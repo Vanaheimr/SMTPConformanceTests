@@ -126,7 +126,7 @@ public sealed class SmtpSinkTests
 
 
     [Test(Description = "RFC 5321 §3.2, §4.1.4: against a server without ESMTP (smtp-sink -e), the client falls back to HELO")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-2")]
+    [Property("Finding", "C-2")]
     public async Task Helo_fallback_against_a_non_esmtp_server()
     {
 
@@ -143,7 +143,7 @@ public sealed class SmtpSinkTests
 
 
     [Test(Description = "RFC 5321 §2.4, RFC 6152: to a server without 8BITMIME (smtp-sink -8) no octet with the high bit set is sent")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-4")]
+    [Property("Finding", "C-4")]
     public async Task No_8bit_octets_without_8bitmime()
     {
 

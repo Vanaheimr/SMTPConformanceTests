@@ -54,7 +54,7 @@ public sealed class DsnParameterTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 3461 §4.1: \"the NEVER keyword MUST appear by itself\" — NOTIFY=NEVER,SUCCESS is a parameter error")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-6")]
+    [Property("Finding", "S-6")]
     public async Task Notify_never_combined_with_another_value_is_rejected()
     {
 
@@ -69,7 +69,7 @@ public sealed class DsnParameterTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 3461 §4.3: ret-value = \"FULL\" / \"HDRS\" — any other RET= value is a parameter error")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-6")]
+    [Property("Finding", "S-6")]
     public async Task An_unknown_ret_value_is_rejected()
     {
 

@@ -56,7 +56,7 @@ public sealed class SizeExtensionTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 1870 §3, RFC 5321 §4.1.1.11: size-value ::= 1*20DIGIT — a non-numeric SIZE= is a parameter syntax error (501), not silently ignored")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-6")]
+    [Property("Finding", "S-6")]
     public async Task A_non_numeric_size_is_rejected()
     {
 

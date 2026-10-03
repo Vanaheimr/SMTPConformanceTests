@@ -54,7 +54,7 @@ public sealed class InternationalizationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6152 §2: body-value ::= \"7BIT\" / \"8BITMIME\" — any other BODY= value is a parameter error")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-6")]
+    [Property("Finding", "S-6")]
     public async Task An_unknown_body_value_is_rejected()
     {
 

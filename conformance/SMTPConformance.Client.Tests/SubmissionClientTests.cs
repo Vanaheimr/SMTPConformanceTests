@@ -139,7 +139,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 5321 §3.2, §4.1.4: when EHLO is refused (502), the client falls back to HELO")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-2")]
+    [Property("Finding", "C-2")]
     public async Task Ehlo_refused_falls_back_to_helo()
     {
 
@@ -240,7 +240,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 5321 §2.4: \"An SMTP client that has not successfully negotiated an appropriate extension ... MUST NOT transmit messages with information in the high-order bit of octets\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-4")]
+    [Property("Finding", "C-4")]
     public async Task No_8bit_data_without_8bitmime()
     {
 

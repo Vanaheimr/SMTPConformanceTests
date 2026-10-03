@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
-**Hermod `0044ecf7`**, which closes S-1, S-2, C-1, S-5, S-11 and S-14.
+**Hermod `e937ebd8`**, which closes S-1, S-2, C-1, S-5, S-11, S-14, S-6, C-2 and C-4.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -19,9 +19,6 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 | ID | Severity | Area | Summary | Tests |
 |---|---|---|---|---|
-| [S-6](#s-6) | medium | server | Unknown or malformed MAIL/RCPT parameters are silently accepted | 6 |
-| [C-4](#c-4) | medium | client | 8-bit content is sent to a server without 8BITMIME | 2 |
-| [C-2](#c-2) | medium | client | No fallback to HELO when EHLO is refused | 2 |
 | [S-3](#s-3) | low | server | DATA after BDAT in the same transaction is accepted | 1 |
 | [S-4](#s-4) | low | server | Replies without RFC 2034 enhanced status codes | 5 |
 | [S-7](#s-7) | low | server | `SIZE=` above the limit is not refused at MAIL | 1 |
@@ -38,7 +35,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-6](#c-6) | low | client | Default EHLO argument is the bare host name, not an FQDN | 1 |
 | [C-7](#c-7) | low | client | Declared `SIZE=` is two octets short | 1 |
 
-35 tests in all.
+25 tests in all.
 
 ### Closed
 
@@ -50,8 +47,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-11](#s-11) | medium | server | SMTPUTF8 envelope addresses were decoded as Latin-1 (`jÃ¶ran@…`) | 2 | [Vanaheimr/Hermod#99](https://github.com/Vanaheimr/Hermod/pull/99) |
 | [S-14](#s-14) | medium | server | REQUIRETLS and DSN parameters were lost on the way into the relay queue | 2 | [Vanaheimr/Hermod#100](https://github.com/Vanaheimr/Hermod/pull/100) |
 | [S-5](#s-5) | medium | server | AUTH failures carried the reply code twice (`535 535 5.7.8 …`) | 2 | [Vanaheimr/Hermod#98](https://github.com/Vanaheimr/Hermod/pull/98) |
+| [S-6](#s-6) | medium | server | Unknown or malformed MAIL/RCPT parameters were silently accepted | 6 | [Vanaheimr/Hermod#101](https://github.com/Vanaheimr/Hermod/pull/101) |
+| [C-4](#c-4) | medium | client | 8-bit content was sent to a server without 8BITMIME | 2 | [Vanaheimr/Hermod#103](https://github.com/Vanaheimr/Hermod/pull/103) |
+| [C-2](#c-2) | medium | client | No fallback to HELO when EHLO was refused | 2 | [Vanaheimr/Hermod#102](https://github.com/Vanaheimr/Hermod/pull/102) |
 
-The 17 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
+The 27 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
 from reading the code that are not pinned by a test yet.
 
 ---
@@ -133,7 +133,8 @@ Fixed: the session takes the reply code from the handler's text when it begins
 with one (`SendAuthRefusalAsync`), so `503 5.5.1 AUTH not started` is a 503 now as well.
 
 ### S-6
-**Unknown or malformed MAIL/RCPT parameters are silently accepted.** RFC 5321
+**Closed** in [Vanaheimr/Hermod#101](https://github.com/Vanaheimr/Hermod/pull/101) (`a08ac031`).
+**Unknown or malformed MAIL/RCPT parameters were silently accepted.** RFC 5321
 §4.1.1.11: *"If the server SMTP does not recognize or cannot implement one or more
 of the parameters associated with a particular MAIL FROM or RCPT TO command, it
 will return code 555."* `HandleMailFromAsync` (`:497`) and `HandleRcptToAsync`
@@ -142,6 +143,11 @@ malformed values of known ones: `X-NO-SUCH-PARAM=1`, `BODY=9BITMIME` (RFC 6152 �
 `SIZE=huge` (RFC 1870 §3), `RET=BODY` (RFC 3461 §4.3), and `NOTIFY=NEVER,SUCCESS`
 (RFC 3461 §4.1: *"the NEVER keyword MUST appear by itself"*). Tests: six, in
 `CommandSyntaxTests`, `InternationalizationTests`, `SizeExtensionTests`, `DsnParameterTests`.
+
+Fixed: `ESMTPParameters` checks every MAIL/RCPT parameter against what is
+advertised — unknown ones, and any after HELO, are 555; invalid values 501. A
+parameter repeated with the same value is tolerated, because CPython's smtplib
+sends `SMTPUTF8 SMTPUTF8`; the interop lane caught that before the fix went in.
 
 ### S-7
 **`SIZE=` above the limit is not refused at MAIL.** RFC 1870 §6.1: *"If the
@@ -251,10 +257,16 @@ with the new `MailSentStatus.TLSUnavailable`, before anything is sent, and are
 not retried.
 
 ### C-2
+**Closed** in [Vanaheimr/Hermod#102](https://github.com/Vanaheimr/Hermod/pull/102) (`cc65c587`).
 **No HELO fallback.** RFC 5321 §3.2: a client must be able to accept 500/501/502/550
 to EHLO, and should then fall back to HELO. Any non-250 EHLO reply throws
 (`:769`). Also seen against Postfix `smtp-sink -e`. Tests:
 `SubmissionClientTests.Ehlo_refused_falls_back_to_helo`, `SmtpSinkTests.Helo_fallback_against_a_non_esmtp_server`.
+
+Fixed: on 500/501/502/504/550 the client sends HELO and continues without
+extensions. The negotiated capabilities are reset per connection now — they had
+accumulated across connections, which after a fallback would have put ESMTP
+parameters on MAIL.
 
 ### C-3
 **EHLO keywords are compared case-sensitively** (`== "STARTTLS"`, `== "8BITMIME"`,
@@ -263,12 +275,18 @@ advertising `starttls` gets "TLS is not supported". Test:
 `SubmissionClientTests.Ehlo_keywords_are_case_insensitive`.
 
 ### C-4
+**Closed** in [Vanaheimr/Hermod#103](https://github.com/Vanaheimr/Hermod/pull/103) (`e937ebd8`).
 **8-bit content to a server without 8BITMIME.** RFC 5321 §2.4: *"An SMTP client
 that has not successfully negotiated an appropriate extension ... MUST NOT
 transmit messages with information in the high-order bit of octets."* A
 `text/plain; charset=utf-8` body goes out as raw UTF-8 regardless. Also seen
 against `smtp-sink -8`. Tests: `SubmissionClientTests.No_8bit_data_without_8bitmime`,
 `SmtpSinkTests.No_8bit_octets_without_8bitmime`.
+
+Fixed by the second of RFC 6152 §3's two options: Hermod has no 7-bit
+conversion, so such a message ends before MAIL with
+`MailSentStatus.EightBitNotSupported`. Converting unsigned messages to
+quoted-printable would be the friendlier answer and is still open.
 
 ### C-5
 **A bare LF in the body is sent as a bare LF** (`SendDataAsync`, `:424`, writes

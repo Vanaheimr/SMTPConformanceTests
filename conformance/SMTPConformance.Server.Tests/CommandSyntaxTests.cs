@@ -129,7 +129,7 @@ public sealed class CommandSyntaxTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.1.11: \"If the server SMTP does not recognize or cannot implement one or more of the parameters associated with a particular MAIL FROM or RCPT TO command, it will return code 555.\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-6")]
+    [Property("Finding", "S-6")]
     public async Task Unknown_mail_parameter_is_rejected_with_555()
     {
 
@@ -143,7 +143,7 @@ public sealed class CommandSyntaxTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.1.11: an unrecognised RCPT TO parameter is answered with 555")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-6")]
+    [Property("Finding", "S-6")]
     public async Task Unknown_rcpt_parameter_is_rejected_with_555()
     {
 
