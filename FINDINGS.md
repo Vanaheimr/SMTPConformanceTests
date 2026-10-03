@@ -69,6 +69,8 @@ and Exim now do.
 Tests: `LineTerminatorTests` — six `Smuggling: …` cases, `A_bare_LF_does_not_terminate_a_command`,
 `A_bare_CR_does_not_terminate_a_command`.
 
+Fix proposed in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95), together with S-2.
+
 ### S-2
 **A rejected BDAT does not consume its chunk.**
 
@@ -83,6 +85,8 @@ pipelining that is command injection by anyone who can make a BDAT fail.
 
 Tests: `ChunkingTests.A_rejected_bdat_still_consumes_its_chunk`,
 `ChunkingTests.An_oversized_bdat_still_consumes_its_chunk`.
+
+Fix proposed in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95).
 
 ### S-3
 **DATA after BDAT in the same transaction is accepted.** RFC 3030 §2: *"If a DATA
@@ -202,11 +206,16 @@ keep the authentication. Test: `AuthTests.Rset_keeps_the_authentication`.
 ### C-1
 **A refused STARTTLS silently downgrades to cleartext.** With `UseTLS = STARTTLS`,
 a `454` (or any non-220) reply to STARTTLS (`SMTPSubmissionClient.cs:792`) has no
-else branch: the client sends EHLO again and the whole message in cleartext.
-An on-path attacker only has to rewrite one reply. RFC 3207 §6 names exactly
-this attack; a client configured to require TLS must stop. (The "STARTTLS not
-advertised" path does throw; only the refused path leaks.) Test:
+else branch: the client sends EHLO again and carries on in cleartext. With
+credentials it stops one step later — AUTH is never sent without TLS, so the
+result is `InvalidLogin`; **without credentials the whole message goes out in
+the clear.** An on-path attacker only has to rewrite one reply. RFC 3207 §6
+names exactly this attack; a client configured to require TLS must stop. (The
+"STARTTLS not advertised" path does throw; only the refused path leaks.) Test:
 `SubmissionClientTests.A_refused_starttls_does_not_downgrade`.
+
+Fix proposed in [Vanaheimr/Hermod#96](https://github.com/Vanaheimr/Hermod/pull/96):
+all three failure paths end with a new `MailSentStatus.TLSUnavailable`, no retry.
 
 ### C-2
 **No HELO fallback.** RFC 5321 §3.2: a client must be able to accept 500/501/502/550
