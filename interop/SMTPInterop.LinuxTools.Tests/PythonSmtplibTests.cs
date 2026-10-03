@@ -91,7 +91,7 @@ public sealed class PythonSmtplibTests : LinuxToolTestBase
 
 
     [Test(Description = "RFC 6531: smtplib sends with SMTPUTF8 and UTF-8 addresses; Hermod stores the envelope correctly")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-11")]
+    [Property("Finding", "S-11")]
     public async Task Smtplib_smtputf8_delivery()
     {
 

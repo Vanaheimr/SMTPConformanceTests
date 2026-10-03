@@ -137,7 +137,7 @@ public sealed class AuthTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 4954 §4, §6: wrong credentials are 535 5.7.8")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-5")]
+    [Property("Finding", "S-5")]
     public async Task Wrong_password_is_535()
     {
 
@@ -371,7 +371,7 @@ public sealed class AuthTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 3461 §5.2.1: ENVID, RET and per-recipient NOTIFY received with a message MUST appear again when it is relayed — so they have to survive into the relay queue")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-14")]
+    [Property("Finding", "S-14")]
     public async Task Dsn_parameters_are_carried_onto_the_relay_queue()
     {
 

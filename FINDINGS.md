@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
-**Hermod `1b272df4`**, which closes S-1, S-2 and C-1.
+**Hermod `0044ecf7`**, which closes S-1, S-2, C-1, S-5, S-11 and S-14.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -19,9 +19,6 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 | ID | Severity | Area | Summary | Tests |
 |---|---|---|---|---|
-| [S-11](#s-11) | medium | server | SMTPUTF8 envelope addresses are decoded as Latin-1 (`jÃ¶ran@…`) | 2 |
-| [S-14](#s-14) | medium | server | REQUIRETLS and DSN parameters are lost on the way into the relay queue | 2 |
-| [S-5](#s-5) | medium | server | AUTH failures carry the reply code twice (`535 535 5.7.8 …`) | 2 |
 | [S-6](#s-6) | medium | server | Unknown or malformed MAIL/RCPT parameters are silently accepted | 6 |
 | [C-4](#c-4) | medium | client | 8-bit content is sent to a server without 8BITMIME | 2 |
 | [C-2](#c-2) | medium | client | No fallback to HELO when EHLO is refused | 2 |
@@ -41,7 +38,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-6](#c-6) | low | client | Default EHLO argument is the bare host name, not an FQDN | 1 |
 | [C-7](#c-7) | low | client | Declared `SIZE=` is two octets short | 1 |
 
-41 tests in all.
+35 tests in all.
 
 ### Closed
 
@@ -50,8 +47,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-1](#s-1) | **critical** | server | SMTP smuggling: bare LF / bare CR end a line, so `<LF>.<LF>` ends DATA | 8 | [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95) |
 | [S-2](#s-2) | **high** | server | A rejected BDAT does not consume its chunk — the chunk is executed as commands | 2 | [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95) |
 | [C-1](#c-1) | **high** | client | STARTTLS refused with 454 → the client continues in cleartext | 1 | [Vanaheimr/Hermod#96](https://github.com/Vanaheimr/Hermod/pull/96) |
+| [S-11](#s-11) | medium | server | SMTPUTF8 envelope addresses were decoded as Latin-1 (`jÃ¶ran@…`) | 2 | [Vanaheimr/Hermod#99](https://github.com/Vanaheimr/Hermod/pull/99) |
+| [S-14](#s-14) | medium | server | REQUIRETLS and DSN parameters were lost on the way into the relay queue | 2 | [Vanaheimr/Hermod#100](https://github.com/Vanaheimr/Hermod/pull/100) |
+| [S-5](#s-5) | medium | server | AUTH failures carried the reply code twice (`535 535 5.7.8 …`) | 2 | [Vanaheimr/Hermod#98](https://github.com/Vanaheimr/Hermod/pull/98) |
 
-The 11 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
+The 17 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
 from reading the code that are not pinned by a test yet.
 
 ---
@@ -119,7 +119,8 @@ connection` (`:1144`), and on the 503s "Say HELO first" (`:310`, `:487`), "TLS a
 active", "Already authenticated". Tests: `EnhancedStatusCodeTests` — five cases.
 
 ### S-5
-**AUTH failures carry the reply code twice.** The auth handlers return
+**Closed** in [Vanaheimr/Hermod#98](https://github.com/Vanaheimr/Hermod/pull/98) (`0887e06e`).
+**AUTH failures carried the reply code twice.** The auth handlers return
 `ErrorCode: "535 5.7.8 …"` (`PlainAuthHandler.cs:54`, `LoginAuthHandler.cs:75`,
 `ScramSha256AuthHandler.cs:56`, …, `SmtpAuthManager.cs` for `504 5.5.4`), and
 `SMTPSession.HandleAuthResultAsync` (`:386`) / `HandleAuthAsync` (`:347`) prepend the
@@ -127,6 +128,9 @@ code again: `535 535 5.7.8 Authentication failed`, `504 504 5.5.4 Unrecognized
 authentication type`. The reply is still parseable, but the enhanced code is no
 longer where RFC 2034 puts it, so clients report "no enhanced code".
 Tests: `AuthTests.Wrong_password_is_535`, `EnhancedStatusCodeTests` "unknown AUTH mechanism (504)".
+
+Fixed: the session takes the reply code from the handler's text when it begins
+with one (`SendAuthRefusalAsync`), so `503 5.5.1 AUTH not started` is a 503 now as well.
 
 ### S-6
 **Unknown or malformed MAIL/RCPT parameters are silently accepted.** RFC 5321
@@ -165,13 +169,17 @@ recipient is treated as relay and refused with 550. Test:
 `RelayAndPostmasterTests.Postmaster_without_a_domain_is_accepted`.
 
 ### S-11
-**SMTPUTF8 envelope addresses are decoded as Latin-1.** The session reader is
+**Closed** in [Vanaheimr/Hermod#99](https://github.com/Vanaheimr/Hermod/pull/99) (`e835211c`).
+**SMTPUTF8 envelope addresses were decoded as Latin-1.** The session reader is
 Latin-1 (`:52`), deliberately, so that DATA/BDAT octets survive — and the message
 body is re-decoded as UTF-8 (`:698`). The envelope is not: `jöran@bücher.example`
 reaches storage, the relay queue and the `Received:` header as
 `jÃ¶ran@bÃ¼cher.example`. RFC 6531 §3.3 makes the addresses UTF-8. Reproduced with
 CPython's `smtplib` as well. Tests: `InternationalizationTests.Utf8_addresses_with_the_smtputf8_parameter_are_accepted`,
 `PythonSmtplibTests.Smtplib_smtputf8_delivery`.
+
+Fixed: every command line is decoded as UTF-8 before it is parsed; octets that are
+not UTF-8 make it an invalid command (`500 5.5.2`). S-12 is untouched.
 
 ### S-12
 **Non-ASCII addresses are accepted without the SMTPUTF8 parameter.** RFC 6531 §3.5:
@@ -184,7 +192,8 @@ NOOP, EHLO, STARTTLS, or QUIT."* AUTH (SCRAM is offered in cleartext), VRFY and
 RSET are answered normally. Tests: three cases in `RequireStartTlsTests`.
 
 ### S-14
-**REQUIRETLS and DSN parameters are dropped when a message is queued for relay.**
+**Closed** in [Vanaheimr/Hermod#100](https://github.com/Vanaheimr/Hermod/pull/100) (`0044ecf7`).
+**REQUIRETLS and DSN parameters were dropped when a message was queued for relay.**
 `ProcessReceivedMessageAsync` (`:967`) builds the `QueuedMail` with `Priority` but
 without `RequireTls`, `EnvId`, `Ret` or `Notify`, although the session parsed all
 of them. RFC 8689 §5 requires the REQUIRETLS tag to travel with the message
@@ -193,6 +202,13 @@ of them. RFC 8689 §5 requires the REQUIRETLS tag to travel with the message
 Note that `QueuedMail.Notify` is per message, while NOTIFY and ORCPT are per
 recipient. Tests: `StartTlsTests.Requiretls_is_carried_onto_the_relay_queue`,
 `AuthTests.Dsn_parameters_are_carried_onto_the_relay_queue`.
+
+Fixed: the queue entry keeps `RequireTls`, `EnvId`, `Ret` and, new,
+`RecipientDsns` — NOTIFY and ORCPT per recipient — and `SMTPOutboundClient` writes
+each relayed RCPT with its own NOTIFY (`NEVER` included) and its received ORCPT.
+The relay client had also been rewriting every ORCPT from the recipient address and
+applying one NOTIFY to all recipients; that is fixed with it. Still open: an absent
+RET is relayed as `RET=FULL` (RFC 3461 leaves the absent case to the server).
 
 ### S-15
 **AUTH is accepted during a mail transaction.** RFC 4954 §4: *"An AUTH command

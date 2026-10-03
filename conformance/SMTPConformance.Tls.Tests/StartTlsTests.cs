@@ -209,7 +209,7 @@ public sealed class StartTlsTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8689 §4.1, §5: a REQUIRETLS message relayed onward must carry the requirement into the queue")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-14")]
+    [Property("Finding", "S-14")]
     public async Task Requiretls_is_carried_onto_the_relay_queue()
     {
 

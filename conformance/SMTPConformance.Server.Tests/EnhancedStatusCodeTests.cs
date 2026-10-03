@@ -56,7 +56,7 @@ public sealed class EnhancedStatusCodeTests : HermodServerTestBase
         yield return Case("DATA without RCPT (503)",       [ "MAIL FROM:<sender@client.example>" ],                               "DATA");
         yield return Case("MAIL syntax error (501)",       [],                                                                    "MAIL FROM:nobrackets@client.example");
         yield return Case("unknown command (500)",         [],                                                                    "FROBNICATE", "S-4");
-        yield return Case("unknown AUTH mechanism (504)",  [],                                                                    "AUTH NO-SUCH-MECHANISM", "S-5");
+        yield return Case("unknown AUTH mechanism (504)",  [],                                                                    "AUTH NO-SUCH-MECHANISM").SetProperty("Finding", "S-5");
         yield return Case("QUIT",                          [],                                                                    "QUIT", "S-4");
     }
 

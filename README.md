@@ -13,14 +13,17 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-03, Hermod `1b272df4`):** 217 tests — 176 pass, **41 are open
+**State (2026-10-03, Hermod `0044ecf7`):** 217 tests — 182 pass, **35 are open
 findings** (`KnownIssue`), documented with RFC quote and code location in
-[FINDINGS.md](FINDINGS.md). The first run found 52; the three that mattered
-beyond conformance are fixed in Hermod:
+[FINDINGS.md](FINDINGS.md). The first run found 52. Six findings are fixed in
+Hermod since, among them the three that mattered beyond conformance:
 [SMTP smuggling](FINDINGS.md#s-1) (S-1) and [BDAT chunks executed as commands](FINDINGS.md#s-2)
-(S-2) in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95), and a
+(S-2) in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95), a
 [STARTTLS downgrade in the submission client](FINDINGS.md#c-1) (C-1) in
-[Vanaheimr/Hermod#96](https://github.com/Vanaheimr/Hermod/pull/96).
+[Vanaheimr/Hermod#96](https://github.com/Vanaheimr/Hermod/pull/96); and
+[doubled AUTH reply codes](FINDINGS.md#s-5) (S-5, [#98](https://github.com/Vanaheimr/Hermod/pull/98)),
+[UTF-8 envelope addresses](FINDINGS.md#s-11) (S-11, [#99](https://github.com/Vanaheimr/Hermod/pull/99)),
+[REQUIRETLS and DSN lost on relay](FINDINGS.md#s-14) (S-14, [#100](https://github.com/Vanaheimr/Hermod/pull/100)).
 
 ## Layout
 
@@ -120,15 +123,15 @@ vectors, and the four Linux tools.
 | RFC 2920 PIPELINING | 4 | 0 | — |
 | RFC 1870 SIZE | 5 | 2 | S-6, S-7 |
 | RFC 3030 CHUNKING / BDAT | 8 | 1 | S-3 (~~S-2~~ fixed) |
-| RFC 6152 8BITMIME, RFC 6531 SMTPUTF8 | 6 | 4 | S-6, S-11, S-12 |
-| RFC 2034 / 3463 enhanced status codes | 14 | 6 | S-4, S-5 |
+| RFC 6152 8BITMIME, RFC 6531 SMTPUTF8 | 6 | 2 | S-6, S-12 (~~S-11~~ fixed) |
+| RFC 2034 / 3463 enhanced status codes | 14 | 5 | S-4 (~~S-5~~ fixed) |
 | RFC 3461 DSN parameters | 5 | 2 | S-6 |
-| RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 5 | S-8, S-13, S-14 |
-| RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 5 | S-5, S-14, S-15, S-16, S-17 |
+| RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 4 | S-8, S-13 (~~S-14~~ fixed) |
+| RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 3 | S-15, S-16, S-17 (~~S-5~~, ~~S-14~~ fixed) |
 | Submission client (RFC 5321, 1870, 3207, 4954, 6152) | 20 | 6 | C-2 … C-7 (~~C-1~~ fixed) |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
-| Interop: swaks, smtplib, openssl s_client, smtp-sink | 17 | 3 | S-11, C-2, C-4 |
-| **Total** | **217** | **41** | |
+| Interop: swaks, smtplib, openssl s_client, smtp-sink | 17 | 2 | C-2, C-4 (~~S-11~~ fixed) |
+| **Total** | **217** | **35** | |
 
 ## External test partners
 
@@ -149,8 +152,8 @@ one can tell us that the others cannot.
 1. **Postfix `smtpd` and `smtp`, both directions.** As a *server* for
    `SMTPOutboundClient`/`MailSender`: a strict next hop with
    `smtpd_forbid_bare_newline`, `smtpd_tls_security_level = encrypt`, DSN and
-   SMTPUTF8 — the real test for S-14 (are ENVID/RET/NOTIFY/ORCPT and REQUIRETLS
-   actually emitted on relay?). As a *client*: Postfix delivering to Hermod as
+   SMTPUTF8 — an independent check of the S-14 fix (ENVID/RET/NOTIFY/ORCPT and
+   REQUIRETLS on relay), which Hermod's own tests verify only against a fake hop. As a *client*: Postfix delivering to Hermod as
    MX is the most common real-world peer Hermod will ever see. Postfix is
    already installed for `smtp-sink`; this needs a throwaway `main.cf` per test.
 2. **SEC Consult `smtp-smuggling-tools`.** The scanner published with the

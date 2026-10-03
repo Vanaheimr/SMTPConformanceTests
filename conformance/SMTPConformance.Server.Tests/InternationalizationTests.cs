@@ -68,7 +68,7 @@ public sealed class InternationalizationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6531 §3.4: with the SMTPUTF8 parameter, UTF-8 envelope addresses are accepted and delivered")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-11")]
+    [Property("Finding", "S-11")]
     public async Task Utf8_addresses_with_the_smtputf8_parameter_are_accepted()
     {
 
