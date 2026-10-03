@@ -158,7 +158,7 @@ public sealed class CommandSyntaxTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.1.4: DATA takes no argument — DATA with one is a syntax error (501)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-8")]
+    [Property("Finding", "S-8")]
     public async Task Data_with_an_argument_is_rejected_with_501()
     {
 
@@ -168,6 +168,25 @@ public sealed class CommandSyntaxTests : HermodServerTestBase
         var reply = await client.CommandAsync("DATA please");
 
         Assert.That(reply.Code, Is.EqualTo(501), Explain(client));
+
+    }
+
+
+    [Test(Description = "RFC 5321 §4.1.1.5: rset = \"RSET\" CRLF — RSET with an argument is a syntax error (501), and the transaction stays")]
+    [Property("Finding", "S-8")]
+    public async Task Rset_with_an_argument_is_rejected_with_501()
+    {
+
+        await using var client = await Server.ConnectAndEhloAsync();
+
+        await client.EnvelopeAsync("sender@client.example", "alice@hermod.test");
+        var reply = await client.CommandAsync("RSET now");
+        var data  = await client.CommandAsync("DATA");
+
+        Assert.Multiple(() => {
+            Assert.That(reply.Code, Is.EqualTo(501), Explain(client));
+            Assert.That(data.Code,  Is.EqualTo(354), "the refused RSET must leave the transaction in place" + Explain(client));
+        });
 
     }
 

@@ -104,7 +104,7 @@ public sealed partial class GreetingAndEhloTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.1.1: ehlo = \"EHLO\" SP ( Domain / address-literal ) CRLF — EHLO without an argument is a syntax error (501)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-8")]
+    [Property("Finding", "S-8")]
     public async Task Ehlo_without_a_domain_is_rejected_with_501()
     {
 
@@ -119,7 +119,7 @@ public sealed partial class GreetingAndEhloTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.1.1: helo = \"HELO\" SP Domain CRLF — HELO without an argument is a syntax error (501)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-8")]
+    [Property("Finding", "S-8")]
     public async Task Helo_without_a_domain_is_rejected_with_501()
     {
 

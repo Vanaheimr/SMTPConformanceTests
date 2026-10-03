@@ -38,26 +38,23 @@ public sealed class EnhancedStatusCodeTests : HermodServerTestBase
     /// </summary>
     public static IEnumerable<TestCaseData> Replies()
     {
-        TestCaseData Case(String name, String[] setup, String command, String? finding = null)
-        {
-            var data = new TestCaseData(setup, command).SetName($"Enhanced code on: {name}");
-            return finding is null
-                       ? data
-                       : data.SetCategory(TestCategories.KnownIssue).SetProperty("Finding", finding);
-        }
+        TestCaseData Case(String name, String[] setup, String command)
+            => new TestCaseData(setup, command).SetName($"Enhanced code on: {name}");
 
-        yield return Case("NOOP",                          [],                                                                    "NOOP", "S-4");
-        yield return Case("RSET",                          [],                                                                    "RSET", "S-4");
-        yield return Case("VRFY",                          [],                                                                    "VRFY alice", "S-4");
+        yield return Case("NOOP",                          [],                                                                    "NOOP").SetProperty("Finding", "S-4");
+        yield return Case("RSET",                          [],                                                                    "RSET").SetProperty("Finding", "S-4");
+        yield return Case("VRFY",                          [],                                                                    "VRFY alice").SetProperty("Finding", "S-4");
         yield return Case("MAIL accepted",                 [],                                                                    "MAIL FROM:<sender@client.example>");
         yield return Case("RCPT accepted",                 [ "MAIL FROM:<sender@client.example>" ],                               "RCPT TO:<alice@hermod.test>");
         yield return Case("RCPT relay denied",             [ "MAIL FROM:<sender@client.example>" ],                               "RCPT TO:<x@elsewhere.example>");
         yield return Case("RCPT without MAIL (503)",       [],                                                                    "RCPT TO:<alice@hermod.test>");
         yield return Case("DATA without RCPT (503)",       [ "MAIL FROM:<sender@client.example>" ],                               "DATA");
         yield return Case("MAIL syntax error (501)",       [],                                                                    "MAIL FROM:nobrackets@client.example");
-        yield return Case("unknown command (500)",         [],                                                                    "FROBNICATE", "S-4");
+        yield return Case("unknown command (500)",         [],                                                                    "FROBNICATE").SetProperty("Finding", "S-4");
         yield return Case("unknown AUTH mechanism (504)",  [],                                                                    "AUTH NO-SUCH-MECHANISM").SetProperty("Finding", "S-5");
-        yield return Case("QUIT",                          [],                                                                    "QUIT", "S-4");
+        yield return Case("AUTH without a mechanism (501)", [],                                                                   "AUTH");
+        yield return Case("cancelled AUTH (501)",          [ "AUTH SCRAM-SHA-256" ],                                              "*");
+        yield return Case("QUIT",                          [],                                                                    "QUIT").SetProperty("Finding", "S-4");
     }
 
 

@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
-**Hermod `26e540bb`**, which closes S-1, S-2, C-1, S-5, S-11, S-14, S-6, C-2, C-4, S-3, S-7, S-16 and S-17.
+**Hermod `a4e083d3`** (Styx `c530de16`), which closes S-1, S-2, C-1, S-5, S-11, S-14, S-6, C-2, C-4, S-3, S-7, S-16, S-17, S-4 and S-8.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -19,8 +19,6 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 | ID | Severity | Area | Summary | Tests |
 |---|---|---|---|---|
-| [S-4](#s-4) | low | server | Replies without RFC 2034 enhanced status codes | 5 |
-| [S-8](#s-8) | low | server | HELO/EHLO without argument, DATA/STARTTLS with one: accepted | 4 |
 | [S-9](#s-9) | low | server | A second MAIL inside a transaction silently restarts it | 1 |
 | [S-10](#s-10) | low | server | `RCPT TO:<Postmaster>` is refused as a relay attempt | 1 |
 | [S-12](#s-12) | low | server | Non-ASCII addresses accepted without the SMTPUTF8 parameter | 2 |
@@ -31,7 +29,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-6](#c-6) | low | client | Default EHLO argument is the bare host name, not an FQDN | 1 |
 | [C-7](#c-7) | low | client | Declared `SIZE=` is two octets short | 1 |
 
-21 tests in all.
+12 tests in all.
 
 ### Closed
 
@@ -50,8 +48,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-7](#s-7) | low | server | `SIZE=` above the limit was not refused at MAIL | 1 | [Vanaheimr/Hermod#109](https://github.com/Vanaheimr/Hermod/pull/109) |
 | [S-16](#s-16) | low | server | Undecodable base64 in AUTH was 535, not 501 5.5.2 | 1 | [Vanaheimr/Hermod#110](https://github.com/Vanaheimr/Hermod/pull/110) |
 | [S-17](#s-17) | low | server | RSET discarded the authentication | 1 | [Vanaheimr/Hermod#105](https://github.com/Vanaheimr/Hermod/pull/105) |
+| [S-4](#s-4) | low | server | Replies without RFC 2034 enhanced status codes | 5 | [Vanaheimr/Hermod#113](https://github.com/Vanaheimr/Hermod/pull/113) |
+| [S-8](#s-8) | low | server | HELO/EHLO without argument, DATA/STARTTLS with one: accepted | 4 | [Vanaheimr/Hermod#114](https://github.com/Vanaheimr/Hermod/pull/114) |
 
-The 31 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
+The 40 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
 from reading the code that are not pinned by a test yet.
 
 ---
@@ -116,6 +116,7 @@ received were dropped with the transaction. Fixed: DATA is 503 while a BDAT
 sequence is open; the chunks stay, and BDAT … LAST still completes.
 
 ### S-4
+**Closed** in [Vanaheimr/Hermod#113](https://github.com/Vanaheimr/Hermod/pull/113) (`7988e6c6`).
 **Replies without enhanced status codes.** RFC 2034 §4: once
 `ENHANCEDSTATUSCODES` is advertised, *"the text part of all 2xx, 4xx, and 5xx SMTP
 responses other than the initial greeting and any response to HELO or EHLO are
@@ -123,6 +124,11 @@ prefaced with a status code"*. Missing on `250 OK` (NOOP `:241`, RSET `:1123`),
 `252 Cannot verify user` (`:249`), `500 Unrecognized command` (`:254`), `221 … closing
 connection` (`:1144`), and on the 503s "Say HELO first" (`:310`, `:487`), "TLS already
 active", "Already authenticated". Tests: `EnhancedStatusCodeTests` — five cases.
+
+Fixing it turned up four more: the 220 to STARTTLS, the 454 without a
+certificate, the 501 to AUTH without a mechanism and the 501 to a cancelled AUTH.
+All 13 carry a code now (2.0.0, 5.5.1, 5.5.4, 4.7.0, 5.7.0 by RFC 3463 class);
+`EnhancedStatusCodeTests` gained the two AUTH cases that need no TLS.
 
 ### S-5
 **Closed** in [Vanaheimr/Hermod#98](https://github.com/Vanaheimr/Hermod/pull/98) (`0887e06e`).
@@ -166,10 +172,17 @@ Fixed: the declared size is compared at MAIL; a 20-digit value beyond UInt64
 counts as larger than any limit.
 
 ### S-8
-**Argument syntax is not checked.** `EHLO` and `HELO` without a domain are
+**Closed** in [Vanaheimr/Hermod#114](https://github.com/Vanaheimr/Hermod/pull/114) (`a4e083d3`).
+**Argument syntax was not checked.** `EHLO` and `HELO` without a domain are
 answered 250 (RFC 5321 §4.1.1.1 grammar → 501; `:260`, `:268`). `DATA please`
 starts a DATA phase (§4.1.1.4: `data = "DATA" CRLF`). `STARTTLS now` starts TLS
 (RFC 3207 §4: *"501 Syntax error (no parameters allowed)"*). Tests: four.
+
+Fixed in one place next to the command parser: a command that breaks its
+argument rule is 501 and not executed. `RSET now` had the same gap (§4.1.1.5) and
+is covered too, with a fifth test, `CommandSyntaxTests.Rset_with_an_argument_is_rejected_with_501`.
+QUIT with an argument (§4.1.1.10 allows none) still ends the session, as in Postfix: refusing it
+would only keep a connection open that both sides are done with.
 
 ### S-9
 **A second MAIL inside a transaction restarts it.** RFC 5321 §3.3 forbids the

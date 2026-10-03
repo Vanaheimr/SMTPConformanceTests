@@ -54,7 +54,7 @@ public sealed class StartTlsTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 3207 §4: STARTTLS takes no parameters — \"501 Syntax error (no parameters allowed)\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-8")]
+    [Property("Finding", "S-8")]
     public async Task Starttls_with_a_parameter_is_501()
     {
 
