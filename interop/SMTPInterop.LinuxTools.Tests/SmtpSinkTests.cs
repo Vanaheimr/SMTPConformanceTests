@@ -57,7 +57,12 @@ public sealed class SmtpSinkTests
 
             var port    = (UInt16) Random.Shared.Next(20000, 60000);
             var dumpDir = $"/tmp/smtp-sink-{Guid.NewGuid():N}";
-            var process = Wsl.StartDetached($"mkdir -p {dumpDir} && chmod 777 {dumpDir} && exec /usr/sbin/smtp-sink {Options} -d {dumpDir}/ 0.0.0.0:{port} 16", asRoot: false);
+            // smtp-sink refuses to run as root without -u — which is how a CI container
+            // runs everything. "nobody" can write the dump directory because it is 777.
+            var process = Wsl.StartDetached($"mkdir -p {dumpDir} && chmod 777 {dumpDir} && " +
+                                            $"if [ \"$(id -u)\" = 0 ]; then U='-u nobody'; else U=''; fi && " +
+                                            $"exec /usr/sbin/smtp-sink $U {Options} -d {dumpDir}/ 0.0.0.0:{port} 16",
+                                            asRoot: false);
 
             var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
 
