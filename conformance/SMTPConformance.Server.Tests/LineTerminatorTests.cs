@@ -44,7 +44,7 @@ public sealed class LineTerminatorTests : HermodServerTestBase
 
 
     [TestCaseSource(nameof(AmbiguousTerminators))]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-1")]
+    [Property("Finding", "S-1")]
     public async Task An_ambiguous_end_of_data_does_not_end_the_message(String Terminator)
     {
 
@@ -82,7 +82,7 @@ public sealed class LineTerminatorTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §2.3.8: a bare LF does not terminate a command line — 'NOOP<LF>NOOP<CRLF>' is one line, so at most one reply")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-1")]
+    [Property("Finding", "S-1")]
     public async Task A_bare_LF_does_not_terminate_a_command()
     {
 
@@ -98,7 +98,7 @@ public sealed class LineTerminatorTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §2.3.8: a bare CR does not terminate a command line — 'NOOP<CR>NOOP<CRLF>' is one line, so at most one reply")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-1")]
+    [Property("Finding", "S-1")]
     public async Task A_bare_CR_does_not_terminate_a_command()
     {
 

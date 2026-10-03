@@ -359,7 +359,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 3207 §4.1, §6: a client configured for STARTTLS does not send the message in cleartext when the server answers STARTTLS with 454")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-1")]
+    [Property("Finding", "C-1")]
     public async Task A_refused_starttls_does_not_downgrade()
     {
 

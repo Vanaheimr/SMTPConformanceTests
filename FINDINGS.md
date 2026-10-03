@@ -4,20 +4,21 @@ Every finding below is pinned by at least one test that asserts what the RFC
 says. Those tests carry `[Category("KnownIssue")]` and a `Finding` property with
 the ID, so the merge gate stays green while they stay red. When a fix lands,
 the test turns green, the nightly reports it as "now passing", and the tag
-comes off.
+comes off — the `Finding` property stays, so the test still says which finding
+it guards.
 
-Measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03.
-Line numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`.
+First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
+numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
+**Hermod `1b272df4`**, which closes S-1, S-2 and C-1.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 ```
 
+### Open
+
 | ID | Severity | Area | Summary | Tests |
 |---|---|---|---|---|
-| [S-1](#s-1) | **critical** | server | SMTP smuggling: bare LF / bare CR end a line, so `<LF>.<LF>` ends DATA | 8 |
-| [S-2](#s-2) | **high** | server | A rejected BDAT does not consume its chunk — the chunk is executed as commands | 2 |
-| [C-1](#c-1) | **high** | client | STARTTLS refused with 454 → the client sends the message in cleartext | 1 |
 | [S-11](#s-11) | medium | server | SMTPUTF8 envelope addresses are decoded as Latin-1 (`jÃ¶ran@…`) | 2 |
 | [S-14](#s-14) | medium | server | REQUIRETLS and DSN parameters are lost on the way into the relay queue | 2 |
 | [S-5](#s-5) | medium | server | AUTH failures carry the reply code twice (`535 535 5.7.8 …`) | 2 |
@@ -40,7 +41,17 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-6](#c-6) | low | client | Default EHLO argument is the bare host name, not an FQDN | 1 |
 | [C-7](#c-7) | low | client | Declared `SIZE=` is two octets short | 1 |
 
-52 tests in all. Besides these, [observations](#observations-without-a-test-yet)
+41 tests in all.
+
+### Closed
+
+| ID | Severity | Area | Summary | Tests | Fixed in |
+|---|---|---|---|---|---|
+| [S-1](#s-1) | **critical** | server | SMTP smuggling: bare LF / bare CR end a line, so `<LF>.<LF>` ends DATA | 8 | [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95) |
+| [S-2](#s-2) | **high** | server | A rejected BDAT does not consume its chunk — the chunk is executed as commands | 2 | [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95) |
+| [C-1](#c-1) | **high** | client | STARTTLS refused with 454 → the client continues in cleartext | 1 | [Vanaheimr/Hermod#96](https://github.com/Vanaheimr/Hermod/pull/96) |
+
+The 11 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
 from reading the code that are not pinned by a test yet.
 
 ---
@@ -48,7 +59,8 @@ from reading the code that are not pinned by a test yet.
 ## Server
 
 ### S-1
-**SMTP smuggling: bare LF and bare CR are accepted as line terminators.**
+**Closed** in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95) (`edcb81f3`).
+**SMTP smuggling: bare LF and bare CR were accepted as line terminators.**
 
 RFC 5321 §2.3.8: *"Conforming implementations MUST NOT recognize or generate any
 other character or character sequence as a line terminator."*
@@ -69,10 +81,13 @@ and Exim now do.
 Tests: `LineTerminatorTests` — six `Smuggling: …` cases, `A_bare_LF_does_not_terminate_a_command`,
 `A_bare_CR_does_not_terminate_a_command`.
 
-Fix proposed in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95), together with S-2.
+Fixed: `SMTPLineReader` ends lines at CR LF only. A bare CR/LF in a command
+is `500 5.5.2`; in content it rejects the message with `550 5.5.2` after the end
+of data, or is normalized to CR LF with `SMTPServerConfig.RejectBareLineEndings = false`.
 
 ### S-2
-**A rejected BDAT does not consume its chunk.**
+**Closed** in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95) (`edcb81f3`).
+**A rejected BDAT did not consume its chunk.**
 
 RFC 3030 §2: *"If a failure occurs after a BDAT command is received, the
 receiver-SMTP MUST accept and discard the associated message data before
@@ -86,7 +101,7 @@ pipelining that is command injection by anyone who can make a BDAT fail.
 Tests: `ChunkingTests.A_rejected_bdat_still_consumes_its_chunk`,
 `ChunkingTests.An_oversized_bdat_still_consumes_its_chunk`.
 
-Fix proposed in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95).
+Fixed: every refusal with a known chunk size reads and discards the chunk first.
 
 ### S-3
 **DATA after BDAT in the same transaction is accepted.** RFC 3030 §2: *"If a DATA
@@ -204,7 +219,8 @@ keep the authentication. Test: `AuthTests.Rset_keeps_the_authentication`.
 ## Submission client (`SMTPSubmissionClient`)
 
 ### C-1
-**A refused STARTTLS silently downgrades to cleartext.** With `UseTLS = STARTTLS`,
+**Closed** in [Vanaheimr/Hermod#96](https://github.com/Vanaheimr/Hermod/pull/96) (`c04587fe`).
+**A refused STARTTLS silently downgraded to cleartext.** With `UseTLS = STARTTLS`,
 a `454` (or any non-220) reply to STARTTLS (`SMTPSubmissionClient.cs:792`) has no
 else branch: the client sends EHLO again and carries on in cleartext. With
 credentials it stops one step later — AUTH is never sent without TLS, so the
@@ -214,8 +230,9 @@ names exactly this attack; a client configured to require TLS must stop. (The
 "STARTTLS not advertised" path does throw; only the refused path leaks.) Test:
 `SubmissionClientTests.A_refused_starttls_does_not_downgrade`.
 
-Fix proposed in [Vanaheimr/Hermod#96](https://github.com/Vanaheimr/Hermod/pull/96):
-all three failure paths end with a new `MailSentStatus.TLSUnavailable`, no retry.
+Fixed: STARTTLS not offered, refused, or a failed handshake all end the attempt
+with the new `MailSentStatus.TLSUnavailable`, before anything is sent, and are
+not retried.
 
 ### C-2
 **No HELO fallback.** RFC 5321 §3.2: a client must be able to accept 500/501/502/550

@@ -13,11 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-03, Hermod `8af03484`):** 217 tests — 165 pass, **52 are open
+**State (2026-10-03, Hermod `1b272df4`):** 217 tests — 176 pass, **41 are open
 findings** (`KnownIssue`), documented with RFC quote and code location in
-[FINDINGS.md](FINDINGS.md). Three of them matter beyond conformance:
-[SMTP smuggling](FINDINGS.md#s-1) (S-1), [BDAT chunks executed as commands](FINDINGS.md#s-2)
-(S-2) and a [STARTTLS downgrade in the submission client](FINDINGS.md#c-1) (C-1).
+[FINDINGS.md](FINDINGS.md). The first run found 52; the three that mattered
+beyond conformance are fixed in Hermod:
+[SMTP smuggling](FINDINGS.md#s-1) (S-1) and [BDAT chunks executed as commands](FINDINGS.md#s-2)
+(S-2) in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95), and a
+[STARTTLS downgrade in the submission client](FINDINGS.md#c-1) (C-1) in
+[Vanaheimr/Hermod#96](https://github.com/Vanaheimr/Hermod/pull/96).
 
 ## Layout
 
@@ -113,19 +116,19 @@ vectors, and the four Linux tools.
 | Specification | Tests | Failing | Open findings |
 |---|---:|---:|---|
 | RFC 5321 SMTP — greeting, EHLO/HELO, command syntax, state machine, DATA, transparency, trace, relay, postmaster | 50 | 7 | S-6, S-8, S-9, S-10 |
-| RFC 5321 §2.3.8 line terminators / SMTP smuggling | 9 | 8 | **S-1** |
+| RFC 5321 §2.3.8 line terminators / SMTP smuggling | 9 | 0 | ~~S-1~~ fixed |
 | RFC 2920 PIPELINING | 4 | 0 | — |
 | RFC 1870 SIZE | 5 | 2 | S-6, S-7 |
-| RFC 3030 CHUNKING / BDAT | 8 | 3 | **S-2**, S-3 |
+| RFC 3030 CHUNKING / BDAT | 8 | 1 | S-3 (~~S-2~~ fixed) |
 | RFC 6152 8BITMIME, RFC 6531 SMTPUTF8 | 6 | 4 | S-6, S-11, S-12 |
 | RFC 2034 / 3463 enhanced status codes | 14 | 6 | S-4, S-5 |
 | RFC 3461 DSN parameters | 5 | 2 | S-6 |
 | RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 5 | S-8, S-13, S-14 |
 | RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 5 | S-5, S-14, S-15, S-16, S-17 |
-| Submission client (RFC 5321, 1870, 3207, 4954, 6152) | 20 | 7 | **C-1**, C-2 … C-7 |
+| Submission client (RFC 5321, 1870, 3207, 4954, 6152) | 20 | 6 | C-2 … C-7 (~~C-1~~ fixed) |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink | 17 | 3 | S-11, C-2, C-4 |
-| **Total** | **217** | **52** | |
+| **Total** | **217** | **41** | |
 
 ## External test partners
 

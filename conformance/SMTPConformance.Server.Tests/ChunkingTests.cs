@@ -116,7 +116,7 @@ public sealed class ChunkingTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 3030 §2: \"If a failure occurs after a BDAT command is received, the receiver-SMTP MUST accept and discard the associated message data\" — here: BDAT without a recipient")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-2")]
+    [Property("Finding", "S-2")]
     public async Task A_rejected_bdat_still_consumes_its_chunk()
     {
 
@@ -135,7 +135,7 @@ public sealed class ChunkingTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 3030 §2: a BDAT refused for its size must still have its data consumed")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-2")]
+    [Property("Finding", "S-2")]
     public async Task An_oversized_bdat_still_consumes_its_chunk()
     {
 
