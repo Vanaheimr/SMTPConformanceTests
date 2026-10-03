@@ -70,7 +70,7 @@ public sealed class RelayAndPostmasterTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.5.1: \"the special case of 'RCPT TO:<Postmaster>' (with no domain specification), MUST be supported\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-10")]
+    [Property("Finding", "S-10")]
     public async Task Postmaster_without_a_domain_is_accepted()
     {
 

@@ -238,7 +238,7 @@ public sealed class AuthTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 4954 §4: \"An AUTH command issued during a mail transaction MUST be rejected with a 503 reply.\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-15")]
+    [Property("Finding", "S-15")]
     public async Task Auth_during_a_transaction_is_503()
     {
 

@@ -54,8 +54,8 @@ public sealed class TransactionStateTests : HermodServerTestBase
     }
 
 
-    [Test(Description = "RFC 5321 §3.3, §4.3.2: \"MAIL ... MUST NOT be sent if a mail transaction is already open\"; the server's answer to a second MAIL is 503")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-9")]
+    [Test(Description = "RFC 5321 §4.1.4, §4.3.2: \"MAIL ... MUST NOT be sent if a mail transaction is already open\"; the server's answer to a second MAIL is 503")]
+    [Property("Finding", "S-9")]
     public async Task A_second_mail_inside_a_transaction_is_503()
     {
 

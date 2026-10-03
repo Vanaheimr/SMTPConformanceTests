@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
-**Hermod `a4e083d3`** (Styx `c530de16`), which closes S-1, S-2, C-1, S-5, S-11, S-14, S-6, C-2, C-4, S-3, S-7, S-16, S-17, S-4 and S-8.
+**Hermod `1b9a9a95`** (Styx `c530de16`), which closes S-1, S-2, C-1, S-5, S-11, S-14, S-6, C-2, C-4, S-3, S-7, S-16, S-17, S-4, S-8, S-9, S-10 and S-15.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -19,17 +19,14 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 | ID | Severity | Area | Summary | Tests |
 |---|---|---|---|---|
-| [S-9](#s-9) | low | server | A second MAIL inside a transaction silently restarts it | 1 |
-| [S-10](#s-10) | low | server | `RCPT TO:<Postmaster>` is refused as a relay attempt | 1 |
 | [S-12](#s-12) | low | server | Non-ASCII addresses accepted without the SMTPUTF8 parameter | 2 |
 | [S-13](#s-13) | low | server | With `RequireStartTls`, only MAIL is gated; AUTH, VRFY, RSET are not | 3 |
-| [S-15](#s-15) | low | server | AUTH is accepted during a mail transaction | 1 |
 | [C-3](#c-3) | low | client | EHLO keywords are matched case-sensitively | 1 |
 | [C-5](#c-5) | low | client | A bare LF in the body goes out as a bare LF | 1 |
 | [C-6](#c-6) | low | client | Default EHLO argument is the bare host name, not an FQDN | 1 |
 | [C-7](#c-7) | low | client | Declared `SIZE=` is two octets short | 1 |
 
-12 tests in all.
+9 tests in all.
 
 ### Closed
 
@@ -50,8 +47,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-17](#s-17) | low | server | RSET discarded the authentication | 1 | [Vanaheimr/Hermod#105](https://github.com/Vanaheimr/Hermod/pull/105) |
 | [S-4](#s-4) | low | server | Replies without RFC 2034 enhanced status codes | 5 | [Vanaheimr/Hermod#113](https://github.com/Vanaheimr/Hermod/pull/113) |
 | [S-8](#s-8) | low | server | HELO/EHLO without argument, DATA/STARTTLS with one: accepted | 4 | [Vanaheimr/Hermod#114](https://github.com/Vanaheimr/Hermod/pull/114) |
+| [S-9](#s-9) | low | server | A second MAIL inside a transaction silently restarted it | 1 | [Vanaheimr/Hermod#115](https://github.com/Vanaheimr/Hermod/pull/115) |
+| [S-10](#s-10) | low | server | `RCPT TO:<Postmaster>` was refused as a relay attempt | 1 | [Vanaheimr/Hermod#116](https://github.com/Vanaheimr/Hermod/pull/116) |
+| [S-15](#s-15) | low | server | AUTH was accepted during a mail transaction | 1 | [Vanaheimr/Hermod#117](https://github.com/Vanaheimr/Hermod/pull/117) |
 
-The 40 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
+The 43 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
 from reading the code that are not pinned by a test yet.
 
 ---
@@ -185,17 +185,26 @@ QUIT with an argument (§4.1.1.10 allows none) still ends the session, as in Pos
 would only keep a connection open that both sides are done with.
 
 ### S-9
-**A second MAIL inside a transaction restarts it.** RFC 5321 §3.3 forbids the
+**Closed** in [Vanaheimr/Hermod#115](https://github.com/Vanaheimr/Hermod/pull/115) (`c8684647`).
+**A second MAIL inside a transaction restarted it.** RFC 5321 §4.1.4 forbids the
 client to send it; §4.3.2 lists 503 as the server's answer. `HandleMailFromAsync`
 (`:526`) clears the recipients and answers 250. Test:
 `TransactionStateTests.A_second_mail_inside_a_transaction_is_503`.
 
+Fixed: `503 5.5.1 Nested MAIL command`, as in Postfix; the open transaction keeps
+its sender and recipients. Hermod's own clients send one message per session.
+
 ### S-10
-**`RCPT TO:<Postmaster>` is refused.** RFC 5321 §4.5.1: *"the special case of
+**Closed** in [Vanaheimr/Hermod#116](https://github.com/Vanaheimr/Hermod/pull/116) (`7301f097`).
+**`RCPT TO:<Postmaster>` was refused.** RFC 5321 §4.5.1: *"the special case of
 'RCPT TO:<Postmaster>' (with no domain specification), MUST be supported."*
 `ExtractDomain` (`:1103`) yields `""`, which is not a local domain, so the
 recipient is treated as relay and refused with 550. Test:
 `RelayAndPostmasterTests.Postmaster_without_a_domain_is_accepted`.
+
+Fixed: domainless `Postmaster`, in any case, is `postmaster@<Hostname>` and
+delivered locally whatever the relay rules; with the domain filled in, the MDN
+generator, which parses each recipient as an address, sees an ordinary one.
 
 ### S-11
 **Closed** in [Vanaheimr/Hermod#99](https://github.com/Vanaheimr/Hermod/pull/99) (`e835211c`).
@@ -240,9 +249,14 @@ applying one NOTIFY to all recipients; that is fixed with it. Still open: an abs
 RET is relayed as `RET=FULL` (RFC 3461 leaves the absent case to the server).
 
 ### S-15
-**AUTH is accepted during a mail transaction.** RFC 4954 §4: *"An AUTH command
+**Closed** in [Vanaheimr/Hermod#117](https://github.com/Vanaheimr/Hermod/pull/117) (`1b9a9a95`).
+**AUTH was accepted during a mail transaction.** RFC 4954 §4: *"An AUTH command
 issued during a mail transaction MUST be rejected with a 503 reply."* Test:
 `AuthTests.Auth_during_a_transaction_is_503`.
+
+It mattered beyond the reply code: completed, the AUTH let the later RCPTs run
+under another identity than the MAIL, so a recipient just refused as relay would
+be accepted into the same transaction. Fixed: 503 and no exchange started.
 
 ### S-16
 **Closed** in [Vanaheimr/Hermod#110](https://github.com/Vanaheimr/Hermod/pull/110) (`15ac9f6c`).
