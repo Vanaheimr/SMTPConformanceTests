@@ -102,7 +102,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 5321 §4.1.4: \"The domain name given in the EHLO command MUST be either a primary host name ... or, if the host has no name, an address literal\" — checked with the client's default local domain")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-6")]
+    [Property("Finding", "C-6")]
     public async Task Default_ehlo_argument_is_a_domain_or_address_literal()
     {
 
@@ -221,7 +221,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 5321 §2.3.8, §4.1.1.4: a bare LF inside the body text is never sent as a bare LF")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-5")]
+    [Property("Finding", "C-5")]
     public async Task A_bare_LF_in_the_body_is_not_sent_bare()
     {
 
@@ -278,7 +278,7 @@ public sealed partial class SubmissionClientTests
     #region SIZE, SMTPUTF8
 
     [Test(Description = "RFC 1870 §5, §6: the declared SIZE= is not smaller than the octets then sent (CRLFs included, stuffing excluded)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-7")]
+    [Property("Finding", "C-7")]
     public async Task Declared_size_covers_the_message()
     {
 
@@ -401,7 +401,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 5321 §2.4: EHLO keywords are case-insensitive — a lower-case 'starttls' is still STARTTLS")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-3")]
+    [Property("Finding", "C-3")]
     public async Task Ehlo_keywords_are_case_insensitive()
     {
 

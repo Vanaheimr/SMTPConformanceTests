@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
-**Hermod `1b9a9a95`** (Styx `c530de16`), which closes S-1, S-2, C-1, S-5, S-11, S-14, S-6, C-2, C-4, S-3, S-7, S-16, S-17, S-4, S-8, S-9, S-10 and S-15.
+**Hermod `1c056b32`** (Styx `c530de16`), which closes every finding but S-12 and S-13.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -21,12 +21,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 |---|---|---|---|---|
 | [S-12](#s-12) | low | server | Non-ASCII addresses accepted without the SMTPUTF8 parameter | 2 |
 | [S-13](#s-13) | low | server | With `RequireStartTls`, only MAIL is gated; AUTH, VRFY, RSET are not | 3 |
-| [C-3](#c-3) | low | client | EHLO keywords are matched case-sensitively | 1 |
-| [C-5](#c-5) | low | client | A bare LF in the body goes out as a bare LF | 1 |
-| [C-6](#c-6) | low | client | Default EHLO argument is the bare host name, not an FQDN | 1 |
-| [C-7](#c-7) | low | client | Declared `SIZE=` is two octets short | 1 |
 
-9 tests in all.
+5 tests in all.
 
 ### Closed
 
@@ -50,8 +46,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-9](#s-9) | low | server | A second MAIL inside a transaction silently restarted it | 1 | [Vanaheimr/Hermod#115](https://github.com/Vanaheimr/Hermod/pull/115) |
 | [S-10](#s-10) | low | server | `RCPT TO:<Postmaster>` was refused as a relay attempt | 1 | [Vanaheimr/Hermod#116](https://github.com/Vanaheimr/Hermod/pull/116) |
 | [S-15](#s-15) | low | server | AUTH was accepted during a mail transaction | 1 | [Vanaheimr/Hermod#117](https://github.com/Vanaheimr/Hermod/pull/117) |
+| [C-5](#c-5) | low | client | A bare LF in the body went out as a bare LF | 1 | [Vanaheimr/Hermod#120](https://github.com/Vanaheimr/Hermod/pull/120) |
+| [C-3](#c-3) | low | client | EHLO keywords were matched case-sensitively | 1 | [Vanaheimr/Hermod#118](https://github.com/Vanaheimr/Hermod/pull/118) |
+| [C-6](#c-6) | low | client | Default EHLO argument was the bare host name, not an FQDN | 1 | [Vanaheimr/Hermod#119](https://github.com/Vanaheimr/Hermod/pull/119) |
+| [C-7](#c-7) | low | client | Declared `SIZE=` was two octets short | 1 | [Vanaheimr/Hermod#120](https://github.com/Vanaheimr/Hermod/pull/120) |
 
-The 43 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
+The 47 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
 from reading the code that are not pinned by a test yet.
 
 ---
@@ -313,10 +313,14 @@ accumulated across connections, which after a fallback would have put ESMTP
 parameters on MAIL.
 
 ### C-3
-**EHLO keywords are compared case-sensitively** (`== "STARTTLS"`, `== "8BITMIME"`,
+**Closed** in [Vanaheimr/Hermod#118](https://github.com/Vanaheimr/Hermod/pull/118) (`e3fcd84b`).
+**EHLO keywords were compared case-sensitively** (`== "STARTTLS"`, `== "8BITMIME"`,
 … `:787`, `:833`ff). RFC 5321 §2.4 makes them case-insensitive; a server
 advertising `starttls` gets "TLS is not supported". Test:
 `SubmissionClientTests.Ehlo_keywords_are_case_insensitive`.
+
+Fixed: each EHLO line is compared with its keyword in upper case and its
+parameters as sent. The same gap made `8bitmime` and `size 100` invisible.
 
 ### C-4
 **Closed** in [Vanaheimr/Hermod#103](https://github.com/Vanaheimr/Hermod/pull/103) (`e937ebd8`).
@@ -333,20 +337,34 @@ conversion, so such a message ends before MAIL with
 quoted-printable would be the friendlier answer and is still open.
 
 ### C-5
-**A bare LF in the body is sent as a bare LF** (`SendDataAsync`, `:424`, writes
+**Closed** in [Vanaheimr/Hermod#120](https://github.com/Vanaheimr/Hermod/pull/120) (`1c056b32`).
+**A bare LF in the body was sent as a bare LF** (`SendDataAsync`, `:424`, writes
 each serialized line verbatim). RFC 5321 §2.3.8. Against a server with S-1's
 behaviour this is exactly a smuggling primitive. Test:
 `SubmissionClientTests.A_bare_LF_in_the_body_is_not_sent_bare`.
 
+Fixed: every CR LF, bare CR and bare LF inside a serialized line ends it, before
+the 8-bit check, the SIZE computation and dot-stuffing - so `\n.\n` in a body
+goes out as a `..` line, and the message stays one message.
+
 ### C-6
-**The default EHLO argument is `Dns.GetHostName()`** (`:173`) — `octal` on the
+**Closed** in [Vanaheimr/Hermod#119](https://github.com/Vanaheimr/Hermod/pull/119) (`a6ee2431`).
+**The default EHLO argument was `Dns.GetHostName()`** (`:173`) — `octal` on the
 test machine. RFC 5321 §4.1.4: a primary host name (FQDN) or an address literal.
 Test: `SubmissionClientTests.Default_ehlo_argument_is_a_domain_or_address_literal`.
 
+Fixed as `LocalDomain`'s documentation had promised: unset, it is the address the
+connection leaves from, as an address literal (`[192.0.2.1]`, `[IPv6:…]`).
+`LocalDomain` is `null` when unset now, instead of holding the host name.
+
 ### C-7
-**The declared `SIZE=` is two octets short** (`:996`, `String.Join("\r\n", lines)`
+**Closed** in [Vanaheimr/Hermod#120](https://github.com/Vanaheimr/Hermod/pull/120) (`1c056b32`).
+**The declared `SIZE=` was two octets short** (`:996`, `String.Join("\r\n", lines)`
 omits the final CRLF). RFC 1870 §5 counts all CRLFs. Harmless except at the exact
 limit. Test: `SubmissionClientTests.Declared_size_covers_the_message`.
+
+Fixed: each line's UTF-8 octets and its CR LF; the client's own check against the
+server's limit now holds to the octet.
 
 ---
 

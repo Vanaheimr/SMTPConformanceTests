@@ -13,9 +13,9 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `1b9a9a95`):** 220 tests — 211 pass, **9 are open
+**State (2026-10-04, Hermod `1c056b32`):** 220 tests — 215 pass, **5 are open
 findings** (`KnownIssue`), documented with RFC quote and code location in
-[FINDINGS.md](FINDINGS.md). The first run found 52. Eighteen findings are fixed in
+[FINDINGS.md](FINDINGS.md). The first run found 52. Twenty-two findings are fixed in
 Hermod since, among them the three that mattered beyond conformance:
 [SMTP smuggling](FINDINGS.md#s-1) (S-1) and [BDAT chunks executed as commands](FINDINGS.md#s-2)
 (S-2) in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95), a
@@ -35,7 +35,10 @@ Hermod since, among them the three that mattered beyond conformance:
 [unchecked command arguments](FINDINGS.md#s-8) (S-8, [#114](https://github.com/Vanaheimr/Hermod/pull/114)),
 [nested MAIL](FINDINGS.md#s-9) (S-9, [#115](https://github.com/Vanaheimr/Hermod/pull/115)),
 [`RCPT TO:<Postmaster>` refused](FINDINGS.md#s-10) (S-10, [#116](https://github.com/Vanaheimr/Hermod/pull/116)),
-[AUTH inside a transaction](FINDINGS.md#s-15) (S-15, [#117](https://github.com/Vanaheimr/Hermod/pull/117)).
+[AUTH inside a transaction](FINDINGS.md#s-15) (S-15, [#117](https://github.com/Vanaheimr/Hermod/pull/117)),
+[case-sensitive EHLO keywords](FINDINGS.md#c-3) (C-3, [#118](https://github.com/Vanaheimr/Hermod/pull/118)),
+[a bare host name in EHLO](FINDINGS.md#c-6) (C-6, [#119](https://github.com/Vanaheimr/Hermod/pull/119)),
+[bare LFs sent by the client](FINDINGS.md#c-5) (C-5) and [SIZE two octets short](FINDINGS.md#c-7) (C-7, both [#120](https://github.com/Vanaheimr/Hermod/pull/120)).
 
 ## Layout
 
@@ -140,10 +143,10 @@ vectors, and the four Linux tools.
 | RFC 3461 DSN parameters | 5 | 0 | ~~S-6~~ fixed |
 | RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 3 | S-13 (~~S-8~~, ~~S-14~~ fixed) |
 | RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
-| Submission client (RFC 5321, 1870, 3207, 4954, 6152) | 20 | 4 | C-3, C-5, C-6, C-7 (~~C-1~~, ~~C-2~~, ~~C-4~~ fixed) |
+| Submission client (RFC 5321, 1870, 3207, 4954, 6152) | 20 | 0 | ~~C-1~~ to ~~C-7~~ fixed |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink | 17 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~ fixed |
-| **Total** | **220** | **9** | |
+| **Total** | **220** | **5** | |
 
 ## External test partners
 
