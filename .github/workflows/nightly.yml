@@ -1,0 +1,123 @@
+name: Nightly
+
+# The counterpart to ci.yml. Three questions the gate cannot ask:
+#
+#   1. Interop: do swaks, CPython's smtplib, openssl s_client and Postfix's
+#      smtp-sink agree with Hermod? In this container they run natively, on the
+#      same loopback as the server under test.
+#   2. Known issues: which findings are still open — and has any KnownIssue test
+#      started to pass, so its tag can come off?
+#   3. Drift: does the suite still agree with Hermod's *current* master?
+#
+# Scheduled workflows only run on the default branch, and GitHub disables them
+# after 60 days without repository activity.
+on:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+
+  interop-and-findings:
+    runs-on: ubuntu-latest
+    container: debian:13
+    steps:
+
+      - name: Install git and the .NET prerequisites
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git libicu76 libssl3t64 libstdc++6 tzdata
+
+      # Postfix is installed for smtp-sink/smtp-source only. "No configuration"
+      # keeps the package from setting up (or starting) a mail system.
+      - name: Install the SMTP tools
+        run: |
+          echo 'postfix postfix/main_mailer_type select No configuration' | debconf-set-selections
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            swaks libnet-ssleay-perl libio-socket-ssl-perl libauthen-sasl-perl \
+            openssl python3 postfix procps iproute2
+
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        run: dotnet build SMTPConformanceTests.slnx --configuration Release
+
+      - name: Test (interop against swaks, smtplib, openssl, smtp-sink)
+        timeout-minutes: 30
+        run: >
+          dotnet test SMTPConformanceTests.slnx --configuration Release --no-build
+          --filter "TestCategory=WSL&TestCategory!=KnownIssue"
+          --logger "console;verbosity=normal"
+          --logger "trx;LogFilePrefix=interop"
+          --results-directory artifacts
+
+      # Informational: every test here is expected to fail. One that passes is
+      # the news — its finding has been fixed and the tag should be removed.
+      - name: Report open findings (KnownIssue)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          dotnet test SMTPConformanceTests.slnx --configuration Release --no-build \
+            --filter "TestCategory=KnownIssue" \
+            --logger "trx;LogFilePrefix=known-issues" \
+            --results-directory artifacts 2>&1 | tee known.txt
+          {
+            echo '## Open findings (KnownIssue tests — expected red)'
+            echo
+            echo '```'
+            grep -E "Failed!|Passed!|Fehler!|Bestanden!" known.txt
+            echo '```'
+            echo
+            echo 'A KnownIssue test that **passes** means its finding is fixed: remove the tag and update FINDINGS.md.'
+            grep -E "^\s+(Passed|Bestanden) " known.txt | sed 's/^/- now passing: /'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-nightly
+          path: artifacts/*.trx
+
+  against-hermod-master:
+    runs-on: ubuntu-latest
+    container: debian:13
+    steps:
+
+      - name: Install git and the .NET prerequisites
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git libicu76 libssl3t64 libstdc++6 tzdata
+
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Move the submodules to master
+        run: |
+          git config --global --add safe.directory '*'
+          git submodule foreach 'git fetch origin master && git checkout FETCH_HEAD'
+          echo "### Submodule revisions under test" >> "$GITHUB_STEP_SUMMARY"
+          git submodule status >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        run: dotnet build SMTPConformanceTests.slnx --configuration Release
+
+      - name: Test (offline gate, against Hermod master)
+        timeout-minutes: 25
+        run: >
+          dotnet test SMTPConformanceTests.slnx --configuration Release --no-build
+          --filter "TestCategory!=Online&TestCategory!=WSL&TestCategory!=Docker&TestCategory!=KnownIssue"
+          --logger "console;verbosity=normal"

@@ -1,0 +1,18 @@
+bin/
+obj/
+TestResults/
+*.user
+
+# Visual Studio's per-solution state: window layout, the browse database,
+# and the file-watcher cache. Machine-local, and large.
+.vs/
+
+# Where both workflows point --results-directory for their .trx logs. On a runner
+# that is a throwaway directory an upload-artifact step collects; run the same
+# command locally to reproduce a CI result and it lands in the working tree.
+artifacts/
+
+# Hermod's SMTPServer creates its MailStoragePath on Start() even when an
+# IMailStorage is injected. The fixtures point it into the temp directory, but a
+# stray run of the library's own defaults drops a ./mailstore next to the binary.
+mailstore/

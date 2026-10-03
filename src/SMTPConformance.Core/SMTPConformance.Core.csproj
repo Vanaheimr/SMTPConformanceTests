@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Shared infrastructure for the Hermod SMTP conformance and interoperability test suite: an independent byte-level SMTP peer, a scripted SMTP server for client tests, Hermod server fixtures, WSL tool bridge, capability probing.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- NUnit only for Assert.Ignore-based capability gating helpers. -->
+    <PackageReference Include="NUnit" Version="5.0.0" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.15.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\Styx\Styx\Styx.csproj" />
+    <ProjectReference Include="..\..\libs\Hermod\Hermod\Hermod.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  # Pull requests: newest run per branch wins. Pushes: one run per commit, never
+  # cancelled — a commit without a verdict cannot be blamed later. Same policy as
+  # the DNS, NTS and SSH conformance suites.
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  offline-suite:
+    # Two legs, because TLS is half of SMTP's attack surface and goes through
+    # SChannel on Windows and OpenSSL on Debian. fail-fast is off: "red on
+    # exactly one platform" is the most informative result this matrix can give.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            leg: windows-latest
+          - os: ubuntu-latest
+            container: debian:13
+            leg: debian-13-container
+    name: ${{ matrix.leg }}
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    steps:
+
+      # Before the checkout: without a git binary actions/checkout falls back to a
+      # REST tarball, which cannot fetch submodules — and libs/Hermod is the
+      # system under test.
+      - name: Install git and the .NET prerequisites (Debian container)
+        if: runner.os == 'Linux'
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git libicu76 libssl3t64 libstdc++6 tzdata
+
+      # Hermod carries FontAwesome files whose paths exceed MAX_PATH under the
+      # runner workspace.
+      - name: Allow long paths (Windows)
+        if: runner.os == 'Windows'
+        run: git config --system core.longpaths true
+
+      # The gitlinks name the Hermod and Styx revisions under test; testing against
+      # their current master is the nightly's question, not the gate's.
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        run: dotnet build SMTPConformanceTests.slnx --configuration Release
+
+      # The hermetic gate: no network, no external tools, no open findings.
+      # KnownIssue tests assert what the RFC says and are red until Hermod is
+      # fixed (see FINDINGS.md); they run in nightly.yml as a report.
+      - name: Test (offline gate)
+        timeout-minutes: 25
+        run: >
+          dotnet test SMTPConformanceTests.slnx --configuration Release --no-build
+          --filter "TestCategory!=Online&TestCategory!=WSL&TestCategory!=Docker&TestCategory!=KnownIssue"
+          --logger "console;verbosity=normal"
+          --logger "trx;LogFilePrefix=${{ matrix.leg }}"
+          --results-directory artifacts
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.leg }}
+          path: artifacts/*.trx

@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/conformance/">
+    <Project Path="conformance/SMTPConformance.Auth.Tests/SMTPConformance.Auth.Tests.csproj" />
+    <Project Path="conformance/SMTPConformance.Client.Tests/SMTPConformance.Client.Tests.csproj" />
+    <Project Path="conformance/SMTPConformance.MessageFormat.Tests/SMTPConformance.MessageFormat.Tests.csproj" />
+    <Project Path="conformance/SMTPConformance.Server.Tests/SMTPConformance.Server.Tests.csproj" />
+    <Project Path="conformance/SMTPConformance.Tls.Tests/SMTPConformance.Tls.Tests.csproj" />
+  </Folder>
+  <Folder Name="/interop/">
+    <Project Path="interop/SMTPInterop.LinuxTools.Tests/SMTPInterop.LinuxTools.Tests.csproj" />
+  </Folder>
+  <Folder Name="/libs/" />
+  <Folder Name="/libs/Hermod/">
+    <Project Path="libs/Hermod/Hermod/Hermod.csproj" />
+  </Folder>
+  <Folder Name="/libs/Styx/">
+    <Project Path="libs/Styx/Styx/Styx.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/SMTPConformance.Core/SMTPConformance.Core.csproj" />
+  </Folder>
+</Solution>

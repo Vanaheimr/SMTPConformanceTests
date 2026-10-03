@@ -1,0 +1,8 @@
+# Shell scripts have to reach WSL with LF endings. With core.autocrlf=true a
+# script whose first directive is "set -e<CR>" is rejected by dash as an
+# illegal option.
+*.sh text eol=lf
+
+# SMTP fixtures are wire captures: CRLF is the protocol, not a platform habit,
+# and a bare LF in one of them is the test. Git must not touch either.
+fixtures/** -text
