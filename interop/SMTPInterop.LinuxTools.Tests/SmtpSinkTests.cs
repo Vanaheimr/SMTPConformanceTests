@@ -153,12 +153,18 @@ public sealed class SmtpSinkTests
         var marker = $"marker-{Guid.NewGuid():N}";
         var result = await client.Send(Message(marker, "Grüße aus Köln"), NumberOfRetries: 0);
 
-        Assume.That(result, Is.EqualTo(MailSentStatus.ok));
+        var dump   = sink.Dumps();
 
-        var dump = sink.Dumps();
-
-        Assert.That(dump, Does.Contain(marker));
-        Assert.That(dump.Any(c => c > '\x7F'), Is.False, "the message reached the server with 8-bit content");
+        // RFC 6152 §3 allows two answers: convert to 7-bit MIME and send, or treat the
+        // barrier as a permanent failure and send nothing. Either passes; 8-bit octets
+        // arriving at the server do not.
+        if (result != MailSentStatus.ok)
+            Assert.That(dump, Does.Not.Contain(marker), "a failed send must not have delivered the message");
+        else
+        {
+            Assert.That(dump, Does.Contain(marker));
+            Assert.That(dump.Any(c => c > '\x7F'), Is.False, "the message reached the server with 8-bit content");
+        }
 
     }
 
