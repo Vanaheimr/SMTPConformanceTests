@@ -207,7 +207,7 @@ public sealed class AuthTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 4954 §4: \"If the server cannot [BASE64] decode any client response, it MUST reject the AUTH command with a 501 reply (and an enhanced status code of 5.5.2).\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-16")]
+    [Property("Finding", "S-16")]
     public async Task An_undecodable_response_is_501_5_5_2()
     {
 
@@ -428,7 +428,7 @@ public sealed class AuthTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.1.5 with RFC 4954 §4: RSET clears the transaction, not the authentication — after RSET no further AUTH is permitted, so a server that forgot it would leave the client unable to authenticate again")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-17")]
+    [Property("Finding", "S-17")]
     public async Task Rset_keeps_the_authentication()
     {
 

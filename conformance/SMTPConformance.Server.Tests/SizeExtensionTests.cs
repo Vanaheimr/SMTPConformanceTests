@@ -42,7 +42,7 @@ public sealed class SizeExtensionTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 1870 §6.1: \"If the indicated size is larger than the server's fixed maximum message size, the server responds with code 552\" — at MAIL, before any data")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-7")]
+    [Property("Finding", "S-7")]
     public async Task A_declared_size_above_the_limit_is_rejected_at_mail_with_552()
     {
 

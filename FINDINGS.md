@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
-**Hermod `e937ebd8`**, which closes S-1, S-2, C-1, S-5, S-11, S-14, S-6, C-2 and C-4.
+**Hermod `26e540bb`**, which closes S-1, S-2, C-1, S-5, S-11, S-14, S-6, C-2, C-4, S-3, S-7, S-16 and S-17.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -19,23 +19,19 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 | ID | Severity | Area | Summary | Tests |
 |---|---|---|---|---|
-| [S-3](#s-3) | low | server | DATA after BDAT in the same transaction is accepted | 1 |
 | [S-4](#s-4) | low | server | Replies without RFC 2034 enhanced status codes | 5 |
-| [S-7](#s-7) | low | server | `SIZE=` above the limit is not refused at MAIL | 1 |
 | [S-8](#s-8) | low | server | HELO/EHLO without argument, DATA/STARTTLS with one: accepted | 4 |
 | [S-9](#s-9) | low | server | A second MAIL inside a transaction silently restarts it | 1 |
 | [S-10](#s-10) | low | server | `RCPT TO:<Postmaster>` is refused as a relay attempt | 1 |
 | [S-12](#s-12) | low | server | Non-ASCII addresses accepted without the SMTPUTF8 parameter | 2 |
 | [S-13](#s-13) | low | server | With `RequireStartTls`, only MAIL is gated; AUTH, VRFY, RSET are not | 3 |
 | [S-15](#s-15) | low | server | AUTH is accepted during a mail transaction | 1 |
-| [S-16](#s-16) | low | server | Undecodable base64 in AUTH is 535, not 501 5.5.2 | 1 |
-| [S-17](#s-17) | low | server | RSET discards the authentication | 1 |
 | [C-3](#c-3) | low | client | EHLO keywords are matched case-sensitively | 1 |
 | [C-5](#c-5) | low | client | A bare LF in the body goes out as a bare LF | 1 |
 | [C-6](#c-6) | low | client | Default EHLO argument is the bare host name, not an FQDN | 1 |
 | [C-7](#c-7) | low | client | Declared `SIZE=` is two octets short | 1 |
 
-25 tests in all.
+21 tests in all.
 
 ### Closed
 
@@ -50,8 +46,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-6](#s-6) | medium | server | Unknown or malformed MAIL/RCPT parameters were silently accepted | 6 | [Vanaheimr/Hermod#101](https://github.com/Vanaheimr/Hermod/pull/101) |
 | [C-4](#c-4) | medium | client | 8-bit content was sent to a server without 8BITMIME | 2 | [Vanaheimr/Hermod#103](https://github.com/Vanaheimr/Hermod/pull/103) |
 | [C-2](#c-2) | medium | client | No fallback to HELO when EHLO was refused | 2 | [Vanaheimr/Hermod#102](https://github.com/Vanaheimr/Hermod/pull/102) |
+| [S-3](#s-3) | low | server | DATA after BDAT in the same transaction was accepted | 1 | [Vanaheimr/Hermod#111](https://github.com/Vanaheimr/Hermod/pull/111) |
+| [S-7](#s-7) | low | server | `SIZE=` above the limit was not refused at MAIL | 1 | [Vanaheimr/Hermod#109](https://github.com/Vanaheimr/Hermod/pull/109) |
+| [S-16](#s-16) | low | server | Undecodable base64 in AUTH was 535, not 501 5.5.2 | 1 | [Vanaheimr/Hermod#110](https://github.com/Vanaheimr/Hermod/pull/110) |
+| [S-17](#s-17) | low | server | RSET discarded the authentication | 1 | [Vanaheimr/Hermod#105](https://github.com/Vanaheimr/Hermod/pull/105) |
 
-The 27 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
+The 31 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
 from reading the code that are not pinned by a test yet.
 
 ---
@@ -104,10 +104,16 @@ Tests: `ChunkingTests.A_rejected_bdat_still_consumes_its_chunk`,
 Fixed: every refusal with a known chunk size reads and discards the chunk first.
 
 ### S-3
-**DATA after BDAT in the same transaction is accepted.** RFC 3030 §2: *"If a DATA
+**Closed** in [Vanaheimr/Hermod#111](https://github.com/Vanaheimr/Hermod/pull/111) (`26e540bb`).
+**DATA after BDAT in the same transaction was accepted.** RFC 3030 §2: *"If a DATA
 statement is issued after a BDAT for the current transaction, a 503 'Bad sequence
 of commands' MUST be issued."* `HandleDataAsync` (`:616`) does not look at
 `_inBdatSequence`. Test: `ChunkingTests.Data_after_bdat_in_the_same_transaction_is_503`.
+
+Checking the fix showed what the old behaviour did with the message: DATA took
+a body of its own, that body alone was delivered, and the BDAT chunks already
+received were dropped with the transaction. Fixed: DATA is 503 while a BDAT
+sequence is open; the chunks stay, and BDAT … LAST still completes.
 
 ### S-4
 **Replies without enhanced status codes.** RFC 2034 §4: once
@@ -150,10 +156,14 @@ parameter repeated with the same value is tolerated, because CPython's smtplib
 sends `SMTPUTF8 SMTPUTF8`; the interop lane caught that before the fix went in.
 
 ### S-7
-**`SIZE=` above the limit is not refused at MAIL.** RFC 1870 §6.1: *"If the
+**Closed** in [Vanaheimr/Hermod#109](https://github.com/Vanaheimr/Hermod/pull/109) (`cec28b42`).
+**`SIZE=` above the limit was not refused at MAIL.** RFC 1870 §6.1: *"If the
 indicated size is larger than the server's fixed maximum message size, the server
 responds with code 552."* The declared size is never read; the message is
 transferred in full and only then refused. Test: `SizeExtensionTests.A_declared_size_above_the_limit_is_rejected_at_mail_with_552`.
+
+Fixed: the declared size is compared at MAIL; a 20-digit value beyond UInt64
+counts as larger than any limit.
 
 ### S-8
 **Argument syntax is not checked.** `EHLO` and `HELO` without a domain are
@@ -222,13 +232,20 @@ issued during a mail transaction MUST be rejected with a 503 reply."* Test:
 `AuthTests.Auth_during_a_transaction_is_503`.
 
 ### S-16
-**Undecodable base64 in an AUTH response is 535.** RFC 4954 §4: *"If the server
+**Closed** in [Vanaheimr/Hermod#110](https://github.com/Vanaheimr/Hermod/pull/110) (`15ac9f6c`).
+**Undecodable base64 in an AUTH response was 535.** RFC 4954 §4: *"If the server
 cannot [BASE64] decode any client response, it MUST reject the AUTH command with
 a 501 reply (and an enhanced status code of 5.5.2)."* Test:
 `AuthTests.An_undecodable_response_is_501_5_5_2`.
 
+Fixed in all four handlers (PLAIN, LOGIN, SCRAM-SHA-256, EXTERNAL — the last had
+ignored decode errors). Only the client response itself counts: a malformed
+proof inside a well-encoded SCRAM message stays 535, and RFC 4954 §4's `=` is the
+empty response, so `AUTH EXTERNAL =` keeps working.
+
 ### S-17
-**RSET discards the authentication** (`HandleRsetAsync`, `:1122`,
+**Closed** in [Vanaheimr/Hermod#105](https://github.com/Vanaheimr/Hermod/pull/105) (`5dc976fa`), a fix made outside this suite's own round of PRs.
+**RSET discarded the authentication** (`HandleRsetAsync`, `:1122`,
 `_authManager.Reset()`). No RFC sentence says RSET keeps it — but RFC 5321
 §4.1.1.5 scopes RSET to the transaction, and RFC 4954 §4 says that after a
 successful AUTH *"no more AUTH commands may be issued in the same session"*. A

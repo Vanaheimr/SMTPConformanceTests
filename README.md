@@ -13,9 +13,9 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-03, Hermod `e937ebd8`):** 217 tests — 192 pass, **25 are open
+**State (2026-10-04, Hermod `26e540bb`):** 217 tests — 196 pass, **21 are open
 findings** (`KnownIssue`), documented with RFC quote and code location in
-[FINDINGS.md](FINDINGS.md). The first run found 52. Nine findings are fixed in
+[FINDINGS.md](FINDINGS.md). The first run found 52. Thirteen findings are fixed in
 Hermod since, among them the three that mattered beyond conformance:
 [SMTP smuggling](FINDINGS.md#s-1) (S-1) and [BDAT chunks executed as commands](FINDINGS.md#s-2)
 (S-2) in [Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95), a
@@ -26,7 +26,11 @@ Hermod since, among them the three that mattered beyond conformance:
 [REQUIRETLS and DSN lost on relay](FINDINGS.md#s-14) (S-14, [#100](https://github.com/Vanaheimr/Hermod/pull/100)),
 [unchecked MAIL/RCPT parameters](FINDINGS.md#s-6) (S-6, [#101](https://github.com/Vanaheimr/Hermod/pull/101)),
 [no HELO fallback](FINDINGS.md#c-2) (C-2, [#102](https://github.com/Vanaheimr/Hermod/pull/102)),
-[8-bit content without 8BITMIME](FINDINGS.md#c-4) (C-4, [#103](https://github.com/Vanaheimr/Hermod/pull/103)).
+[8-bit content without 8BITMIME](FINDINGS.md#c-4) (C-4, [#103](https://github.com/Vanaheimr/Hermod/pull/103)),
+[RSET dropping the AUTH](FINDINGS.md#s-17) (S-17, [#105](https://github.com/Vanaheimr/Hermod/pull/105)),
+[SIZE checked only after the data](FINDINGS.md#s-7) (S-7, [#109](https://github.com/Vanaheimr/Hermod/pull/109)),
+[undecodable AUTH answered 535](FINDINGS.md#s-16) (S-16, [#110](https://github.com/Vanaheimr/Hermod/pull/110)),
+[DATA after BDAT](FINDINGS.md#s-3) (S-3, [#111](https://github.com/Vanaheimr/Hermod/pull/111)).
 
 ## Layout
 
@@ -124,17 +128,17 @@ vectors, and the four Linux tools.
 | RFC 5321 SMTP — greeting, EHLO/HELO, command syntax, state machine, DATA, transparency, trace, relay, postmaster | 50 | 5 | S-8, S-9, S-10 (~~S-6~~ fixed) |
 | RFC 5321 §2.3.8 line terminators / SMTP smuggling | 9 | 0 | ~~S-1~~ fixed |
 | RFC 2920 PIPELINING | 4 | 0 | — |
-| RFC 1870 SIZE | 5 | 1 | S-7 (~~S-6~~ fixed) |
-| RFC 3030 CHUNKING / BDAT | 8 | 1 | S-3 (~~S-2~~ fixed) |
+| RFC 1870 SIZE | 5 | 0 | ~~S-6~~, ~~S-7~~ fixed |
+| RFC 3030 CHUNKING / BDAT | 8 | 0 | ~~S-2~~, ~~S-3~~ fixed |
 | RFC 6152 8BITMIME, RFC 6531 SMTPUTF8 | 6 | 2 | S-12 (~~S-6~~, ~~S-11~~ fixed) |
 | RFC 2034 / 3463 enhanced status codes | 14 | 5 | S-4 (~~S-5~~ fixed) |
 | RFC 3461 DSN parameters | 5 | 0 | ~~S-6~~ fixed |
 | RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 4 | S-8, S-13 (~~S-14~~ fixed) |
-| RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 3 | S-15, S-16, S-17 (~~S-5~~, ~~S-14~~ fixed) |
+| RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 1 | S-15 (~~S-5~~, ~~S-14~~, ~~S-16~~, ~~S-17~~ fixed) |
 | Submission client (RFC 5321, 1870, 3207, 4954, 6152) | 20 | 4 | C-3, C-5, C-6, C-7 (~~C-1~~, ~~C-2~~, ~~C-4~~ fixed) |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink | 17 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~ fixed |
-| **Total** | **217** | **25** | |
+| **Total** | **217** | **21** | |
 
 ## External test partners
 

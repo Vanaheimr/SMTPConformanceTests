@@ -161,7 +161,7 @@ public sealed class ChunkingTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 3030 §2: \"If a DATA statement is issued after a BDAT for the current transaction, a 503 'Bad sequence of commands' MUST be issued.\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-3")]
+    [Property("Finding", "S-3")]
     public async Task Data_after_bdat_in_the_same_transaction_is_503()
     {
 
