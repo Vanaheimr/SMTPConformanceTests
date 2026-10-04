@@ -2,6 +2,8 @@ using System.Text;
 
 using NUnit.Framework;
 
+using SMTPConformance.Core;
+
 
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
 using org.GraphDefined.Vanaheimr.Hermod.TLS;
@@ -54,6 +56,39 @@ public sealed partial class SubmissionClientTests
         Assert.Multiple(() => {
             Assert.That(result,                                            Is.Not.EqualTo(MailSentStatus.ok), Explain(server));
             Assert.That(script.Commands.Select(c => c.Line).LastOrDefault(), Is.EqualTo("QUIT"),             Explain(server));
+        });
+
+    }
+
+    #endregion
+
+    #region Partial delivery (C-11)
+
+    [Test(Description = "RFC 5321 §3.3: recipients are accepted or refused one by one - a refused one does not stop the message for the others, and the result says who got it")]
+    [Category(TestCategories.KnownIssue), Property("Finding", "C-11")]
+    public async Task A_refused_recipient_does_not_stop_the_message_for_the_others()
+    {
+
+        var script = new SmtpServerScript { RcptReply = rcpt => rcpt.StartsWith("gone") ? "550 5.1.1 No such user" : "250 2.1.5 Ok" };
+        await using var server = ScriptedSmtpServer.Start(script);
+        using var client = ClientFor(server);
+
+        var message = new org.GraphDefined.Vanaheimr.Hermod.Mail.EMailEnvelop(org.GraphDefined.Vanaheimr.Hermod.Mail.EMail.Parse([
+                          "From: app@client.example",
+                          "To: here@scripted.test, gone@scripted.test",
+                          "Subject: partial",
+                          "",
+                          "hello"
+                      ]));
+
+        var result = await client.SendWithResult(message, NumberOfRetries: 0);
+        await server.WhenIdleAsync();
+
+        Assert.Multiple(() => {
+            Assert.That(script.Transactions.Single().DataLines, Is.Not.Empty, "here@ gets the message" + Explain(server));
+            Assert.That(result.Status,                          Is.Not.EqualTo(MailSentStatus.ok), "not everyone got it" + Explain(server));
+            Assert.That(result.Recipients.Select(recipient => (UInt16) recipient.StatusCode),
+                        Is.EquivalentTo(new UInt16[] { 250, 550 }), Explain(server));
         });
 
     }

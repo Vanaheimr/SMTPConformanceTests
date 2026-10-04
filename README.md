@@ -13,7 +13,10 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `d2d608d2`):** 234 tests, **all pass**. A second round
+**State (2026-10-04, Hermod `d2d608d2`):** 264 tests — 244 pass, **20 are open
+findings** of a third round: `SMTPOutboundClient`, the relay side, which the suite now
+tests too (O-1 to O-8, against a scripted next hop and against Postfix), and partial
+delivery in the submission client (C-11). A second round
 made five more findings (S-18, S-19, C-8 to C-10) from the observations the first left
 without a test - all five fixed too ([#124](https://github.com/Vanaheimr/Hermod/pull/124)
 to [#127](https://github.com/Vanaheimr/Hermod/pull/127)). The first run, against Hermod `8af03484`,
@@ -132,10 +135,11 @@ vectors, and the four Linux tools.
 | RFC 3461 DSN parameters | 5 | 0 | ~~S-6~~ fixed |
 | RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 0 | ~~S-8~~, ~~S-13~~, ~~S-14~~ fixed |
 | RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
-| Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 30 | 0 | ~~C-1~~ to ~~C-10~~ fixed |
+| Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 1 | C-11 (~~C-1~~ to ~~C-10~~ fixed) |
+| Outbound client (RFC 5321, 3461, 6152, 6531) | 20 | 17 | O-1, O-2, O-3, O-5, O-6, O-7, O-8 |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
-| Interop: swaks, smtplib, openssl s_client, smtp-sink | 17 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~ fixed |
-| **Total** | **234** | **0** | |
+| Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 2 | O-3 (~~S-11~~, ~~C-2~~, ~~C-4~~ fixed) |
+| **Total** | **264** | **20** | |
 
 ## External test partners
 
@@ -150,33 +154,27 @@ one can tell us that the others cannot.
 | **CPython `smtplib`** | client → Hermod | an independent client stack in the standard library: `send_message`, `starttls`, `login`, `SMTP_SSL`, `SMTPUTF8` |
 | **OpenSSL `s_client -starttls smtp`** | client → Hermod | the STARTTLS reference most TLS scanners build on; TLS 1.2/1.3 accepted, 1.1 refused |
 | **Postfix `smtp-sink`** | Hermod client → server | a server whose quirks are switches: `-e` (no ESMTP), `-8` (no 8BITMIME), `-Q DATA` (421 mid-transaction), message dumps |
+| **Postfix `smtpd` and `smtp`** | both | a private instance per test (`postfix -c`, its own `main.cf`, queue and log): Postfix delivering to Hermod as next hop - plain, two recipients, SMTPUTF8, enforced STARTTLS - and Hermod's outbound client relaying through a strict Postfix (no bare LFs, FQDN HELO, RFC 821 envelopes) to smtp-sink, whose dump shows the DSN parameters as forwarded |
 
 ### Recommended next, by value
 
-1. **Postfix `smtpd` and `smtp`, both directions.** As a *server* for
-   `SMTPOutboundClient`/`MailSender`: a strict next hop with
-   `smtpd_forbid_bare_newline`, `smtpd_tls_security_level = encrypt`, DSN and
-   SMTPUTF8 — an independent check of the S-14 fix (ENVID/RET/NOTIFY/ORCPT and
-   REQUIRETLS on relay), which Hermod's own tests verify only against a fake hop. As a *client*: Postfix delivering to Hermod as
-   MX is the most common real-world peer Hermod will ever see. Postfix is
-   already installed for `smtp-sink`; this needs a throwaway `main.cf` per test.
-2. **SEC Consult `smtp-smuggling-tools`.** The scanner published with the
+1. **SEC Consult `smtp-smuggling-tools`.** The scanner published with the
    smuggling research. A second, independent opinion on S-1, and the regression
    check once it is fixed.
-3. **`pyspf` with the OpenSPF test suite (`rfc7208-tests.yml`).** Hundreds of
+2. **`pyspf` with the OpenSPF test suite (`rfc7208-tests.yml`).** Hundreds of
    SPF cases, each with its own DNS zone data. Hermod's `DNSVerifier` already
    takes an `IDNSClient`, so the suite's zones can be fed through
    `StubDnsClient` and every case run offline — the largest gain in coverage per
    line of glue code.
-4. **`dkimpy` and `authheaders`.** `dkimsign`/`dkimverify` and
+3. **`dkimpy` and `authheaders`.** `dkimsign`/`dkimverify` and
    `arcsign`/`arcverify` in both directions against Hermod's `DkimSigner`,
    `ArcSealer`, `ArcValidator` (Hermod's README reports one-off checks against
    dkimpy; this makes them a standing test), and `authheaders` as an oracle for
    the `Authentication-Results:` field Hermod writes.
-5. **`testssl.sh --starttls smtp`.** Protocols, cipher order, certificate
+4. **`testssl.sh --starttls smtp`.** Protocols, cipher order, certificate
    handling and the known TLS vulnerability checks on ports 25/587/465 — a TLS
    audit rather than a handshake test.
-6. **`aiosmtpd`.** A scriptable SMTP server in Python with STARTTLS, AUTH and
+5. **`aiosmtpd`.** A scriptable SMTP server in Python with STARTTLS, AUTH and
    SMTPUTF8 — a second independent server for the client tests, cheap to run in
    CI next to `ScriptedSmtpServer`.
 

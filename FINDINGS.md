@@ -19,7 +19,23 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+The third round looks at `SMTPOutboundClient`, the relay side that hands every queued
+message to the next hop, which the first two did not test at all (O-1 and on), and at a
+decision about the submission client (C-11). Line numbers refer to `d2d608d2`.
+
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [O-1](#o-1) | **high** | outbound | Every reply but EHLO's is read as one line: a multi-line reply shifts all that follow | 5 |
+| [O-2](#o-2) | **high** | outbound | A recipient the next hop refuses disappears: no bounce, no retry | 2 |
+| [O-3](#o-3) | medium | outbound | No SMTPUTF8, no BODY=8BITMIME - and no check that the next hop can take the message | 6 |
+| [O-4](#o-4) | medium | outbound | REQUIRETLS is not passed on to the next hop | (with the API) |
+| [O-5](#o-5) | medium | outbound | `ReadTimeoutMs` has no effect: a silent server holds the delivery forever | 1 |
+| [O-6](#o-6) | low | outbound | A failed delivery ends without QUIT | 3 |
+| [O-7](#o-7) | low | outbound | EHLO keywords matched as substrings: "DSN" in the server's name is a DSN extension | 1 |
+| [O-8](#o-8) | low | outbound | HELO after any EHLO refusal, a 421 included | 1 |
+| [C-11](#c-11) | low | client | One refused recipient stops the message for all | 1 |
+
+20 tests in all; O-4's needs a hook its fix adds.
 
 ### Closed
 
@@ -375,8 +391,10 @@ against `smtp-sink -8`. Tests: `SubmissionClientTests.No_8bit_data_without_8bitm
 
 Fixed by the second of RFC 6152 §3's two options: Hermod has no 7-bit
 conversion, so such a message ends before MAIL with
-`MailSentStatus.EightBitNotSupported`. Converting unsigned messages to
-quoted-printable would be the friendlier answer and is still open.
+`MailSentStatus.EightBitNotSupported`. Converting to quoted-printable instead
+was considered and decided against: it would break DKIM and OpenPGP signatures
+over the content, and those matter more than reaching the rare server without
+8BITMIME. The same holds for the outbound client (O-3).
 
 ### C-5
 **Closed** in [Vanaheimr/Hermod#120](https://github.com/Vanaheimr/Hermod/pull/120) (`1c056b32`).
@@ -447,6 +465,82 @@ Fixed: MAIL and all RCPTs as one pipelined group (DATA stays out of it - the cli
 still sends only when every recipient was accepted), the message as one
 `BDAT <size> LAST`. `BODY=BINARYMIME`, sent with DATA before against RFC 3030 §3,
 now goes only with BDAT.
+
+### C-11
+**One refused recipient stops the message for all** (`SMTPSubmissionClient.cs`, the
+RCPT loop): a 550 for one recipient throws, and the others, already accepted, never
+get the message. RFC 5321 §3.3 has the server accept or refuse recipients one by
+one, and the usual client behaviour (Postfix, Exim) is to deliver to those accepted
+and report the rest. A decision more than a violation; decided for partial delivery,
+with each recipient's result in `SMTPSendResult.Recipients`. Test:
+`SubmissionClientTests.A_refused_recipient_does_not_stop_the_message_for_the_others`.
+
+---
+
+## Outbound client (`SMTPOutboundClient`)
+
+Tested through the public way in - `MailSender.SendDirectAsync`, and for O-2 the
+`QueueProcessor` with its `BounceHandler` - against a scripted server set as smart
+host (`OutboundClientTests`), and against Postfix (`PostfixTests`).
+
+### O-1
+**Every reply but EHLO's is read as one line** (`ReadResponseAsync`, `:569`, one
+`ReadLineAsync`). RFC 5321 §4.2.1 allows any reply to have several lines, and large
+providers send their refusals that way ("550-5.1.1 The email account that you tried
+to reach does not exist. ... 550 5.1.1 ..."). The client takes the first line as the
+reply and the second as the reply to its next command: a multi-line greeting makes
+EHLO look refused, a multi-line RCPT refusal answers the next RCPT. Tests:
+`OutboundClientTests.A_multi_line_reply_is_read_whole` (greeting, MAIL, RCPT, DATA)
+and `A_multi_line_refusal_does_not_shift_the_replies`; a multi-line end-of-data
+reply goes unnoticed (QUIT is next) and is a guard.
+
+### O-2
+**A recipient the next hop refuses disappears** (`TrySendToMxAsync`, `:410`ff, and
+`QueueProcessor.HandleDeliveryResultAsync`). A refused RCPT is logged and skipped;
+if any recipient was accepted the delivery is a `Success`, and the queue marks the
+message delivered. The refused recipient gets no bounce, a 4xx-refused one is never
+tried again. RFC 5321 §6.1: a relay that accepted a message "MUST NOT lose the
+message", and must report a failure to the sender. Tests:
+`OutboundClientTests.A_recipient_refused_by_the_next_hop_is_bounced`,
+`A_recipient_refused_for_now_is_retried`.
+
+### O-3
+**No SMTPUTF8, no BODY=8BITMIME** on MAIL (`:400`ff build only DSN and MT-PRIORITY
+parameters). A message with a non-ASCII address goes out without SMTPUTF8 - a strict
+next hop (Hermod itself since S-12, behind Postfix) refuses it with 553 5.6.7 - and
+8-bit content goes out undeclared, also to a server without 8BITMIME (RFC 6152 §3,
+RFC 6531 §3.2: the message must not be handed to a server that cannot take it).
+Tests: four in `OutboundClientTests`, two in `PostfixTests`.
+
+### O-4
+**REQUIRETLS is not passed on.** S-14 made the queue carry it and the client insist
+on TLS, but MAIL goes out without the REQUIRETLS parameter, and the next hop is not
+asked whether it supports it (RFC 8689 §4.2.1: without it the message is not to be
+sent on). Its test needs TLS to the scripted server, which the client validates
+strictly once TLS is required - against the system's trust store. A certificate
+validation hook in `SmtpOutboundConfig` is part of the fix; the test comes with it.
+
+### O-5
+**`ReadTimeoutMs` has no effect** (`:258`ff: it is set as the socket's
+`ReceiveTimeout`, which asynchronous reads ignore). A next hop that accepts the
+connection and then says nothing holds the delivery - and a queue worker - until the
+caller's token fires; for the queue that is never. RFC 5321 §4.5.3.2 gives a client
+its timeouts. Test: `A_silent_server_is_given_up_on_after_the_read_timeout`.
+
+### O-6
+**A failed delivery ends without QUIT** - as C-8 was for the submission client: only
+the success path says it. Tests: three cases of `A_failed_relay_ends_with_QUIT`.
+
+### O-7
+**EHLO keywords are matched as substrings** (`:315`, `:397`f: `Contains("STARTTLS")`,
+`Contains("DSN")`, `Contains("MT-PRIORITY")`, and `AUTH`/`PLAIN` likewise): a server
+named `dsn.example` "offers" DSN and gets RET/ENVID/NOTIFY it never advertised (a
+strict server answers 555). Test: `A_server_named_dsn_does_not_get_DSN_parameters`.
+
+### O-8
+**HELO after any EHLO refusal** (`:302`): also after 421, which ends the session.
+RFC 5321 §3.2 has HELO as the fallback for a server that does not know EHLO.
+Test: `A_421_to_EHLO_is_not_answered_with_HELO`.
 
 ---
 
