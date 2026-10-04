@@ -1,6 +1,5 @@
 using NUnit.Framework;
 
-using SMTPConformance.Core;
 using SMTPConformance.Core.Fixtures;
 
 namespace SMTPConformance.Server.Tests;
@@ -20,7 +19,7 @@ public sealed class SessionTimeoutTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §3.8, §4.5.3.2: an idle session is closed after the timeout, with a 421 first")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-19")]
+    [Property("Finding", "S-19")]
     public async Task An_idle_session_is_closed_with_421()
     {
 

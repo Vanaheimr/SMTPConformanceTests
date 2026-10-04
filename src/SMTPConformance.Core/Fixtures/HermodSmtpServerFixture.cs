@@ -1,4 +1,3 @@
-using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
@@ -27,6 +26,12 @@ public sealed class HermodSmtpServerFixtureOptions
     public Boolean                                    EnableTls                { get; init; } = false;
 
     public Boolean                                    RequireStartTls          { get; init; } = false;
+
+    /// <summary>
+    /// Where the server listens, every port chosen by the system. Default: every IPv4 address -
+    /// the interop tests reach the server from WSL, through the host's address, not loopback.
+    /// </summary>
+    public IReadOnlyList<System.Net.IPAddress>        ListenAddresses          { get; init; } = [ System.Net.IPAddress.Any ];
 
     public Int32                                      MaxMessageSize           { get; init; } = 1024 * 1024;
 
@@ -94,9 +99,10 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
     public StubDnsClient          Dns               { get; }
     public X509Certificate2?      Certificate       { get; }
 
-    public UInt16                 MtaPort           => Config.Port;
-    public UInt16                 SubmissionPort    => Config.SubmissionPort;
-    public UInt16                 ImplicitTlsPort   => Config.ImplicitTlsPort;
+    // The ports the system chose: the configuration asks for port 0, the server says where it landed.
+    public UInt16                 MtaPort           => (UInt16) Server.MtaEndPoints[0].Port;
+    public UInt16                 SubmissionPort    => (UInt16) Server.SubmissionEndPoints[0].Port;
+    public UInt16                 ImplicitTlsPort   => (UInt16) Server.ImplicitTlsEndPoints[0].Port;
 
     public String                 Host              => "127.0.0.1";
 
@@ -133,100 +139,62 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
 
         Options ??= new HermodSmtpServerFixtureOptions();
 
-        const Int32 attempts = 10;
+        var directory = Directory.CreateTempSubdirectory("smtp-conformance-").FullName;
 
-        for (var attempt = 1; ; attempt++)
+        String?            certificatePath  = null;
+        X509Certificate2?  certificate      = null;
+
+        if (Options.EnableTls)
+            (certificatePath, certificate) = TestCertificate.WritePfx(directory, Options.Hostname);
+
+        // Port 0 everywhere: the system picks free ports while binding, so no other process can
+        // take one between choosing and binding, and the server reports where it landed.
+        var config  = new SMTPServerConfig {
+                          Hostname                 = Options.Hostname,
+                          ListenAddresses          = Options.ListenAddresses,
+                          Port                     = 0,
+                          SubmissionPort           = 0,
+                          ImplicitTlsPort          = 0,
+                          EnableImplicitTls        = Options.EnableTls,
+                          MailStoragePath          = directory,
+                          CertificatePath          = certificatePath,
+                          CertificatePassword      = certificatePath is not null ? TestCertificate.PfxPassword : null,
+                          SessionTimeout           = Options.SessionTimeout,
+                          MaxMessageSize           = Options.MaxMessageSize,
+                          MaxRecipients            = Options.MaxRecipients,
+                          MaxCommandLineLength     = Options.MaxCommandLineLength,
+                          MaxTextLineLength        = Options.MaxTextLineLength,
+                          RequireStartTls          = Options.RequireStartTls,
+                          LocalDomains             = [.. Options.LocalDomains],
+                          RequireAuthForRelay      = Options.RequireAuthForRelay,
+                          RequireAuthOnSubmission  = Options.RequireAuthOnSubmission
+                      };
+
+        var storage = new CapturingMailStorage();
+        var queue   = new CapturingMailQueue();
+        var users   = new InMemoryUserStore(Options.Users);
+        var log     = new CapturingLogger();
+
+        var server  = new SMTPServer(config,
+                                     Options.Dns,
+                                     log,
+                                     users,
+                                     queue,
+                                     Options.RateLimits,
+                                     storage);
+
+        // Start() binds its listeners before its first await: a bind that failed shows up as an
+        // already-faulted task, and the end points are known once it has returned.
+        var runTask = server.Start();
+
+        if (runTask.IsFaulted || server.MtaEndPoints.Count == 0)
         {
-
-            var directory = Directory.CreateTempSubdirectory("smtp-conformance-").FullName;
-
-            String?            certificatePath  = null;
-            X509Certificate2?  certificate      = null;
-
-            if (Options.EnableTls)
-                (certificatePath, certificate) = TestCertificate.WritePfx(directory, Options.Hostname);
-
-            var ports   = FreePort.Tcp(3);
-
-            var config  = new SMTPServerConfig {
-                              Hostname                 = Options.Hostname,
-                              Port                     = ports[0],
-                              SubmissionPort           = ports[1],
-                              ImplicitTlsPort          = ports[2],
-                              EnableImplicitTls        = Options.EnableTls,
-                              MailStoragePath          = directory,
-                              CertificatePath          = certificatePath,
-                              CertificatePassword      = certificatePath is not null ? TestCertificate.PfxPassword : null,
-                              SessionTimeout           = Options.SessionTimeout,
-                              MaxMessageSize           = Options.MaxMessageSize,
-                              MaxRecipients            = Options.MaxRecipients,
-                              MaxCommandLineLength     = Options.MaxCommandLineLength,
-                              MaxTextLineLength        = Options.MaxTextLineLength,
-                              RequireStartTls          = Options.RequireStartTls,
-                              LocalDomains             = [.. Options.LocalDomains],
-                              RequireAuthForRelay      = Options.RequireAuthForRelay,
-                              RequireAuthOnSubmission  = Options.RequireAuthOnSubmission
-                          };
-
-            var storage = new CapturingMailStorage();
-            var queue   = new CapturingMailQueue();
-            var users   = new InMemoryUserStore(Options.Users);
-            var log     = new CapturingLogger();
-
-            var server  = new SMTPServer(config,
-                                         Options.Dns,
-                                         log,
-                                         users,
-                                         queue,
-                                         Options.RateLimits,
-                                         storage);
-
-            // Start() binds its listeners before its first await, so a port that was
-            // taken in the meantime shows up as an already-faulted task.
-            var runTask = server.Start();
-
-            var up      = !runTask.IsFaulted &&
-                          await IsListening(config.Port,           TimeSpan.FromSeconds(5)) &&
-                          await IsListening(config.SubmissionPort, TimeSpan.FromSeconds(5)) &&
-                          (!Options.EnableTls || await IsListening(config.ImplicitTlsPort, TimeSpan.FromSeconds(5)));
-
-            if (up)
-                return new HermodSmtpServerFixture(server, config, storage, queue, users, log, Options.Dns, certificate, runTask, directory);
-
             try { await server.DisposeAsync(); } catch { }
             TryDelete(directory);
-
-            if (attempt >= attempts)
-                throw new InvalidOperationException(
-                          $"Hermod's SMTP server did not come up after {attempts} attempts.\n" +
-                          (runTask.Exception?.ToString() ?? log.ToString())
-                      );
-
+            throw new InvalidOperationException($"Hermod's SMTP server did not come up.\n{runTask.Exception?.ToString() ?? log.ToString()}");
         }
 
-    }
-
-
-    private static async Task<Boolean> IsListening(UInt16 Port, TimeSpan Within)
-    {
-
-        var deadline = DateTime.UtcNow + Within;
-
-        while (DateTime.UtcNow < deadline)
-        {
-            try
-            {
-                using var tcp = new TcpClient();
-                await tcp.ConnectAsync("127.0.0.1", Port);
-                return true;
-            }
-            catch (SocketException)
-            {
-                await Task.Delay(25);
-            }
-        }
-
-        return false;
+        return new HermodSmtpServerFixture(server, config, storage, queue, users, log, Options.Dns, certificate, runTask, directory);
 
     }
 

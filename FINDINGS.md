@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `96a8048d`** (Styx `c530de16`), which closes every one of them. The
+**Hermod `d2d608d2`** (Styx `c530de16`), which closes every one of them. The
 second round (S-18 and on, C-8 and on) comes from the observations the first one
 left without a test; its line numbers refer to `96a8048d`.
 
@@ -19,15 +19,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [C-8](#c-8) | medium | client | A failed attempt ends without QUIT, the connection left open | 7 |
-| [C-9](#c-9) | low | client | Each TCP read is decoded as UTF-8 on its own; surplus bytes are dropped | 1 |
-| [S-18](#s-18) | low | server | Listens on IPv4 `Any` only, no address choice, bound ports unknown | (with the API) |
-| [S-19](#s-19) | low | server | An idle session is closed without saying why (no 421) | 1 |
-| [C-10](#c-10) | low | client | PIPELINING and CHUNKING are never used | 2 |
-
-11 tests in all. S-18's test needs the API its fix adds and comes with it.
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -57,9 +49,14 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-7](#c-7) | low | client | Declared `SIZE=` was two octets short | 1 | [Vanaheimr/Hermod#120](https://github.com/Vanaheimr/Hermod/pull/120) |
 | [S-12](#s-12) | low | server | Non-ASCII addresses were accepted without the SMTPUTF8 parameter | 2 | [Vanaheimr/Hermod#122](https://github.com/Vanaheimr/Hermod/pull/122) |
 | [S-13](#s-13) | low | server | With `RequireStartTls`, only MAIL was gated; AUTH, VRFY, RSET were not | 3 | [Vanaheimr/Hermod#123](https://github.com/Vanaheimr/Hermod/pull/123) |
+| [C-8](#c-8) | medium | client | A failed attempt ended without QUIT, the connection left open | 7 | [Vanaheimr/Hermod#126](https://github.com/Vanaheimr/Hermod/pull/126) |
+| [C-9](#c-9) | low | client | Each TCP read was decoded as UTF-8 on its own; surplus bytes were dropped | 1 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
+| [S-18](#s-18) | low | server | Listened on IPv4 `Any` only, no address choice, bound ports unknown | 2 | [Vanaheimr/Hermod#125](https://github.com/Vanaheimr/Hermod/pull/125) |
+| [S-19](#s-19) | low | server | An idle session was closed without saying why (no 421) | 1 | [Vanaheimr/Hermod#124](https://github.com/Vanaheimr/Hermod/pull/124) |
+| [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
 
-The 52 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
-from reading the code that are not pinned by a test yet.
+The 65 tests for these are part of the merge gate now; the observations the first
+round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
 
@@ -298,22 +295,32 @@ legitimate way back; its next relay RCPT gets 550. Postfix, Exim and Dovecot
 keep the authentication. Test: `AuthTests.Rset_keeps_the_authentication`.
 
 ### S-18
-**The server listens on IPv4 `Any` only** (`SMTPServer.cs:145`ff): every port is a
+**Closed** in [Vanaheimr/Hermod#125](https://github.com/Vanaheimr/Hermod/pull/125) (`e2373666`).
+**The server listened on IPv4 `Any` only** (`SMTPServer.cs:145`ff): every port is a
 `TcpListener(IPAddress.Any, port)`. There is no way to listen on loopback only, on one
 address of a multi-homed host, or on IPv6 - an MX reachable only over IPv6, or
 reachable over both (RFC 5321 §5.1 and RFC 3974 assume an MX answers on the
 addresses its name has), is out of reach. Nor can a caller learn the port the system
 chose for port 0, which is why the suite's fixture probes for free ports itself.
-The test comes with the API: the fixture binds loopback, port 0.
+Fixed: `SMTPServerConfig.ListenAddresses` (default IPv4 `Any`), IPv6 listeners IPv6
+only, and `MtaEndPoints` / `SubmissionEndPoints` / `ImplicitTlsEndPoints` with the
+ports actually bound. The fixture now runs on port 0 and asks; its free-port probe
+and retry loop are gone. Tests: `ListenAddressTests`, IPv4 and IPv6 loopback
+together, and a loopback server reporting its ports.
 
 ### S-19
-**An idle session is closed without a word** (`SMTPSession.ReadLineAsync`,
+**Closed** in [Vanaheimr/Hermod#124](https://github.com/Vanaheimr/Hermod/pull/124) (`9de11710`).
+**An idle session was closed without a word** (`SMTPSession.ReadLineAsync`,
 `:1420`ff: the timeout ends the read, the session loop ends, the socket closes). Not
 a violation - RFC 5321 §3.8 allows closing after the §4.5.3.2 timeout - but a
 `421 4.4.2 ... timeout` first, as Postfix sends and as §3.8 has it for a server that
 must end the session, tells the client that the server gave up rather than that the
 network broke. Test: `SessionTimeoutTests.An_idle_session_is_closed_with_421`; a
 second test guards that a client that keeps talking is not cut off.
+
+Fixed: `421 4.4.2 <host> Error: timeout exceeded`, also for a timeout in the middle
+of DATA or a BDAT chunk - which until then reset the transaction and waited a
+second timeout for a command.
 
 ---
 
@@ -402,7 +409,8 @@ Fixed: each line's UTF-8 octets and its CR LF; the client's own check against th
 server's limit now holds to the octet.
 
 ### C-8
-**A failed attempt ends without QUIT.** RFC 5321 §4.1.1.10: *"The sender MUST NOT
+**Closed** in [Vanaheimr/Hermod#126](https://github.com/Vanaheimr/Hermod/pull/126) (`0297524c`).
+**A failed attempt ended without QUIT.** RFC 5321 §4.1.1.10: *"The sender MUST NOT
 intentionally close the transmission channel until it sends a QUIT command, and it
 SHOULD wait until it receives the reply"*. A refused RCPT throws out of the send loop
 (`SMTPSubmissionClient.cs:1275`ff), as do a refused MAIL, DATA or message; STARTTLS
@@ -411,8 +419,13 @@ out of it. None of them sends QUIT, and the connection stays open until the next
 `Send` or `Dispose()` - the server holds a session slot for a client that has
 left. Tests: `SubmissionClientTests.A_failed_attempt_ends_with_QUIT`, seven cases.
 
+Fixed: every attempt ends with QUIT where the session can still carry one, then the
+connection is closed. A delivered message stays `ok` whatever the reply to QUIT
+(RFC 5321 §6.1); before, an odd one turned it into an exception.
+
 ### C-9
-**Replies are decoded one TCP read at a time** (`ReadSMTPResponsesAsync`, `:386`):
+**Closed** in [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) (`d2d608d2`).
+**Replies were decoded one TCP read at a time** (`ReadSMTPResponsesAsync`, `:386`):
 each read is turned into a string on its own, so a UTF-8 character split across two
 segments becomes two U+FFFD; and whatever followed the reply in the same read is
 dropped (`dataAfterLastReply`). Harmless while replies are ASCII and the client
@@ -420,11 +433,20 @@ waits for each - but servers do put UTF-8 in reply text, and PIPELINING (C-10)
 needs the bytes behind a reply. Test:
 `SubmissionClientTests.A_reply_split_inside_a_UTF8_character_is_read_whole`.
 
+Fixed: octets are collected in a buffer that lives with the connection; a reply is
+decoded once it is complete, and what follows it is kept for the next one.
+
 ### C-10
-**PIPELINING and CHUNKING are never used**, even when offered. Not a conformance
+**Closed** in [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) (`d2d608d2`).
+**PIPELINING and CHUNKING were never used**, even when offered. Not a conformance
 issue - both are MAY - but every RCPT costs a round trip of its own, and DATA one
 more for the 354. Tests: `SubmissionClientTests.With_PIPELINING_MAIL_and_RCPT_go_out_together`,
 `With_CHUNKING_the_message_goes_as_BDAT`.
+
+Fixed: MAIL and all RCPTs as one pipelined group (DATA stays out of it - the client
+still sends only when every recipient was accepted), the message as one
+`BDAT <size> LAST`. `BODY=BINARYMIME`, sent with DATA before against RFC 3030 §3,
+now goes only with BDAT.
 
 ---
 
@@ -438,4 +460,4 @@ None left. Of those the first round noted:
 - **Unbounded line reads** - fixed with S-1 ([Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95)):
   `SMTPLineReader` enforces the limit while reading, so a peer that never sends CR LF
   cannot grow the buffer past it.
-- The others are S-18, S-19, C-8, C-9 and C-10 above.
+- The others became S-18, S-19, C-8, C-9 and C-10 above, all closed.

@@ -2,7 +2,6 @@ using System.Text;
 
 using NUnit.Framework;
 
-using SMTPConformance.Core;
 
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
 using org.GraphDefined.Vanaheimr.Hermod.TLS;
@@ -27,8 +26,7 @@ public sealed partial class SubmissionClientTests
     {
 
         TestCaseData Case(String Name, Func<SmtpServerScript> Script, TLSUsage UseTLS = TLSUsage.NoTLS, String Body = "hello")
-            => new TestCaseData(Script, UseTLS, Body).SetName($"QUIT after: {Name}")
-                                                    .SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "C-8");
+            => new TestCaseData(Script, UseTLS, Body).SetName($"QUIT after: {Name}").SetProperty("Finding", "C-8");
 
         yield return Case("a refused RCPT",                () => new SmtpServerScript { RcptReply = _ => "550 5.1.1 No such user" });
         yield return Case("a refused MAIL",                () => new SmtpServerScript { MailReply = "550 5.7.1 Sender rejected" });
@@ -113,7 +111,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 9293 §3.8.6: TCP is a stream, its segment boundaries mean nothing — a reply split inside a UTF-8 character is still read as the server wrote it")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-9")]
+    [Property("Finding", "C-9")]
     public async Task A_reply_split_inside_a_UTF8_character_is_read_whole()
     {
 
@@ -200,7 +198,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 2920 §3.1: with PIPELINING the client may send MAIL and its RCPTs without waiting for each reply — one round trip instead of one per command")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-10")]
+    [Property("Finding", "C-10")]
     public async Task With_PIPELINING_MAIL_and_RCPT_go_out_together()
     {
 
@@ -220,7 +218,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 3030 §2: with CHUNKING the client may send the message as BDAT ... LAST — no 354 round trip, no dot-stuffing")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-10")]
+    [Property("Finding", "C-10")]
     public async Task With_CHUNKING_the_message_goes_as_BDAT()
     {
 

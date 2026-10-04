@@ -13,9 +13,10 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `96a8048d`):** 232 tests — 221 pass, **11 are open
-findings** of the second round (S-18, S-19, C-8 to C-10), made from the observations
-the first round left without a test. The first run, against Hermod `8af03484`,
+**State (2026-10-04, Hermod `d2d608d2`):** 234 tests, **all pass**. A second round
+made five more findings (S-18, S-19, C-8 to C-10) from the observations the first left
+without a test - all five fixed too ([#124](https://github.com/Vanaheimr/Hermod/pull/124)
+to [#127](https://github.com/Vanaheimr/Hermod/pull/127)). The first run, against Hermod `8af03484`,
 found 24 findings with 52 failing tests; all 24
 are fixed in Hermod since ([Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95)
 to [#123](https://github.com/Vanaheimr/Hermod/pull/123)), each with regression tests
@@ -37,7 +38,7 @@ src/SMTPConformance.Core/          shared infrastructure, no tests
   RawSmtp/SmtpReply.cs             RFC 5321 §4.2 reply grammar, RFC 3463 enhanced codes
   Scripted/ScriptedSmtpServer.cs   loopback server running a script per connection
   Scripted/SmtpServerScript.cs     configurable well-behaved server dialogue (client tests)
-  Fixtures/HermodSmtpServerFixture real SMTPServer on three free ports, in-memory
+  Fixtures/HermodSmtpServerFixture real SMTPServer on port 0 (asks where it landed), in-memory
                                    storage/queue/users, stub DNS, self-signed cert
   Wsl.cs, TestEnvironment.cs       WSL / native-Linux bridge and capability gating
 
@@ -121,7 +122,7 @@ vectors, and the four Linux tools.
 
 | Specification | Tests | Failing | Open findings |
 |---|---:|---:|---|
-| RFC 5321 SMTP — greeting, EHLO/HELO, command syntax, state machine, DATA, transparency, trace, relay, postmaster | 53 | 1 | S-19 (~~S-6~~, ~~S-8~~, ~~S-9~~, ~~S-10~~ fixed) |
+| RFC 5321 SMTP — greeting, EHLO/HELO, command syntax, state machine, DATA, transparency, trace, relay, postmaster | 55 | 0 | ~~S-6~~, ~~S-8~~, ~~S-9~~, ~~S-10~~, ~~S-18~~, ~~S-19~~ fixed |
 | RFC 5321 §2.3.8 line terminators / SMTP smuggling | 9 | 0 | ~~S-1~~ fixed |
 | RFC 2920 PIPELINING | 4 | 0 | — |
 | RFC 1870 SIZE | 5 | 0 | ~~S-6~~, ~~S-7~~ fixed |
@@ -131,10 +132,10 @@ vectors, and the four Linux tools.
 | RFC 3461 DSN parameters | 5 | 0 | ~~S-6~~ fixed |
 | RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 0 | ~~S-8~~, ~~S-13~~, ~~S-14~~ fixed |
 | RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
-| Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 30 | 10 | C-8, C-9, C-10 (~~C-1~~ to ~~C-7~~ fixed) |
+| Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 30 | 0 | ~~C-1~~ to ~~C-10~~ fixed |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink | 17 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~ fixed |
-| **Total** | **232** | **11** | |
+| **Total** | **234** | **0** | |
 
 ## External test partners
 
