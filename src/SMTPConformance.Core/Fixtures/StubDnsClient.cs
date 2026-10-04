@@ -18,11 +18,19 @@ namespace SMTPConformance.Core.Fixtures;
 /// record, no DMARC policy, no PTR — which is the hermetic baseline: the
 /// verifier finds nothing to enforce and the message is accepted.
 /// </para>
+/// <para>
+/// It speaks DNSSEC as far as a stub can: it carries the DO bit DANE switches on,
+/// and returns RRSIGs where a test registered them with the records they sign. A
+/// lookup can also be made to fail - an error code, or an exception as a timeout
+/// or an unreachable server would raise.
+/// </para>
 /// </remarks>
-public sealed class StubDnsClient : IDNSClient
+public sealed class StubDnsClient : IDNSClientWithDNSSEC
 {
 
     private readonly Dictionary<(String Name, DNSResourceRecordTypes Type), List<IDNSResourceRecord>> table = [];
+    private readonly Dictionary<(String Name, DNSResourceRecordTypes Type), DNSResponseCodes>          failures = [];
+    private readonly Dictionary<(String Name, DNSResourceRecordTypes Type), Exception>                 exceptions = [];
     private readonly Lock tableLock = new();
 
     private static readonly DNSServerConfig origin = new(IPv4Address.Localhost, IPPort.DNS);
@@ -31,6 +39,11 @@ public sealed class StubDnsClient : IDNSClient
     /// Every query this client received, in order.
     /// </summary>
     public List<(String Name, DNSResourceRecordTypes Type)> Queries { get; } = [];
+
+    /// <summary>
+    /// The DNSSEC OK bit (RFC 3225), which a DANE resolver sets.
+    /// </summary>
+    public Boolean DnssecOK { get; set; }
 
 
     /// <summary>
@@ -45,6 +58,30 @@ public sealed class StubDnsClient : IDNSClient
         return this;
     }
 
+    /// <summary>
+    /// Answer one owner name and type with an error code and no records. Returns this, for chaining.
+    /// </summary>
+    public StubDnsClient Fail(String                  Name,
+                              DNSResourceRecordTypes  Type,
+                              DNSResponseCodes        ResponseCode   = DNSResponseCodes.ServerFailure)
+    {
+        lock (tableLock)
+            failures[(Key(Name), Type)] = ResponseCode;
+        return this;
+    }
+
+    /// <summary>
+    /// Let the lookup of one owner name and type throw, as a timeout would. Returns this, for chaining.
+    /// </summary>
+    public StubDnsClient Throw(String                  Name,
+                               DNSResourceRecordTypes  Type,
+                               Exception?              Exception   = null)
+    {
+        lock (tableLock)
+            exceptions[(Key(Name), Type)] = Exception ?? new TimeoutException($"DNS query for {Name} {Type} timed out");
+        return this;
+    }
+
     private static String Key(String name)
         => name.TrimEnd('.').ToLowerInvariant();
 
@@ -52,7 +89,8 @@ public sealed class StubDnsClient : IDNSClient
                           IEnumerable<DNSResourceRecordTypes>  Types)
     {
 
-        var answers = new List<IDNSResourceRecord>();
+        var answers      = new List<IDNSResourceRecord>();
+        var responseCode = DNSResponseCodes.NoError;
 
         lock (tableLock)
         {
@@ -61,7 +99,13 @@ public sealed class StubDnsClient : IDNSClient
 
                 Queries.Add((Key(Name), type));
 
-                if (table.TryGetValue((Key(Name), type), out var records))
+                if (exceptions.TryGetValue((Key(Name), type), out var exception))
+                    throw exception;
+
+                if (failures.TryGetValue((Key(Name), type), out var failure))
+                    responseCode = failure;
+
+                else if (table.TryGetValue((Key(Name), type), out var records))
                     answers.AddRange(records);
 
             }
@@ -74,7 +118,7 @@ public sealed class StubDnsClient : IDNSClient
                    false,                      // not truncated
                    true,                       // recursion desired
                    false,                      // recursion available
-                   DNSResponseCodes.NoError,
+                   responseCode,
                    answers,
                    [],
                    [],

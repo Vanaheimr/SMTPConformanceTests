@@ -20,7 +20,7 @@ namespace SMTPConformance.Client.Tests;
 /// on the wire, how it reads the replies, and what becomes of recipients the next hop refuses.
 /// </summary>
 [TestFixture]
-public sealed class OutboundClientTests
+public sealed partial class OutboundClientTests
 {
 
     #region Setup
