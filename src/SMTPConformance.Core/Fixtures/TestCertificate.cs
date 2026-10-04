@@ -76,7 +76,9 @@ public static class TestCertificate
     /// is an intermediate under a root of its own, as a public CA's is: a server sends it along,
     /// where a self-signed root is not sent on every platform (.NET on Linux leaves it out).
     /// </summary>
-    public static (X509Certificate2 Authority, X509Certificate2 Server) CreateIssuedCertificate(String ServerName)
+    /// <param name="ServerName">The name the server certificate is issued for.</param>
+    /// <param name="UnreachableIssuerUrl">Give the authority an AIA "CA Issuers" URL nobody answers (TEST-NET-1), as a public CA's intermediate has one.</param>
+    public static (X509Certificate2 Authority, X509Certificate2 Server) CreateIssuedCertificate(String ServerName, Boolean UnreachableIssuerUrl = false)
     {
 
         using var rootKey      = RSA.Create(2048);
@@ -89,6 +91,8 @@ public static class TestCertificate
         var authorityRequest   = new CertificateRequest("CN=Conformance test authority", authorityKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         authorityRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
         authorityRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign, true));
+        if (UnreachableIssuerUrl)
+            authorityRequest.CertificateExtensions.Add(new X509AuthorityInformationAccessExtension(null, [ "http://192.0.2.1/root.crt" ]));
         using var issued0      = authorityRequest.Create(root, DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(8), RandomNumberGenerator.GetBytes(8));
         using var authority    = issued0.CopyWithPrivateKey(authorityKey);
 

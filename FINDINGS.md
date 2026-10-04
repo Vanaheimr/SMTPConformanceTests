@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `04dca36d`** (Styx `c530de16`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `04dca36d`** (Styx `c530de16`), which closes every one of them but N-5. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
@@ -22,7 +22,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests | Fix proposed in |
+|---|---|---|---|---|---|
+| [N-5](#n-5) | medium | DANE | DANE-TA depended on the platform downloading issuers: with an unreachable AIA URL, ~15 s of waiting and a failure | 1 | [Vanaheimr/Hermod#149](https://github.com/Vanaheimr/Hermod/pull/149) |
 
 ### Closed
 
@@ -910,6 +912,23 @@ via TLS, but authentication is not required."
 Fixed: `DaneResult.RequiresTls` beside `IsUsable` - TLS for both, authentication only against
 usable records. Tests: `Unusable_TLSA_records_need_TLS_but_no_authentication`, and the guard
 `Unusable_TLSA_records_still_need_TLS`.
+
+### N-5
+**DANE-TA depended on the platform downloading issuers** (`SMTPOutboundClient`, the
+`SslClientAuthenticationOptions` of STARTTLS). The guard
+`DANE_TA_accepts_a_certificate_for_the_host` failed now and then on Windows, the first
+run after a build: three seconds between connecting and the certificate check, and the
+chain the validation callback got lacked the intermediate the server had sent - the
+DANE-TA anchor. `SslStream` builds the server's chain with the default policy, which
+fetches missing issuers from the certificates' AIA URLs; the test's anchor is an
+intermediate whose root nobody has, so Windows went looking for it, and when that times
+out the chain comes back without the certificates the server presented. Under DANE the
+presented chain is all there is to authenticate against (RFC 7672 §3.1.2). In practice:
+a private CA whose AIA URL does not answer from the MTA's network makes every DANE-TA
+delivery wait some 15 seconds, and fail. Test:
+`OutboundClientTests.DANE_TA_does_not_depend_on_certificate_downloads` - the anchor gets
+an AIA URL in TEST-NET-1 (`http://192.0.2.1/`), which makes the failure certain:
+17.5 s against the pin.
 
 ---
 

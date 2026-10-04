@@ -13,7 +13,9 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `04dca36d`):** 331 tests, **all pass**. A fourth round
+**State (2026-10-04, Hermod `04dca36d`):** 332 tests — 331 pass, **1 is an open
+finding**: N-5, DANE-TA waiting for certificate downloads, with a fix proposed in
+[#149](https://github.com/Vanaheimr/Hermod/pull/149). A fourth round
 tested what the relay owes beyond delivery: the reports to the sender (DSN, D-1 to
 D-12), MTA-STS (M-1 to M-6) and DANE (N-1 to N-4) - 22 findings, among them bounces
 with CR CR LF line ends and one Message-ID for all, a message lost without a bounce
@@ -148,10 +150,10 @@ vectors, and the four Linux tools.
 | Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 0 | ~~C-1~~ to ~~C-11~~ fixed |
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
 | Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
-| MTA-STS (RFC 8461), DANE (RFC 7672) | 40 | 0 | ~~M-1~~ to ~~M-6~~, ~~N-1~~ to ~~N-4~~ fixed |
+| MTA-STS (RFC 8461), DANE (RFC 7672) | 41 | 1 | N-5 (~~M-1~~ to ~~M-6~~, ~~N-1~~ to ~~N-4~~ fixed) |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **331** | **0** | |
+| **Total** | **332** | **1** | |
 
 ## External test partners
 

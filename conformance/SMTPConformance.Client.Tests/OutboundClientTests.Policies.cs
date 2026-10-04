@@ -7,6 +7,7 @@ using org.GraphDefined.Vanaheimr.Hermod.DNS;
 using org.GraphDefined.Vanaheimr.Hermod.Mail;
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
 
+using SMTPConformance.Core;
 using SMTPConformance.Core.Fixtures;
 using SMTPConformance.Core.Scripted;
 
@@ -204,6 +205,28 @@ public sealed partial class OutboundClientTests
         var result = await SendWith(zone.ClientFor(server), Envelope([ "you@outbound.test" ]), server);
 
         Assert.That(result.Status, Is.EqualTo(SendStatus.Success), Explain(server) + "\n--- client log ---\n" + zone.Log);
+
+    }
+
+
+    [Test(Description = "RFC 7672 §3.1.2: DANE-TA authenticates against the chain the server presents - not against one the platform completes from the network, and without waiting for it")]
+    [Category(TestCategories.KnownIssue), Property("Finding", "N-5")]
+    public async Task DANE_TA_does_not_depend_on_certificate_downloads()
+    {
+
+        var (authority, certificate) = TestCertificate.CreateIssuedCertificate("localhost", UnreachableIssuerUrl: true);
+        var script = new SmtpServerScript { Certificate = certificate, CertificateChain = [ authority ] };
+        await using var server = ScriptedSmtpServer.Start(script);
+        using var zone = new SignedLocalhost();
+        zone.Tlsa(server.Port, TLSA_CertificateUsage.DANE_TA, authority);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var result    = await SendWith(zone.ClientFor(server), Envelope([ "you@outbound.test" ]), server);
+
+        Assert.Multiple(() => {
+            Assert.That(result.Status,      Is.EqualTo(SendStatus.Success),          Explain(server) + "\n--- client log ---\n" + zone.Log);
+            Assert.That(stopwatch.Elapsed,  Is.LessThan(TimeSpan.FromSeconds(10)),  "no waiting for http://192.0.2.1/");
+        });
 
     }
 
