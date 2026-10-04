@@ -13,10 +13,12 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `d2d608d2`):** 264 tests — 244 pass, **20 are open
-findings** of a third round: `SMTPOutboundClient`, the relay side, which the suite now
-tests too (O-1 to O-8, against a scripted next hop and against Postfix), and partial
-delivery in the submission client (C-11). A second round
+**State (2026-10-04, Hermod `306f2d59`):** 266 tests, **all pass**. A third round
+tested `SMTPOutboundClient`, the relay side - against a scripted next hop and against
+Postfix in both directions - and found eight findings (O-1 to O-8), among them a
+multi-line reply shifting every reply after it and refused recipients that simply
+disappeared; with partial delivery in the submission client (C-11) all fixed in
+[#130](https://github.com/Vanaheimr/Hermod/pull/130) and [#131](https://github.com/Vanaheimr/Hermod/pull/131). A second round
 made five more findings (S-18, S-19, C-8 to C-10) from the observations the first left
 without a test - all five fixed too ([#124](https://github.com/Vanaheimr/Hermod/pull/124)
 to [#127](https://github.com/Vanaheimr/Hermod/pull/127)). The first run, against Hermod `8af03484`,
@@ -135,11 +137,11 @@ vectors, and the four Linux tools.
 | RFC 3461 DSN parameters | 5 | 0 | ~~S-6~~ fixed |
 | RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 0 | ~~S-8~~, ~~S-13~~, ~~S-14~~ fixed |
 | RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
-| Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 1 | C-11 (~~C-1~~ to ~~C-10~~ fixed) |
-| Outbound client (RFC 5321, 3461, 6152, 6531) | 20 | 17 | O-1, O-2, O-3, O-5, O-6, O-7, O-8 |
+| Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 0 | ~~C-1~~ to ~~C-11~~ fixed |
+| Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
-| Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 2 | O-3 (~~S-11~~, ~~C-2~~, ~~C-4~~ fixed) |
-| **Total** | **264** | **20** | |
+| Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
+| **Total** | **266** | **0** | |
 
 ## External test partners
 

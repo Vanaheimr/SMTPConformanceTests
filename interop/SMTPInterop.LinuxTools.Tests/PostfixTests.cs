@@ -255,7 +255,7 @@ public sealed class PostfixTests : LinuxToolTestBase
 
 
     [Test(Description = "RFC 6152 §3: Hermod declares its 8-bit content as BODY=8BITMIME, and Postfix passes the declaration on")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-3")]
+    [Property("Finding", "O-3")]
     public async Task Eight_bit_content_reaches_Postfix_as_BODY_8BITMIME()
     {
 
@@ -275,7 +275,7 @@ public sealed class PostfixTests : LinuxToolTestBase
 
 
     [Test(Description = "RFC 6531: Hermod relays a message with a UTF-8 recipient through Postfix with SMTPUTF8 - Postfix refuses it without - and it reaches the next hop intact")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-3")]
+    [Property("Finding", "O-3")]
     public async Task A_UTF8_recipient_reaches_the_next_hop_through_Postfix()
     {
 

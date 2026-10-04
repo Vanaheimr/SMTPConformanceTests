@@ -9,9 +9,11 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `d2d608d2`** (Styx `c530de16`), which closes every one of them. The
+**Hermod `306f2d59`** (Styx `c530de16`), which closes every one of them. The
 second round (S-18 and on, C-8 and on) comes from the observations the first one
-left without a test; its line numbers refer to `96a8048d`.
+left without a test; its line numbers refer to `96a8048d`. The third (O-1 and on,
+C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test
+at all; its line numbers refer to `d2d608d2`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -19,23 +21,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-The third round looks at `SMTPOutboundClient`, the relay side that hands every queued
-message to the next hop, which the first two did not test at all (O-1 and on), and at a
-decision about the submission client (C-11). Line numbers refer to `d2d608d2`.
-
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [O-1](#o-1) | **high** | outbound | Every reply but EHLO's is read as one line: a multi-line reply shifts all that follow | 5 |
-| [O-2](#o-2) | **high** | outbound | A recipient the next hop refuses disappears: no bounce, no retry | 2 |
-| [O-3](#o-3) | medium | outbound | No SMTPUTF8, no BODY=8BITMIME - and no check that the next hop can take the message | 6 |
-| [O-4](#o-4) | medium | outbound | REQUIRETLS is not passed on to the next hop | (with the API) |
-| [O-5](#o-5) | medium | outbound | `ReadTimeoutMs` has no effect: a silent server holds the delivery forever | 1 |
-| [O-6](#o-6) | low | outbound | A failed delivery ends without QUIT | 3 |
-| [O-7](#o-7) | low | outbound | EHLO keywords matched as substrings: "DSN" in the server's name is a DSN extension | 1 |
-| [O-8](#o-8) | low | outbound | HELO after any EHLO refusal, a 421 included | 1 |
-| [C-11](#c-11) | low | client | One refused recipient stops the message for all | 1 |
-
-20 tests in all; O-4's needs a hook its fix adds.
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -70,8 +56,17 @@ decision about the submission client (C-11). Line numbers refer to `d2d608d2`.
 | [S-18](#s-18) | low | server | Listened on IPv4 `Any` only, no address choice, bound ports unknown | 2 | [Vanaheimr/Hermod#125](https://github.com/Vanaheimr/Hermod/pull/125) |
 | [S-19](#s-19) | low | server | An idle session was closed without saying why (no 421) | 1 | [Vanaheimr/Hermod#124](https://github.com/Vanaheimr/Hermod/pull/124) |
 | [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
+| [O-1](#o-1) | **high** | outbound | Every reply but EHLO's was read as one line: a multi-line reply shifted all that followed | 5 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
+| [O-2](#o-2) | **high** | outbound | A recipient the next hop refused disappeared: no bounce, no retry | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
+| [O-3](#o-3) | medium | outbound | No SMTPUTF8, no BODY=8BITMIME, no check that the next hop could take the message | 6 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
+| [O-4](#o-4) | medium | outbound | REQUIRETLS was not passed on to the next hop | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
+| [O-5](#o-5) | medium | outbound | `ReadTimeoutMs` had no effect: a silent server held the delivery forever | 1 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
+| [O-6](#o-6) | low | outbound | A failed delivery ended without QUIT | 3 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
+| [O-7](#o-7) | low | outbound | EHLO keywords matched as substrings: "DSN" in the server's name was a DSN extension | 1 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
+| [O-8](#o-8) | low | outbound | HELO after any EHLO refusal, a 421 included | 1 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
+| [C-11](#c-11) | low | client | One refused recipient stopped the message for all | 1 | [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) |
 
-The 65 tests for these are part of the merge gate now; the observations the first
+The 87 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -467,13 +462,17 @@ still sends only when every recipient was accepted), the message as one
 now goes only with BDAT.
 
 ### C-11
-**One refused recipient stops the message for all** (`SMTPSubmissionClient.cs`, the
+**Closed** in [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) (`306f2d59`).
+**One refused recipient stopped the message for all** (`SMTPSubmissionClient.cs`, the
 RCPT loop): a 550 for one recipient throws, and the others, already accepted, never
 get the message. RFC 5321 §3.3 has the server accept or refuse recipients one by
 one, and the usual client behaviour (Postfix, Exim) is to deliver to those accepted
 and report the rest. A decision more than a violation; decided for partial delivery,
 with each recipient's result in `SMTPSendResult.Recipients`. Test:
 `SubmissionClientTests.A_refused_recipient_does_not_stop_the_message_for_the_others`.
+
+Fixed: the message goes to every accepted recipient; `MailSentStatus.PartiallySent`
+when some were refused, `IsSuccess` for `ok` alone.
 
 ---
 
@@ -484,7 +483,8 @@ Tested through the public way in - `MailSender.SendDirectAsync`, and for O-2 the
 host (`OutboundClientTests`), and against Postfix (`PostfixTests`).
 
 ### O-1
-**Every reply but EHLO's is read as one line** (`ReadResponseAsync`, `:569`, one
+**Closed** in [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) (`d581a8d9`).
+**Every reply but EHLO's was read as one line** (`ReadResponseAsync`, `:569`, one
 `ReadLineAsync`). RFC 5321 §4.2.1 allows any reply to have several lines, and large
 providers send their refusals that way ("550-5.1.1 The email account that you tried
 to reach does not exist. ... 550 5.1.1 ..."). The client takes the first line as the
@@ -494,8 +494,12 @@ EHLO look refused, a multi-line RCPT refusal answers the next RCPT. Tests:
 and `A_multi_line_refusal_does_not_shift_the_replies`; a multi-line end-of-data
 reply goes unnoticed (QUIT is next) and is a guard.
 
+Fixed: `SMTPConnection` reads every reply to its final line and keeps all lines;
+the text of a multi-line refusal stays whole in `SendResult.ResponseText`.
+
 ### O-2
-**A recipient the next hop refuses disappears** (`TrySendToMxAsync`, `:410`ff, and
+**Closed** in [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) (`d581a8d9`).
+**A recipient the next hop refused disappeared** (`TrySendToMxAsync`, `:410`ff, and
 `QueueProcessor.HandleDeliveryResultAsync`). A refused RCPT is logged and skipped;
 if any recipient was accepted the delivery is a `Success`, and the queue marks the
 message delivered. The refused recipient gets no bounce, a 4xx-refused one is never
@@ -504,7 +508,12 @@ message", and must report a failure to the sender. Tests:
 `OutboundClientTests.A_recipient_refused_by_the_next_hop_is_bounced`,
 `A_recipient_refused_for_now_is_retried`.
 
+Fixed: `SendResult.Recipients` carries every RCPT reply; on a mixed outcome the
+queue delivers for those accepted, bounces each refused recipient on its own, and
+queues those refused for now as a copy for them alone.
+
 ### O-3
+**Closed** in [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) (`d581a8d9`).
 **No SMTPUTF8, no BODY=8BITMIME** on MAIL (`:400`ff build only DSN and MT-PRIORITY
 parameters). A message with a non-ASCII address goes out without SMTPUTF8 - a strict
 next hop (Hermod itself since S-12, behind Postfix) refuses it with 553 5.6.7 - and
@@ -512,35 +521,57 @@ next hop (Hermod itself since S-12, behind Postfix) refuses it with 553 5.6.7 - 
 RFC 6531 §3.2: the message must not be handed to a server that cannot take it).
 Tests: four in `OutboundClientTests`, two in `PostfixTests`.
 
+Fixed: SMTPUTF8 and BODY=8BITMIME are declared; a next hop without what the message
+needs gets nothing - 553 5.6.7 or 554 5.6.3. No 7-bit conversion, as for C-4.
+
 ### O-4
-**REQUIRETLS is not passed on.** S-14 made the queue carry it and the client insist
+**Closed** in [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) (`d581a8d9`).
+**REQUIRETLS was not passed on.** S-14 made the queue carry it and the client insist
 on TLS, but MAIL goes out without the REQUIRETLS parameter, and the next hop is not
 asked whether it supports it (RFC 8689 §4.2.1: without it the message is not to be
-sent on). Its test needs TLS to the scripted server, which the client validates
-strictly once TLS is required - against the system's trust store. A certificate
-validation hook in `SmtpOutboundConfig` is part of the fix; the test comes with it.
+sent on). Its test needed TLS to the scripted server, which the client validated strictly
+once TLS was required - against the system's trust store.
+
+Fixed: REQUIRETLS on MAIL, and 550 5.7.30 for a next hop without it.
+`SmtpOutboundConfig.RemoteCertificateValidator` decides on a certificate where the
+operator's trust is not the system's; the tests use it for their self-signed one.
+Tests: `A_REQUIRETLS_message_goes_over_TLS_with_REQUIRETLS`,
+`A_REQUIRETLS_message_is_not_sent_to_a_next_hop_without_REQUIRETLS`.
 
 ### O-5
-**`ReadTimeoutMs` has no effect** (`:258`ff: it is set as the socket's
+**Closed** in [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) (`d581a8d9`).
+**`ReadTimeoutMs` had no effect** (`:258`ff: it is set as the socket's
 `ReceiveTimeout`, which asynchronous reads ignore). A next hop that accepts the
 connection and then says nothing holds the delivery - and a queue worker - until the
 caller's token fires; for the queue that is never. RFC 5321 §4.5.3.2 gives a client
 its timeouts. Test: `A_silent_server_is_given_up_on_after_the_read_timeout`.
 
+Fixed: every read and write is bounded by its timeout - a `TimeoutException`, a
+temporary failure.
+
 ### O-6
-**A failed delivery ends without QUIT** - as C-8 was for the submission client: only
+**Closed** in [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) (`d581a8d9`).
+**A failed delivery ended without QUIT** - as C-8 was for the submission client: only
 the success path says it. Tests: three cases of `A_failed_relay_ends_with_QUIT`.
 
+Fixed: QUIT in the session's `finally`, whenever the session can still carry it.
+
 ### O-7
-**EHLO keywords are matched as substrings** (`:315`, `:397`f: `Contains("STARTTLS")`,
+**Closed** in [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) (`d581a8d9`).
+**EHLO keywords were matched as substrings** (`:315`, `:397`f: `Contains("STARTTLS")`,
 `Contains("DSN")`, `Contains("MT-PRIORITY")`, and `AUTH`/`PLAIN` likewise): a server
 named `dsn.example` "offers" DSN and gets RET/ENVID/NOTIFY it never advertised (a
 strict server answers 555). Test: `A_server_named_dsn_does_not_get_DSN_parameters`.
 
+Fixed: `Extensions` reads the EHLO reply keyword by keyword, case-insensitively.
+
 ### O-8
+**Closed** in [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) (`d581a8d9`).
 **HELO after any EHLO refusal** (`:302`): also after 421, which ends the session.
 RFC 5321 §3.2 has HELO as the fallback for a server that does not know EHLO.
 Test: `A_421_to_EHLO_is_not_answered_with_HELO`.
+
+Fixed: HELO after 500, 501, 502, 504 and 550 only.
 
 ---
 

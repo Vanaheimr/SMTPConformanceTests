@@ -3,7 +3,6 @@ using System.Text;
 
 using NUnit.Framework;
 
-using SMTPConformance.Core;
 
 using org.GraphDefined.Vanaheimr.Hermod.Mail;
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
@@ -34,13 +33,16 @@ public sealed class OutboundClientTests
                SmartHostPort     = Server.Port,
                ConnectTimeoutMs  = 3_000,
                ReadTimeoutMs     = ReadTimeoutMs,
-               WriteTimeoutMs    = 3_000
+               WriteTimeoutMs    = 3_000,
+               // The scripted server's certificate is self-signed: trusted here, as an operator's
+               // own CA would be.
+               RemoteCertificateValidator = (_, _, _, _) => true
            };
 
     private static SMTPOutboundClient ClientFor(ScriptedSmtpServer Server, UInt32 ReadTimeoutMs = 10_000)
         => new (ConfigFor(Server, ReadTimeoutMs), null, new StubDnsClient(), new CapturingLogger());
 
-    private static EMailEnvelop Envelope(String[] To, String Body = "hello", DsnParameters? Dsn = null)
+    private static EMailEnvelop Envelope(String[] To, String Body = "hello", DsnParameters? Dsn = null, Boolean RequireTls = false)
 
         => new (EMail.Parse([
                     "From: app@client.example",
@@ -49,7 +51,7 @@ public sealed class OutboundClientTests
                     "Content-Type: text/plain; charset=utf-8",
                     "",
                     Body
-                ])) { Dsn = Dsn ?? DsnParameters.None };
+                ])) { Dsn = Dsn ?? DsnParameters.None, RequireTls = RequireTls };
 
     /// <summary>
     /// Deliver directly (MailSender.SendDirectAsync), bounded so that a client that hangs fails the
@@ -85,7 +87,7 @@ public sealed class OutboundClientTests
 
         TestCaseData Case(String Name, Func<SmtpServerScript> Script)
             => new TestCaseData(Script).SetName($"Multi-line reply: {Name}")
-                                       .SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "O-1");
+                                       .SetProperty("Finding", "O-1");
 
         yield return Case("the greeting",          () => new SmtpServerScript { Greeting       = "220-scripted.test ESMTP\r\n220 at your service" });
         yield return Case("MAIL",                  () => new SmtpServerScript { MailReply      = "250-2.1.0 sender\r\n250 2.1.0 ok" });
@@ -119,7 +121,7 @@ public sealed class OutboundClientTests
 
 
     [Test(Description = "RFC 5321 §4.2.1: a refusal of several lines (as large providers send them) is one reply - the next RCPT is not answered by its second line")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-1")]
+    [Property("Finding", "O-1")]
     public async Task A_multi_line_refusal_does_not_shift_the_replies()
     {
 
@@ -174,7 +176,7 @@ public sealed class OutboundClientTests
 
 
     [Test(Description = "RFC 5321 §6.1: a relay that accepted a message must deliver it or report the failure - a recipient the next hop refuses (550) gets a bounce, the others the message")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-2")]
+    [Property("Finding", "O-2")]
     public async Task A_recipient_refused_by_the_next_hop_is_bounced()
     {
 
@@ -198,7 +200,7 @@ public sealed class OutboundClientTests
 
 
     [Test(Description = "RFC 5321 §4.2.5, §4.5.4.1: a recipient refused for now (450) is tried again later - not dropped, not bounced")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-2")]
+    [Property("Finding", "O-2")]
     public async Task A_recipient_refused_for_now_is_retried()
     {
 
@@ -222,7 +224,7 @@ public sealed class OutboundClientTests
     #region O-3: SMTPUTF8 and 8BITMIME on relay
 
     [Test(Description = "RFC 6531 §3.4: a message with a non-ASCII address goes out with the SMTPUTF8 parameter")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-3")]
+    [Property("Finding", "O-3")]
     public async Task A_UTF8_address_goes_out_with_SMTPUTF8()
     {
 
@@ -240,7 +242,7 @@ public sealed class OutboundClientTests
 
 
     [Test(Description = "RFC 6531 §3.2: a message that needs SMTPUTF8 is not handed to a server that does not offer it")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-3")]
+    [Property("Finding", "O-3")]
     public async Task A_UTF8_address_is_not_sent_to_a_server_without_SMTPUTF8()
     {
 
@@ -258,7 +260,7 @@ public sealed class OutboundClientTests
 
 
     [Test(Description = "RFC 6152 §3: 8-bit content goes out declared as BODY=8BITMIME")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-3")]
+    [Property("Finding", "O-3")]
     public async Task Eight_bit_content_goes_out_as_BODY_8BITMIME()
     {
 
@@ -276,7 +278,7 @@ public sealed class OutboundClientTests
 
 
     [Test(Description = "RFC 5321 §2.4, RFC 6152 §3: no octet with the high bit set to a server that did not offer 8BITMIME")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-3")]
+    [Property("Finding", "O-3")]
     public async Task Eight_bit_content_is_not_sent_to_a_server_without_8BITMIME()
     {
 
@@ -293,10 +295,55 @@ public sealed class OutboundClientTests
 
     #endregion
 
+    #region O-4: REQUIRETLS on relay
+
+    [Test(Description = "RFC 8689 §4.2.1: a REQUIRETLS message goes to the next hop over TLS, with the REQUIRETLS option on MAIL")]
+    [Property("Finding", "O-4")]
+    public async Task A_REQUIRETLS_message_goes_over_TLS_with_REQUIRETLS()
+    {
+
+        var script = new SmtpServerScript {
+                         Certificate = TestCertificate.CreateServerCertificate(),
+                         Extensions  = [ "PIPELINING", "SIZE 10485760", "8BITMIME", "ENHANCEDSTATUSCODES", "REQUIRETLS" ]
+                     };
+        await using var server = ScriptedSmtpServer.Start(script);
+
+        var result      = await SendDirect(server, Envelope([ "you@outbound.test" ], RequireTls: true));
+        var transaction = script.Transactions.SingleOrDefault();
+
+        Assert.Multiple(() => {
+            Assert.That(result.Status,              Is.EqualTo(SendStatus.Success), Explain(server));
+            Assert.That(transaction?.Tls,           Is.True,                        Explain(server));
+            Assert.That(transaction?.MailFromLine,  Does.Contain(" REQUIRETLS"),     Explain(server));
+        });
+
+    }
+
+
+    [Test(Description = "RFC 8689 §4.2.1: a REQUIRETLS message is not handed to a next hop that does not offer REQUIRETLS - 5.7.30")]
+    [Property("Finding", "O-4")]
+    public async Task A_REQUIRETLS_message_is_not_sent_to_a_next_hop_without_REQUIRETLS()
+    {
+
+        var script = new SmtpServerScript { Certificate = TestCertificate.CreateServerCertificate() };
+        await using var server = ScriptedSmtpServer.Start(script);
+
+        var result = await SendDirect(server, Envelope([ "you@outbound.test" ], RequireTls: true));
+
+        Assert.Multiple(() => {
+            Assert.That(result.Status,       Is.EqualTo(SendStatus.PermFail),   Explain(server));
+            Assert.That(result.ResponseText, Does.StartWith("5.7.30 "),         Explain(server));
+            Assert.That(script.Transactions, Is.Empty, "no MAIL for a message the next hop cannot keep on TLS" + Explain(server));
+        });
+
+    }
+
+    #endregion
+
     #region O-5: a silent server
 
     [Test(Description = "RFC 5321 §4.5.3.2: the client gives up on a server that does not answer - ReadTimeoutMs is honoured")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-5")]
+    [Property("Finding", "O-5")]
     public async Task A_silent_server_is_given_up_on_after_the_read_timeout()
     {
 
@@ -331,7 +378,7 @@ public sealed class OutboundClientTests
 
         TestCaseData Case(String Name, Func<SmtpServerScript> Script)
             => new TestCaseData(Script).SetName($"Outbound QUIT after: {Name}")
-                                       .SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "O-6");
+                                       .SetProperty("Finding", "O-6");
 
         yield return Case("a refused MAIL",           () => new SmtpServerScript { MailReply      = "550 5.7.1 Sender rejected" });
         yield return Case("every RCPT refused",       () => new SmtpServerScript { RcptReply      = _ => "550 5.1.1 No such user" });
@@ -379,7 +426,7 @@ public sealed class OutboundClientTests
     #region O-7: EHLO keywords, not substrings
 
     [Test(Description = "RFC 5321 §4.1.1.1: an extension is a keyword at the start of an EHLO line - \"DSN\" in the server's name is no DSN extension")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-7")]
+    [Property("Finding", "O-7")]
     public async Task A_server_named_dsn_does_not_get_DSN_parameters()
     {
 
@@ -404,7 +451,7 @@ public sealed class OutboundClientTests
     #region O-8: a 421 to EHLO
 
     [Test(Description = "RFC 5321 §3.2: HELO is the fallback for an EHLO the server does not know (500, 501, 502, 504, 550) - a 421 closes the session")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-8")]
+    [Property("Finding", "O-8")]
     public async Task A_421_to_EHLO_is_not_answered_with_HELO()
     {
 

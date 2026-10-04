@@ -2,7 +2,6 @@ using System.Text;
 
 using NUnit.Framework;
 
-using SMTPConformance.Core;
 
 
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
@@ -65,7 +64,7 @@ public sealed partial class SubmissionClientTests
     #region Partial delivery (C-11)
 
     [Test(Description = "RFC 5321 §3.3: recipients are accepted or refused one by one - a refused one does not stop the message for the others, and the result says who got it")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-11")]
+    [Property("Finding", "C-11")]
     public async Task A_refused_recipient_does_not_stop_the_message_for_the_others()
     {
 
@@ -86,7 +85,7 @@ public sealed partial class SubmissionClientTests
 
         Assert.Multiple(() => {
             Assert.That(script.Transactions.Single().DataLines, Is.Not.Empty, "here@ gets the message" + Explain(server));
-            Assert.That(result.Status,                          Is.Not.EqualTo(MailSentStatus.ok), "not everyone got it" + Explain(server));
+            Assert.That(result.Status,                          Is.EqualTo(MailSentStatus.PartiallySent), "not everyone got it" + Explain(server));
             Assert.That(result.Recipients.Select(recipient => (UInt16) recipient.StatusCode),
                         Is.EquivalentTo(new UInt16[] { 250, 550 }), Explain(server));
         });
