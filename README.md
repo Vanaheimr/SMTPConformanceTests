@@ -13,7 +13,7 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `8dc9663a`):** 329 tests — 326 pass, **3 are open
+**State (2026-10-04, Hermod `8dc9663a`):** 331 tests — 328 pass, **3 are open
 findings**. A fourth round tested what the relay owes beyond delivery: the reports to
 the sender (DSN, D-1 to D-12), MTA-STS (M-1 to M-6) and DANE (N-1 to N-4) - 22
 findings, among them bounces with CR CR LF line ends and one Message-ID for all, a
@@ -23,7 +23,8 @@ fixed in [#134](https://github.com/Vanaheimr/Hermod/pull/134),
 [#135](https://github.com/Vanaheimr/Hermod/pull/135) and
 [#136](https://github.com/Vanaheimr/Hermod/pull/136); N-1 and N-2 waited for Hermod's DNS
 stack (its query cache, its validator and its client each failed a live probe), which
-is fixed now (#139 to #141). A third round tested `SMTPOutboundClient`, the relay side - against a
+is fixed now (#139 to #141); their fix is proposed in
+[#144](https://github.com/Vanaheimr/Hermod/pull/144). A third round tested `SMTPOutboundClient`, the relay side - against a
 scripted next hop and against Postfix in both directions - and found eight findings
 (O-1 to O-8), with partial delivery in the submission client (C-11) all fixed in
 [#130](https://github.com/Vanaheimr/Hermod/pull/130) and [#131](https://github.com/Vanaheimr/Hermod/pull/131). A second round
@@ -148,10 +149,10 @@ vectors, and the four Linux tools.
 | Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 0 | ~~C-1~~ to ~~C-11~~ fixed |
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
 | Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
-| MTA-STS (RFC 8461), DANE (RFC 7672) | 38 | 3 | N-1, N-2 (~~M-1~~ to ~~M-6~~, ~~N-3~~, ~~N-4~~ fixed) |
+| MTA-STS (RFC 8461), DANE (RFC 7672) | 40 | 3 | N-1, N-2 (~~M-1~~ to ~~M-6~~, ~~N-3~~, ~~N-4~~ fixed) |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **329** | **3** | |
+| **Total** | **331** | **3** | |
 
 ## External test partners
 

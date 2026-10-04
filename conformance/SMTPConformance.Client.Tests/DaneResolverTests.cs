@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 
 using NUnit.Framework;
 
+using org.GraphDefined.Vanaheimr.Hermod;
 using org.GraphDefined.Vanaheimr.Hermod.DNS;
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
 
@@ -22,21 +23,45 @@ public sealed class DaneResolverTests
     #region Setup
 
     /// <summary>
-    /// A zone signed with a key generated for the test, whose DS is the trust anchor.
+    /// A zone signed with a key generated for the test, whose DS is the trust anchor, with the
+    /// MX host's address record in it - signed, or (as in an unsigned zone) not.
     /// </summary>
     private sealed class SignedZone : IDisposable
     {
 
+        private readonly String         apex;
+        private readonly StubDnsClient  dns;
+        private readonly A              address;
+
         public DNSSECSigningKey  Key           { get; }
         public DS                TrustAnchor   { get; }
 
-        public SignedZone(String Apex, StubDnsClient Dns)
+        public SignedZone(String Apex, StubDnsClient Dns, Boolean SignedAddress = true)
         {
 
+            apex         = Apex;
+            dns          = Dns;
             Key          = DNSSECSigningKey.Generate(DomainName.ParseLenient(Apex), 13, KeySigningKey: true);
             TrustAnchor  = Key.DelegationSigner();
+            address      = new A(DomainName.Parse(MxHost), DNSQueryClasses.IN, TimeSpan.FromHours(1), IPv4Address.Parse("192.0.2.25"));
 
-            Dns.Answer(Apex, DNSResourceRecordTypes.DNSKEY, Signed(Key.DNSKEY));
+            Dns.Answer(Apex,   DNSResourceRecordTypes.DNSKEY, Signed(Key.DNSKEY));
+            Dns.Answer(MxHost, DNSResourceRecordTypes.A,      SignedAddress ? Signed(address) : [ address ]);
+
+        }
+
+        /// <summary>
+        /// Answer a name of the zone as not existing, the way a signed zone does: NXDOMAIN, with the
+        /// zone's NSEC records and their signatures as the proof (RFC 4035 §3.1.3.2).
+        /// </summary>
+        public void NoSuchName(String Name, DNSResourceRecordTypes Type)
+        {
+
+            var signedZone = DNSSECZoneSigner.Sign([ address ], DomainName.ParseLenient(apex), [ Key ]);
+
+            dns.Fail (Name, Type, DNSResponseCodes.NameError);
+            dns.Proof(Name, Type, [ .. signedZone.Where(record => record.Type == DNSResourceRecordTypes.NSEC ||
+                                                                  record is RRSIG rrsig && rrsig.TypeCovered == DNSResourceRecordTypes.NSEC) ]);
 
         }
 
@@ -125,6 +150,44 @@ public sealed class DaneResolverTests
     }
 
 
+    [Test(Description = "RFC 7672 §2.2.2: a host whose address records are not signed is not asked for TLSA records - a SERVFAIL there, as nameservers of some large providers give, does not hold the mail (a guard for N-1)")]
+    [Property("Finding", "N-1")]
+    public async Task An_unsigned_host_is_not_asked_for_TLSA_records()
+    {
+
+        var dns = new StubDnsClient();
+        using var zone = new SignedZone(Zone, dns, SignedAddress: false);
+        dns.Fail(Owner, DNSResourceRecordTypes.TLSA, DNSResponseCodes.ServerFailure);
+
+        var result = await ResolverFor(dns, zone).ResolveTlsaAsync(MxHost);
+
+        Assert.Multiple(() => {
+            Assert.That(result.Status,     Is.EqualTo(DaneStatus.NoRecord), result.Detail);
+            Assert.That(result.MustDefer,  Is.False,                        result.Detail);
+        });
+
+    }
+
+
+    [Test(Description = "RFC 7672 §2.2, RFC 4035 §5.4: a validated denial of the TLSA records means no DANE - the everyday case of a signed zone without DANE (a guard for N-2)")]
+    [Property("Finding", "N-2")]
+    public async Task A_proven_absence_of_TLSA_records_is_no_DANE()
+    {
+
+        var dns = new StubDnsClient();
+        using var zone = new SignedZone(Zone, dns);
+        zone.NoSuchName(Owner, DNSResourceRecordTypes.TLSA);
+
+        var result = await ResolverFor(dns, zone).ResolveTlsaAsync(MxHost);
+
+        Assert.Multiple(() => {
+            Assert.That(result.Status,     Is.EqualTo(DaneStatus.NoRecord), result.Detail);
+            Assert.That(result.MustDefer,  Is.False,                        result.Detail);
+        });
+
+    }
+
+
     [Test(Description = "RFC 7672 §2.2: outside any signed zone, no TLSA records means no DANE - delivery goes on with opportunistic TLS (a guard for N-2)")]
     [Property("Finding", "N-2")]
     public async Task No_TLSA_records_outside_a_signed_zone_is_no_DANE()
@@ -132,6 +195,8 @@ public sealed class DaneResolverTests
 
         var dns = new StubDnsClient();
         using var zone = new SignedZone(Zone, dns);
+        dns.Answer("mx.unsigned.test", DNSResourceRecordTypes.A,
+                   new A(DomainName.Parse("mx.unsigned.test"), DNSQueryClasses.IN, TimeSpan.FromHours(1), IPv4Address.Parse("192.0.2.26")));
 
         var result = await ResolverFor(dns, zone).ResolveTlsaAsync("mx.unsigned.test");
 

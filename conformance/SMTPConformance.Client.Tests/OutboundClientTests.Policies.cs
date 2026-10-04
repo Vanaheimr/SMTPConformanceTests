@@ -51,7 +51,12 @@ public sealed partial class OutboundClientTests
         public DNSSECSigningKey  Key          { get; } = DNSSECSigningKey.Generate(DomainName.ParseLenient("localhost"), 13, KeySigningKey: true);
 
         public SignedLocalhost()
-            => Dns.Answer("localhost", DNSResourceRecordTypes.DNSKEY, Signed(Key.DNSKEY));
+        {
+            Dns.Answer("localhost", DNSResourceRecordTypes.DNSKEY, Signed(Key.DNSKEY));
+            // RFC 7672 §2.2.2: TLSA records count for a host whose address records are signed.
+            Dns.Answer("localhost", DNSResourceRecordTypes.A,      Signed(new A(DomainName.Parse("localhost"), DNSQueryClasses.IN, TimeSpan.FromHours(1),
+                                                                                 org.GraphDefined.Vanaheimr.Hermod.IPv4Address.Parse("127.0.0.1"))));
+        }
 
         public IDNSResourceRecord[] Signed(params IDNSResourceRecord[] RRSet)
             => [ .. RRSet, DNSSECZoneSigner.SignRRSet(RRSet, Key, DateTime.UtcNow.AddHours(-1), DateTime.UtcNow.AddDays(1)) ];

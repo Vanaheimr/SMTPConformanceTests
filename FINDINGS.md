@@ -25,8 +25,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 | ID | Severity | Area | Summary | Tests | Fix |
 |---|---|---|---|---|---|
-| [N-1](#n-1) | **high** | DANE | A failed TLSA lookup was taken as "no TLSA records" | 3 | blocked by the DNS stack, see [N-1](#n-1) |
-| [N-2](#n-2) | **high** | DANE | An empty TLSA answer in a signed zone was believed without a proof | 2 | blocked by the DNS stack, see [N-1](#n-1) |
+| [N-1](#n-1) | **high** | DANE | A failed TLSA lookup was taken as "no TLSA records" | 4 | proposed in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
+| [N-2](#n-2) | **high** | DANE | An empty TLSA answer in a signed zone was believed without a proof | 3 | proposed in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
 
 ### Closed
 
@@ -864,6 +864,14 @@ cache keeps signatures), [#140](https://github.com/Vanaheimr/Hermod/pull/140) (a
 with two key-signing keys), [#141](https://github.com/Vanaheimr/Hermod/pull/141)
 (compact denial). The same probe against `8dc9663a` finds every zone above "secure",
 and the denials of `mail.ietf.org A` and `_25._tcp.www.isc.org TLSA` validated.
+
+The fix is proposed in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144):
+the address records first (§2.2.2) - insecure ones mean no TLSA lookup and no DANE -
+and for a host whose address records are secure, every failed TLSA lookup and every
+empty answer without a valid denial defers delivery. More tests for it: the guard
+`An_unsigned_host_is_not_asked_for_TLSA_records` (an unsigned host whose TLSA lookup
+fails is not held), and for N-2 `A_proven_absence_of_TLSA_records_is_no_DANE` (a signed
+zone's NXDOMAIN with its NSEC proof is no DANE).
 
 ### N-2
 **An empty TLSA answer in a signed zone was believed without a proof.** RFC 7672

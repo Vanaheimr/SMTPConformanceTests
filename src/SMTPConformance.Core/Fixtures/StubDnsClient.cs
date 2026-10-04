@@ -31,6 +31,7 @@ public sealed class StubDnsClient : IDNSClientWithDNSSEC
     private readonly Dictionary<(String Name, DNSResourceRecordTypes Type), List<IDNSResourceRecord>> table = [];
     private readonly Dictionary<(String Name, DNSResourceRecordTypes Type), DNSResponseCodes>          failures = [];
     private readonly Dictionary<(String Name, DNSResourceRecordTypes Type), Exception>                 exceptions = [];
+    private readonly Dictionary<(String Name, DNSResourceRecordTypes Type), List<IDNSResourceRecord>> proofs = [];
     private readonly Lock tableLock = new();
 
     private static readonly DNSServerConfig origin = new(IPv4Address.Localhost, IPPort.DNS);
@@ -71,6 +72,20 @@ public sealed class StubDnsClient : IDNSClientWithDNSSEC
     }
 
     /// <summary>
+    /// Put records in the authority section of the answer to one owner name and type - the NSEC
+    /// records, and their signatures, that prove a name or type does not exist. Returns this, for
+    /// chaining.
+    /// </summary>
+    public StubDnsClient Proof(String                       Name,
+                               DNSResourceRecordTypes       Type,
+                               params IDNSResourceRecord[]  Authorities)
+    {
+        lock (tableLock)
+            proofs[(Key(Name), Type)] = [.. Authorities];
+        return this;
+    }
+
+    /// <summary>
     /// Let the lookup of one owner name and type throw, as a timeout would. Returns this, for chaining.
     /// </summary>
     public StubDnsClient Throw(String                  Name,
@@ -90,6 +105,7 @@ public sealed class StubDnsClient : IDNSClientWithDNSSEC
     {
 
         var answers      = new List<IDNSResourceRecord>();
+        var authorities  = new List<IDNSResourceRecord>();
         var responseCode = DNSResponseCodes.NoError;
 
         lock (tableLock)
@@ -108,6 +124,9 @@ public sealed class StubDnsClient : IDNSClientWithDNSSEC
                 else if (table.TryGetValue((Key(Name), type), out var records))
                     answers.AddRange(records);
 
+                if (proofs.TryGetValue((Key(Name), type), out var proof))
+                    authorities.AddRange(proof);
+
             }
         }
 
@@ -120,7 +139,7 @@ public sealed class StubDnsClient : IDNSClientWithDNSSEC
                    false,                      // recursion available
                    responseCode,
                    answers,
-                   [],
+                   authorities,
                    [],
                    true,                       // IsValid
                    false,                      // IsTimeout
