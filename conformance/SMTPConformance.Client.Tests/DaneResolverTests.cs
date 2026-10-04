@@ -6,7 +6,6 @@ using org.GraphDefined.Vanaheimr.Hermod;
 using org.GraphDefined.Vanaheimr.Hermod.DNS;
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
 
-using SMTPConformance.Core;
 using SMTPConformance.Core.Fixtures;
 
 namespace SMTPConformance.Client.Tests;
@@ -119,7 +118,7 @@ public sealed class DaneResolverTests
 
     [TestCaseSource(nameof(FailedLookups))]
     [Description("RFC 7672 §2.1.2: \"If any DNS queries used to locate TLSA records fail (... timeouts, malformed replies, SERVFAIL responses, etc.), then the SMTP client MUST treat that server as unreachable and MUST NOT deliver the message via that server\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "N-1")]
+    [Property("Finding", "N-1")]
     public async Task A_failed_TLSA_lookup_defers_delivery(Action<StubDnsClient> Failure)
     {
 
@@ -135,7 +134,7 @@ public sealed class DaneResolverTests
 
 
     [Test(Description = "RFC 7672 §2.1.1, RFC 4035 §5.4: in a signed zone, \"no TLSA records\" is only true with a validated denial of existence - an empty answer without one is what stripping the records produces, and is bogus")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "N-2")]
+    [Property("Finding", "N-2")]
     public async Task An_empty_answer_without_proof_in_a_signed_zone_defers_delivery()
     {
 

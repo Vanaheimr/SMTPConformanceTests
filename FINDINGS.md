@@ -9,8 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `8dc9663a`** (Styx `c530de16`), which closes every finding but N-1 and
-N-2. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `04dca36d`** (Styx `c530de16`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
@@ -23,10 +22,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests | Fix |
-|---|---|---|---|---|---|
-| [N-1](#n-1) | **high** | DANE | A failed TLSA lookup was taken as "no TLSA records" | 4 | proposed in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
-| [N-2](#n-2) | **high** | DANE | An empty TLSA answer in a signed zone was believed without a proof | 3 | proposed in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -90,8 +86,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [M-6](#m-6) | low | MTA-STS | Through a smart host, the recipient domain's policy was applied to it | 1 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
 | [N-3](#n-3) | **high** | DANE | DANE-TA accepted any certificate of the trust anchor, whatever its name | 3 | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
 | [N-4](#n-4) | medium | DANE | Secure but unusable TLSA records made delivery impossible | 2 | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
+| [N-1](#n-1) | **high** | DANE | A failed TLSA lookup was taken as "no TLSA records" | 4 | [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
+| [N-2](#n-2) | **high** | DANE | An empty TLSA answer in a signed zone was believed without a proof | 3 | [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
 
-The 145 tests for these are part of the merge gate now; the observations the first
+The 152 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -833,6 +831,8 @@ host "localhost" whose certificate - and chain - the scripted server presents
 (`OutboundClientTests.Policies.cs`).
 
 ### N-1
+**Closed** in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) (`d0ddcc3f`), after the DNS fixes
+[#139](https://github.com/Vanaheimr/Hermod/pull/139) to [#141](https://github.com/Vanaheimr/Hermod/pull/141).
 **A failed TLSA lookup was taken as "no TLSA records"** (`ResolveTlsaAsync`): an
 exception becomes `DaneResult.None`, a SERVFAIL an empty answer, and the message goes
 out with opportunistic TLS. RFC 7672 §2.1.2: "If any DNS queries used to locate TLSA
@@ -841,7 +841,7 @@ deliver the message via that server." Tests:
 `A_failed_TLSA_lookup_defers_delivery` (SERVFAIL, timeout), and the guard
 `A_signed_TLSA_record_is_secure`.
 
-Not fixed yet, and for a reason. Deferring on every failed lookup is safe only with
+Not fixed at first, and for a reason. Deferring on every failed lookup is safe only with
 the check of §2.2.2 before it - TLSA is asked only for hosts whose address records
 are signed, because nameservers of some large unsigned providers answer TLSA queries
 with SERVFAIL - and that check, like N-2, needs a DNS stack whose answers can be
@@ -865,7 +865,7 @@ with two key-signing keys), [#141](https://github.com/Vanaheimr/Hermod/pull/141)
 (compact denial). The same probe against `8dc9663a` finds every zone above "secure",
 and the denials of `mail.ietf.org A` and `_25._tcp.www.isc.org TLSA` validated.
 
-The fix is proposed in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144):
+Fixed in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144):
 the address records first (§2.2.2) - insecure ones mean no TLSA lookup and no DANE -
 and for a host whose address records are secure, every failed TLSA lookup and every
 empty answer without a valid denial defers delivery. More tests for it: the guard
@@ -874,12 +874,15 @@ fails is not held), and for N-2 `A_proven_absence_of_TLSA_records_is_no_DANE` (a
 zone's NXDOMAIN with its NSEC proof is no DANE).
 
 ### N-2
+**Closed** in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) (`d0ddcc3f`), with N-1.
 **An empty TLSA answer in a signed zone was believed without a proof.** RFC 7672
 §2.1.1 and RFC 4035 §5.4: in a signed zone, "no TLSA records" is a fact only with a
 validated denial of existence; an empty answer without one is what an attacker who
 strips the records produces, and DANE turns into opportunistic TLS. Tests:
 `An_empty_answer_without_proof_in_a_signed_zone_defers_delivery`, and the guard
-`No_TLSA_records_outside_a_signed_zone_is_no_DANE`. Blocked like N-1.
+`No_TLSA_records_outside_a_signed_zone_is_no_DANE`. Fixed with N-1: an empty answer
+for a host in a signed zone is validated as a denial of existence, and is bogus without
+a valid one.
 
 ### N-3
 **Closed** in [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) (`3edbccd5`).
