@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `04dca36d`** (Styx `c530de16`), which closes every one of them but N-5. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `12baa4e6`** (Styx `c530de16`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
@@ -22,9 +22,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests | Fix proposed in |
-|---|---|---|---|---|---|
-| [N-5](#n-5) | medium | DANE | DANE-TA depended on the platform downloading issuers: with an unreachable AIA URL, ~15 s of waiting and a failure | 1 | [Vanaheimr/Hermod#149](https://github.com/Vanaheimr/Hermod/pull/149) |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -90,8 +88,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [N-4](#n-4) | medium | DANE | Secure but unusable TLSA records made delivery impossible | 2 | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
 | [N-1](#n-1) | **high** | DANE | A failed TLSA lookup was taken as "no TLSA records" | 4 | [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
 | [N-2](#n-2) | **high** | DANE | An empty TLSA answer in a signed zone was believed without a proof | 3 | [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
+| [N-5](#n-5) | medium | DANE | DANE-TA depended on the platform downloading issuers: with an unreachable AIA URL, ~15 s of waiting | 1 | [Vanaheimr/Hermod#149](https://github.com/Vanaheimr/Hermod/pull/149) |
 
-The 152 tests for these are part of the merge gate now; the observations the first
+The 153 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -914,6 +913,7 @@ usable records. Tests: `Unusable_TLSA_records_need_TLS_but_no_authentication`, a
 `Unusable_TLSA_records_still_need_TLS`.
 
 ### N-5
+**Closed** in [Vanaheimr/Hermod#149](https://github.com/Vanaheimr/Hermod/pull/149) (`12baa4e6`).
 **DANE-TA depended on the platform downloading issuers** (`SMTPOutboundClient`, the
 `SslClientAuthenticationOptions` of STARTTLS). The guard
 `DANE_TA_accepts_a_certificate_for_the_host` failed now and then on Windows, the first
@@ -927,8 +927,20 @@ presented chain is all there is to authenticate against (RFC 7672 §3.1.2). In p
 a private CA whose AIA URL does not answer from the MTA's network makes every DANE-TA
 delivery wait some 15 seconds, and fail. Test:
 `OutboundClientTests.DANE_TA_does_not_depend_on_certificate_downloads` - the anchor gets
-an AIA URL in TEST-NET-1 (`http://192.0.2.1/`), which makes the failure certain:
+an AIA URL in TEST-NET-1 (`http://192.0.2.1/`), which makes the wait certain:
 17.5 s against the pin.
+
+Fixed: under DANE the client builds the server's chain offline - no downloads, no
+revocation check. Measured on the client alone, the handshake with such an anchor took
+15.5 s before and 1.3 s after. The suite's test is a guard since: it asserts the outcome
+and only warns about the time, because with the scripted server the old code delivered
+after the wait, and on some Windows images the server side (SChannel) builds its own
+chain and waits as well, which a time bound cannot tell apart. The counter-check is
+Hermod's `DANE_TA_does_not_depend_on_certificate_downloads`, where the old code ends in
+TempFail ([#151](https://github.com/Vanaheimr/Hermod/pull/151) makes its CAs unique, after
+an occasional Windows failure: every anchor was "CN=DANE trust anchor" without key
+identifiers, and the chain engine could take one of an earlier test from its cache - the
+suite's `TestCertificate.CreateIssuedCertificate` does the same now).
 
 ---
 

@@ -81,16 +81,24 @@ public static class TestCertificate
     public static (X509Certificate2 Authority, X509Certificate2 Server) CreateIssuedCertificate(String ServerName, Boolean UnreachableIssuerUrl = false)
     {
 
+        // Every certificate with a name of its own and key identifiers, as real CAs have them:
+        // without, the platform matches issuers by name alone and may take an authority of an
+        // earlier test from its cache for this one's.
+        var unique             = Guid.NewGuid().ToString("N")[..12];
+
         using var rootKey      = RSA.Create(2048);
-        var rootRequest        = new CertificateRequest("CN=Conformance test root", rootKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var rootRequest        = new CertificateRequest($"CN=Conformance test root {unique}", rootKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         rootRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
         rootRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign, true));
+        rootRequest.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(rootRequest.PublicKey, false));
         using var root         = rootRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-10), DateTimeOffset.UtcNow.AddDays(9));
 
         using var authorityKey = RSA.Create(2048);
-        var authorityRequest   = new CertificateRequest("CN=Conformance test authority", authorityKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var authorityRequest   = new CertificateRequest($"CN=Conformance test authority {unique}", authorityKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         authorityRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
         authorityRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign, true));
+        authorityRequest.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(authorityRequest.PublicKey, false));
+        authorityRequest.CertificateExtensions.Add(X509AuthorityKeyIdentifierExtension.CreateFromCertificate(root, true, false));
         if (UnreachableIssuerUrl)
             authorityRequest.CertificateExtensions.Add(new X509AuthorityInformationAccessExtension(null, [ "http://192.0.2.1/root.crt" ]));
         using var issued0      = authorityRequest.Create(root, DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(8), RandomNumberGenerator.GetBytes(8));
@@ -102,6 +110,7 @@ public static class TestCertificate
         var names              = new SubjectAlternativeNameBuilder();
         names.AddDnsName(ServerName);
         serverRequest.CertificateExtensions.Add(names.Build());
+        serverRequest.CertificateExtensions.Add(X509AuthorityKeyIdentifierExtension.CreateFromCertificate(authority, true, false));
         using var issued       = serverRequest.Create(authority, DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(7), RandomNumberGenerator.GetBytes(8));
         using var server       = issued.CopyWithPrivateKey(serverKey);
 
