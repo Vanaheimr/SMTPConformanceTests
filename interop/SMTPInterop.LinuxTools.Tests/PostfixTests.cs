@@ -27,9 +27,6 @@ public sealed class PostfixTests : LinuxToolTestBase
 
     #region Helpers
 
-    private static String Marker()
-        => $"marker-{Guid.NewGuid():N}";
-
     private static String Message(String Marker, String To, String Body = "hello")
 
         => $"From: postfix-sender@interop.test\nTo: {To}\nSubject: {Marker}\nContent-Type: text/plain; charset=utf-8\n\n{Body}\n";

@@ -188,8 +188,10 @@ public sealed class OutboundClientTests
         Assert.Multiple(() => {
             Assert.That(original.Status,          Is.EqualTo(QueueItemStatus.Delivered),            Explain(server));
             Assert.That(bounce,                   Is.Not.Null, "the sender learns that gone@ was refused" + Explain(server));
-            Assert.That(bounce?.MessageContent,   Does.Contain("gone@outbound.test"),               Explain(server));
-            Assert.That(bounce?.MessageContent,   Does.Not.Contain("here@outbound.test"),            "here@ was delivered" + Explain(server));
+            // The report names gone@ as failed, and here@ not at all - the original headers it
+            // quotes do mention here@, so the per-recipient fields are what counts (RFC 3464 §2.3).
+            Assert.That(bounce?.MessageContent,   Does.Contain("Final-Recipient: rfc822; gone@outbound.test"),     Explain(server));
+            Assert.That(bounce?.MessageContent,   Does.Not.Contain("Final-Recipient: rfc822; here@outbound.test"), "here@ was delivered" + Explain(server));
         });
 
     }
