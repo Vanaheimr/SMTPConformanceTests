@@ -64,6 +64,11 @@ public sealed class SmtpServerScript
     public X509Certificate2?        Certificate        { get; init; }
 
     /// <summary>
+    /// The issuers of <see cref="Certificate"/>, sent along with it in the TLS handshake.
+    /// </summary>
+    public IReadOnlyList<X509Certificate2> CertificateChain { get; init; } = [];
+
+    /// <summary>
     /// The reply to STARTTLS. The handshake follows only when it starts with "220".
     /// </summary>
     public String                   StartTlsReply      { get; init; } = "220 2.0.0 Ready to start TLS";
@@ -167,7 +172,7 @@ public sealed class SmtpServerScript
                     await s.ReplyAsync(StartTlsReply);
                     if (StartTlsReply.StartsWith("220"))
                     {
-                        await s.UpgradeToTlsAsServerAsync(Certificate);
+                        await s.UpgradeToTlsAsServerAsync(Certificate, CertificateChain);
                         transaction = null;
                     }
                     break;

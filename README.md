@@ -13,13 +13,16 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `306f2d59`):** 303 tests — 277 pass, **26 are open
-findings** of a fourth round: the reports the relay owes a sender (DSN, D-1 to D-12),
-MTA-STS (M-1 to M-6) and DANE (N-1 to N-4). Fixes are proposed in
-[#134](https://github.com/Vanaheimr/Hermod/pull/134),
+**State (2026-10-04, Hermod `3edbccd5`):** 329 tests — 326 pass, **3 are open
+findings**. A fourth round tested what the relay owes beyond delivery: the reports to
+the sender (DSN, D-1 to D-12), MTA-STS (M-1 to M-6) and DANE (N-1 to N-4) - 22
+findings, among them bounces with CR CR LF line ends and one Message-ID for all, a
+message lost without a bounce because it mentioned "multipart/report", an MTA-STS
+wildcard matching any depth, and DANE-TA accepting a certificate for any name. 20 are
+fixed in [#134](https://github.com/Vanaheimr/Hermod/pull/134),
 [#135](https://github.com/Vanaheimr/Hermod/pull/135) and
-[#136](https://github.com/Vanaheimr/Hermod/pull/136); N-1 and N-2 wait for Hermod's
-DNS stack. A third round tested `SMTPOutboundClient`, the relay side - against a
+[#136](https://github.com/Vanaheimr/Hermod/pull/136); N-1 and N-2 wait for Hermod's DNS
+stack (its query cache, its validator and its client each failed a live probe). A third round tested `SMTPOutboundClient`, the relay side - against a
 scripted next hop and against Postfix in both directions - and found eight findings
 (O-1 to O-8), with partial delivery in the submission client (C-11) all fixed in
 [#130](https://github.com/Vanaheimr/Hermod/pull/130) and [#131](https://github.com/Vanaheimr/Hermod/pull/131). A second round
@@ -143,11 +146,11 @@ vectors, and the four Linux tools.
 | RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
 | Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 0 | ~~C-1~~ to ~~C-11~~ fixed |
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
-| Relay reports (RFC 3461, 3464, 6522) | 25 | 21 | D-1 to D-12 |
-| MTA-STS (RFC 8461), DANE (RFC 7672) | 12 | 5 | M-1 to M-6, N-1 to N-4 |
+| Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
+| MTA-STS (RFC 8461), DANE (RFC 7672) | 38 | 3 | N-1, N-2 (~~M-1~~ to ~~M-6~~, ~~N-3~~, ~~N-4~~ fixed) |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **303** | **26** | |
+| **Total** | **329** | **3** | |
 
 ## External test partners
 

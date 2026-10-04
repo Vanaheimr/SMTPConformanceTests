@@ -5,7 +5,6 @@ using NUnit.Framework;
 
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
 
-using SMTPConformance.Core;
 using SMTPConformance.Core.Fixtures;
 using SMTPConformance.Core.RawSmtp;
 using SMTPConformance.Core.Scripted;
@@ -112,7 +111,7 @@ public sealed partial class OutboundClientTests
     #region D-1: the report is a message - CR LF line ends
 
     [Test(Description = "RFC 5322 §2.3, RFC 5321 §2.3.8: a message's lines end in CR LF - a bounce has no CR that is not followed by LF, and no LF without its CR")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-1")]
+    [Property("Finding", "D-1")]
     public async Task A_bounce_has_CR_LF_line_ends_only()
     {
 
@@ -134,7 +133,7 @@ public sealed partial class OutboundClientTests
     #region D-2: every report is a message of its own - Message-ID and boundary
 
     [Test(Description = "RFC 5322 §3.6.4: a Message-ID is unique to its message; RFC 2046 §5.1.1: a boundary is made of bchars - two bounces have two Message-IDs, each well-formed")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-2")]
+    [Property("Finding", "D-2")]
     public async Task Two_bounces_have_two_valid_Message_IDs_and_valid_boundaries()
     {
 
@@ -175,7 +174,7 @@ public sealed partial class OutboundClientTests
 
     [TestCaseSource(nameof(NotifyWithoutFailure))]
     [Description("RFC 3461 §5.2.6 (b), §5.2.2 (d): \"If a NOTIFY parameter was supplied for the recipient which did not contain the value FAILURE, a DSN MUST NOT be issued for that recipient\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-3")]
+    [Property("Finding", "D-3")]
     public async Task A_failure_is_not_reported_when_NOTIFY_leaves_out_FAILURE(String Notify)
     {
 
@@ -225,7 +224,7 @@ public sealed partial class OutboundClientTests
 
     [TestCaseSource(nameof(InnocentBodies))]
     [Description("RFC 3461 §5.2.6 (c), RFC 5321 §6.1: a failed message whose reverse-path is not null is reported - whatever its body says")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-4")]
+    [Property("Finding", "D-4")]
     public async Task A_failure_is_reported_whatever_the_message_says(String[] Body)
     {
 
@@ -242,7 +241,7 @@ public sealed partial class OutboundClientTests
     #region D-5: a message given up on has failed
 
     [Test(Description = "RFC 3461 §5.2.6: a message that cannot be delivered is reported as \"failed\" - also when the last attempt was refused for now, and the relay gives up")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-5")]
+    [Property("Finding", "D-5")]
     public async Task A_message_given_up_on_is_reported_as_failed()
     {
 
@@ -276,7 +275,7 @@ public sealed partial class OutboundClientTests
 
     [TestCaseSource(nameof(NextHopReplies))]
     [Description("RFC 3461 §6.3 (g), (i), RFC 3464 §2.3.4, §2.3.6: the Status field is the status code the failure had, the Diagnostic-Code the next hop's reply as it was")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-6")]
+    [Property("Finding", "D-6")]
     public async Task A_bounce_carries_the_status_and_reply_of_the_next_hop(String Reply, String Status)
     {
 
@@ -298,7 +297,7 @@ public sealed partial class OutboundClientTests
     #region D-7: Original-Recipient is ORCPT, or absent
 
     [Test(Description = "RFC 3461 §6.3 (d): \"If the ORCPT parameter was provided for this recipient, the Original-Recipient field MUST be supplied, with its value taken from the ORCPT parameter\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-7")]
+    [Property("Finding", "D-7")]
     public async Task Original_Recipient_is_the_ORCPT_parameter()
     {
 
@@ -314,7 +313,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 3461 §6.3 (d): \"If no ORCPT parameter was provided for this recipient, the Original-Recipient field MUST NOT appear\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-7")]
+    [Property("Finding", "D-7")]
     public async Task Without_ORCPT_there_is_no_Original_Recipient()
     {
 
@@ -333,7 +332,7 @@ public sealed partial class OutboundClientTests
     #region D-8: Original-Envelope-Id is ENVID, decoded
 
     [Test(Description = "RFC 3461 §6.3 (a): with ENVID on the MAIL command \"an Original-Envelope-ID field MUST be supplied\" - its xtext decoded")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-8")]
+    [Property("Finding", "D-8")]
     public async Task A_bounce_carries_the_ENVID()
     {
 
@@ -352,7 +351,7 @@ public sealed partial class OutboundClientTests
     #region D-9: RET=HDRS returns the header only
 
     [Test(Description = "RFC 3461 §4.3: \"HDRS requests that only the headers of the message be returned\" - the body stays out of the bounce")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-9")]
+    [Property("Finding", "D-9")]
     public async Task With_RET_HDRS_the_bounce_returns_the_header_only()
     {
 
@@ -377,7 +376,7 @@ public sealed partial class OutboundClientTests
     private static readonly QueueProcessorConfig DelayAtOnce = new() { DomainCooldownSeconds = 0, SendDelayNotifications = true, DelayNotificationAfter = TimeSpan.Zero };
 
     [Test(Description = "RFC 3461 §5.2.5, §6.2: a recipient that asked for NOTIFY=DELAY may get a \"delayed\" DSN - a multipart/report like every DSN, once the configured delay has passed")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-10")]
+    [Property("Finding", "D-10")]
     public async Task A_delay_is_reported_as_a_delayed_DSN_when_asked_for()
     {
 
@@ -420,7 +419,7 @@ public sealed partial class OutboundClientTests
     #region D-11: "relayed" DSNs per recipient
 
     [Test(Description = "RFC 3461 §5.2.2 (b), (e): relayed to a next hop without DSN, a recipient with NOTIFY=SUCCESS gets a \"relayed\" DSN - and one without SUCCESS gets none")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-11")]
+    [Property("Finding", "D-11")]
     public async Task Only_the_recipient_that_asked_gets_a_relayed_DSN()
     {
 
@@ -442,7 +441,7 @@ public sealed partial class OutboundClientTests
     #region D-12: the relay passes on what it received - and nothing else
 
     [Test(Description = "RFC 3461 §5.2.1 (b): \"If no RET parameter was present in the MAIL command when the message was received, the RET parameter MUST NOT be supplied when the message is relayed\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-12")]
+    [Property("Finding", "D-12")]
     public async Task A_relay_adds_no_RET_the_client_did_not_give()
     {
 
@@ -463,7 +462,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 3461 §5.2.1 (c): \"If no NOTIFY parameter was present in the RCPT command when the message was received, the NOTIFY parameter MUST NOT be supplied for that recipient when the message is relayed\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-12")]
+    [Property("Finding", "D-12")]
     public async Task A_relay_adds_no_NOTIFY_the_client_did_not_give()
     {
 

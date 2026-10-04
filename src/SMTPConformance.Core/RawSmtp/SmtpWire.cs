@@ -352,7 +352,10 @@ public class SmtpWire : IAsyncDisposable
     /// <summary>
     /// Switch to TLS as the server.
     /// </summary>
-    public async Task UpgradeToTlsAsServerAsync(X509Certificate2 Certificate, CancellationToken CancellationToken = default)
+    /// <param name="Certificate">The server certificate.</param>
+    /// <param name="Chain">Its issuers, sent along with it.</param>
+    /// <param name="CancellationToken">A cancellation token.</param>
+    public async Task UpgradeToTlsAsServerAsync(X509Certificate2 Certificate, IReadOnlyList<X509Certificate2>? Chain = null, CancellationToken CancellationToken = default)
     {
 
         // Unlike the client side this does not refuse buffered bytes: a server that
@@ -364,8 +367,8 @@ public class SmtpWire : IAsyncDisposable
 
         await tls.AuthenticateAsServerAsync(
                   new SslServerAuthenticationOptions {
-                      ServerCertificate    = Certificate,
-                      EnabledSslProtocols  = SslProtocols.Tls12 | SslProtocols.Tls13
+                      ServerCertificateContext  = SslStreamCertificateContext.Create(Certificate, [.. Chain ?? []], offline: true),
+                      EnabledSslProtocols       = SslProtocols.Tls12 | SslProtocols.Tls13
                   },
                   CancellationToken
               );

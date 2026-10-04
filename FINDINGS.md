@@ -9,8 +9,8 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `306f2d59`** (Styx `c530de16`), which closes every finding of the first
-three rounds. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `3edbccd5`** (Styx `c530de16`), which closes every finding but N-1 and
+N-2. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
@@ -23,36 +23,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-The fourth round. Fixes are proposed for all but N-1 and N-2; until they are merged
-and pinned, the tests below are tagged `KnownIssue`. The findings marked "in Hermod"
-need a hook that comes with their fix - an HTTP handler for the MTA-STS policy, the
-DNSSEC trust anchors for DANE - so their tests live in Hermod's own suite for now and
-come into this one with the pin, as O-4's did.
-
-| ID | Severity | Area | Summary | Tests | Fix proposed in |
+| ID | Severity | Area | Summary | Tests | Fix |
 |---|---|---|---|---|---|
-| [D-1](#d-1) | **high** | reports | Bounces had CR CR LF line ends | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-4](#d-4) | **high** | reports | A message that mentions "multipart/report" or quotes a bounce failed without a bounce | 3 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-2](#d-2) | medium | reports | Every bounce had the same Message-ID, `System.Func`1[System.Guid]`, and an invalid boundary | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-3](#d-3) | medium | reports | NOTIFY=NEVER, SUCCESS or DELAY still got a bounce | 6 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-5](#d-5) | medium | reports | A message given up on was reported as "delayed ... will be retried" | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-6](#d-6) | medium | reports | Status guessed by substring, Diagnostic-Code not the reply | 4 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-12](#d-12) | medium | reports | The relay added RET=FULL and NOTIFY=FAILURE the client had not given | 2 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-7](#d-7) | low | reports | Original-Recipient was the Final-Recipient; ORCPT was ignored | 2 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-8](#d-8) | low | reports | No Original-Envelope-Id in bounces; ENVID not xtext-decoded | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-9](#d-9) | low | reports | RET=HDRS was ignored | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-10](#d-10) | low | reports | Delay notices: not DSNs, NOTIFY ignored, held back 4 h whatever the setting | 2 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [D-11](#d-11) | low | reports | A "relayed" DSN for every recipient once one asked for SUCCESS | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
-| [M-1](#m-1) | **high** | MTA-STS | `*.example.com` matched `example.com` and `foo.bar.example.com` | 7 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
-| [M-2](#m-2) | medium | MTA-STS | Any TXT record containing "v=STSv1" announced a policy | in Hermod | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
-| [M-3](#m-3) | medium | MTA-STS | A policy needed only a mode; enforce without mx allowed every MX | in Hermod | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
-| [M-4](#m-4) | medium | MTA-STS | Policy redirects were followed | in Hermod | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
-| [M-5](#m-5) | medium | MTA-STS | A new policy went unseen until max_age; no matching MX failed for good at once | in Hermod | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
-| [M-6](#m-6) | low | MTA-STS | Through a smart host, the recipient domain's policy was applied to it | in Hermod | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
-| [N-3](#n-3) | **high** | DANE | DANE-TA accepted any certificate of the trust anchor, whatever its name | in Hermod | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
 | [N-1](#n-1) | **high** | DANE | A failed TLSA lookup was taken as "no TLSA records" | 3 | blocked by the DNS stack, see [N-1](#n-1) |
 | [N-2](#n-2) | **high** | DANE | An empty TLSA answer in a signed zone was believed without a proof | 2 | blocked by the DNS stack, see [N-1](#n-1) |
-| [N-4](#n-4) | medium | DANE | Secure but unusable TLSA records made delivery impossible | in Hermod | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
 
 ### Closed
 
@@ -96,8 +70,28 @@ come into this one with the pin, as O-4's did.
 | [O-7](#o-7) | low | outbound | EHLO keywords matched as substrings: "DSN" in the server's name was a DSN extension | 1 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [O-8](#o-8) | low | outbound | HELO after any EHLO refusal, a 421 included | 1 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [C-11](#c-11) | low | client | One refused recipient stopped the message for all | 1 | [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) |
+| [D-1](#d-1) | **high** | reports | Bounces had CR CR LF line ends | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-4](#d-4) | **high** | reports | A message that mentions "multipart/report" or quotes a bounce failed without a bounce | 3 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-2](#d-2) | medium | reports | Every bounce had the same Message-ID, `System.Func`1[System.Guid]`, and an invalid boundary | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-3](#d-3) | medium | reports | NOTIFY=NEVER, SUCCESS or DELAY still got a bounce | 6 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-5](#d-5) | medium | reports | A message given up on was reported as "delayed ... will be retried" | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-6](#d-6) | medium | reports | Status guessed by substring, Diagnostic-Code not the reply | 4 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-12](#d-12) | medium | reports | The relay added RET=FULL and NOTIFY=FAILURE the client had not given | 2 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-7](#d-7) | low | reports | Original-Recipient was the Final-Recipient; ORCPT was ignored | 2 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-8](#d-8) | low | reports | No Original-Envelope-Id in bounces; ENVID not xtext-decoded | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-9](#d-9) | low | reports | RET=HDRS was ignored | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-10](#d-10) | low | reports | Delay notices: not DSNs, NOTIFY ignored, held back 4 h whatever the setting | 2 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [D-11](#d-11) | low | reports | A "relayed" DSN for every recipient once one asked for SUCCESS | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
+| [M-1](#m-1) | **high** | MTA-STS | `*.example.com` matched `example.com` and `foo.bar.example.com` | 7 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
+| [M-2](#m-2) | medium | MTA-STS | Any TXT record containing "v=STSv1" announced a policy | 7 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
+| [M-3](#m-3) | medium | MTA-STS | A policy needed only a mode; enforce without mx allowed every MX | 8 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
+| [M-4](#m-4) | medium | MTA-STS | Policy redirects were followed | 2 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
+| [M-5](#m-5) | medium | MTA-STS | A new policy went unseen until max_age; no matching MX failed for good at once | 3 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
+| [M-6](#m-6) | low | MTA-STS | Through a smart host, the recipient domain's policy was applied to it | 1 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
+| [N-3](#n-3) | **high** | DANE | DANE-TA accepted any certificate of the trust anchor, whatever its name | 3 | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
+| [N-4](#n-4) | medium | DANE | Secure but unusable TLSA records made delivery impossible | 2 | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
 
-The 87 tests for these are part of the merge gate now; the observations the first
+The 145 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -616,13 +610,18 @@ parameters a client would give, let the QueueProcessor relay it to a scripted ne
 hop, and read the reports from the queue.
 
 ### D-1
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **Bounces had CR CR LF line ends** (`BounceHandler.GenerateBounceMessage`). The bounce
 is built with `AppendLine` and then `Replace("\n", "\r\n")`: every CR LF of the
 returned message - and on Windows every line of the bounce - becomes CR CR LF.
 RFC 5322 §2.3: lines end in CR LF, CR and LF appear only together. Test:
 `A_bounce_has_CR_LF_line_ends_only`.
 
+Fixed: every report is built with CR LF from the start; the returned message's line ends are
+made CR LF without touching any other character.
+
 ### D-2
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **Every bounce had the same Message-ID, and an invalid boundary.** The interpolation
 `{UUIDv7.Generate:N}` lacks the call parentheses: it formats the method group, and
 every bounce carries `Message-ID: <bounce.System.Func`1[System.Guid]@...>` - against
@@ -630,14 +629,21 @@ RFC 5322 §3.6.4, which makes it unique - and the boundary
 `=_bounce_System.Func`1[System.Guid]`, whose "`", "[" and "]" are not bchars (RFC 2046
 §5.1.1). Test: `Two_bounces_have_two_valid_Message_IDs_and_valid_boundaries`.
 
+Fixed: a Message-ID and a boundary of their own for every report.
+
 ### D-3
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **NOTIFY did not decide whether a failure is reported.** `SendBounceAsync` never looks
 at it. RFC 3461 §5.2.6 (b): "If a NOTIFY parameter was supplied for the recipient
 which did not contain the value FAILURE, a DSN MUST NOT be issued for that
 recipient." Tests: `A_failure_is_not_reported_when_NOTIFY_leaves_out_FAILURE` (NEVER,
 SUCCESS, DELAY), and three guards with FAILURE or no NOTIFY.
 
+Fixed: each recipient's own NOTIFY decides (`RecipientDsn.ReportsFailure`, `ReportsSuccess`,
+`ReportsDelay`).
+
 ### D-4
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **A message could talk itself out of its bounce** (`IsBouncedMessage`). Any message
 whose content contains "multipart/report", "message/delivery-status", "Auto-Submitted:
 auto-replied" or "From: MAILER-DAEMON" - in the body too - is taken for a bounce and
@@ -647,13 +653,19 @@ has the relay report what it cannot deliver. Reports cannot loop anyway: they go
 with a null reverse-path, and a message with one gets no report (RFC 3461 §6). Tests:
 `A_failure_is_reported_whatever_the_message_says`, three bodies.
 
+Fixed: only a null reverse-path stops a report; `IsBouncedMessage` is gone.
+
 ### D-5
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **A message given up on was reported as delayed.** When the retries run out after
 4xx answers, the bounce is a "soft" one: "Action: delayed", "Delivery will be
 retried". It will not be. RFC 3461 §5.2.6: such a DSN's Action "MUST be 'failed'".
 Test: `A_message_given_up_on_is_reported_as_failed`.
 
+Fixed: a bounce is "Action: failed", whatever the last answer was.
+
 ### D-6
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **The Status was guessed, the Diagnostic-Code was not the reply** (`GetStatusCode`).
 Any reply containing "550" becomes 5.1.1, "554" 5.7.1, and so on - "550 5.7.1 Relaying
 denied" is reported as a bad mailbox. The Diagnostic-Code is the client's summary,
@@ -661,7 +673,11 @@ denied" is reported as a bad mailbox. The Diagnostic-Code is the client's summar
 (g) wants the status code, (i) the next hop's reply. Tests:
 `A_bounce_carries_the_status_and_reply_of_the_next_hop`, four replies.
 
+Fixed: the Status is the enhanced status code of the next hop's reply to that recipient, when
+it is of the reply's class, else X.0.0; the Diagnostic-Code is that reply as it was.
+
 ### D-7
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **Original-Recipient was the Final-Recipient again, and ORCPT was ignored.** RFC 3461
 §6.3 (d): "If the ORCPT parameter was provided for this recipient, the
 Original-Recipient field MUST be supplied, with its value taken from the ORCPT
@@ -669,17 +685,27 @@ parameter. If no ORCPT parameter was provided for this recipient, the
 Original-Recipient field MUST NOT appear." Tests:
 `Original_Recipient_is_the_ORCPT_parameter`, `Without_ORCPT_there_is_no_Original_Recipient`.
 
+Fixed: Original-Recipient from ORCPT, xtext decoded, and only from ORCPT.
+
 ### D-8
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **No Original-Envelope-Id in bounces.** RFC 3461 §6.3 (a): with ENVID on the MAIL
 command "an Original-Envelope-ID field MUST be supplied", its xtext decoded; the
 success DSN had it, undecoded. Test: `A_bounce_carries_the_ENVID`.
 
+Fixed: Original-Envelope-Id from ENVID, xtext decoded (`DsnParser.DecodeXtext`), in every report.
+
 ### D-9
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **RET=HDRS was ignored**: the bounce returns the header and up to a hundred body lines
 as a truncated message/rfc822. RFC 3461 §4.3: "HDRS requests that only the headers of
 the message be returned." Test: `With_RET_HDRS_the_bounce_returns_the_header_only`.
 
+Fixed: a failure returns the whole message unless RET=HDRS asked otherwise or it is above 1 MiB;
+a report without a failure returns the header, as text/rfc822-headers.
+
 ### D-10
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **Delay notices** (`SendDelayNotificationAsync`) are plain text, not DSNs (RFC 3461 §6.2:
 "A DSN is transmitted as a MIME message with a top-level content-type of
 multipart/report"); they ignore NOTIFY - §5.2.5 (c): "If the NOTIFY parameter was
@@ -688,13 +714,20 @@ supplied which did not contain the DELAY keyword, a 'delayed' DSN MUST NOT be is
 Tests: `A_delay_is_reported_as_a_delayed_DSN_when_asked_for`, and the guard
 `A_delay_is_not_reported_when_NOTIFY_leaves_out_DELAY`.
 
+Fixed: delay notices are DSNs with "Action: delayed" and Will-Retry-Until, for the recipients
+whose NOTIFY includes DELAY or who gave none, when `DelayNotificationAfter` says it is time.
+
 ### D-11
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **A "relayed" DSN for every recipient** once one of them asked for SUCCESS: the queue
 ORs the recipients' NOTIFY together, and `SendRelayNotificationAsync` reports on all.
 RFC 3461 §5.2.2 (b), (e): a "relayed" DSN for the recipient that asked, none for one
 that did not. Test: `Only_the_recipient_that_asked_gets_a_relayed_DSN`.
 
+Fixed: a "relayed" DSN for the recipients that asked for SUCCESS, and only for them.
+
 ### D-12
+**Closed** in [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) (`a4eeab14`).
 **The relay made up DSN parameters.** A message received without RET goes on with
 "RET=FULL", a recipient without NOTIFY with "NOTIFY=FAILURE" - `DsnParser` fills in
 defaults, and they are relayed as if given. RFC 3461 §5.2.1 (b): "If no RET parameter
@@ -703,17 +736,22 @@ MUST NOT be supplied when the message is relayed", and (c) the same for NOTIFY.
 Tests: `A_relay_adds_no_RET_the_client_did_not_give`,
 `A_relay_adds_no_NOTIFY_the_client_did_not_give`.
 
+Fixed: NOTIFY and RET are nullable through the queue (`RecipientDsn.Notify`, `QueuedMail.Ret`,
+`DsnParameters.Ret`) - null for "not given" - and only what was given is passed on.
+
 ---
 
 ## MTA-STS
 
-RFC 8461, as `MtaStsResolver` and `SMTPOutboundClient` apply it. Only M-1 can be tested
-from outside today: the resolver fetches policies with an `HttpClient` of its own,
-through the system resolver and trust store. The fix adds
-`SmtpOutboundConfig.MtaStsHttpHandler`; Hermod's `SMTPOutboundClientTests.MtaSts` tests
-M-2 to M-6 through it, with a DNS stub for the TXT and MX records.
+RFC 8461, as `MtaStsResolver` and `SMTPOutboundClient` apply it. Before the fix only M-1
+could be tested from outside: the resolver fetched policies with an `HttpClient` of its
+own, through the system resolver and trust store. The fix added
+`SmtpOutboundConfig.MtaStsHttpHandler`; `MtaStsTests` and `OutboundClientTests.Policies.cs`
+serve policies through it (`MtaStsPolicyHost`), with the stub DNS for the TXT and MX
+records.
 
 ### M-1
+**Closed** in [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) (`8975ddc2`).
 **`*` matched any number of labels, and none** (`MtaStsPolicy.MatchesMx`):
 "*.example.com" allows "example.com" and "foo.bar.example.com". RFC 8461 §4.1: "the
 wildcard character '*' may only be used to match the entire left-most label in the
@@ -722,14 +760,22 @@ but not 'example.com' or 'foo.bar.example.com'." Under enforce, mail can go to h
 the domain never named. Tests: `MtaStsTests.An_mx_pattern_matches_as_RFC_8461_says`,
 seven patterns.
 
+Fixed: "*." stands for exactly the left-most label; case and a trailing dot do not matter.
+
 ### M-2
+**Closed** in [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) (`8975ddc2`).
 **Any TXT record containing "v=STSv1" announced a policy** (`LookupMtaStsTxtAsync`):
 "id=1; v=STSv1", "v=STSv10; ...", one of two records, one without an id. RFC 8461
 §3.1: "records that do not begin with 'v=STSv1;' are discarded. If the number of
 resulting records is not one, or if the resulting record is syntactically invalid,
 senders MUST assume the recipient domain does not have an available MTA-STS Policy."
 
+Fixed: exactly one record, beginning with "v=STSv1", an id of 1 to 32 letters and digits, every
+other field a well-formed extension. Tests: `MtaStsTests.Only_one_valid_TXT_record_announces_a_policy`,
+seven records.
+
 ### M-3
+**Closed** in [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) (`8975ddc2`).
 **A policy needed nothing but a mode** (`ParsePolicy`): no version, no max_age (a day
 is assumed), an enforce policy without a single mx - which then allows every MX -
 and a repeated field counts the last time. RFC 8461 §3.2: version, mode and max_age
@@ -737,11 +783,21 @@ and a repeated field counts the last time. RFC 8461 §3.2: version, mode and max
 repeated field "all entries except for the first SHALL be ignored". And "senders
 SHOULD validate that the media type is 'text/plain'", which nothing does.
 
+Fixed: a policy that is not one is no policy; max_age is capped at 31557600 seconds; only
+text/plain is taken. Tests: `Only_a_valid_policy_counts` (six policies),
+`A_policy_that_is_not_text_plain_does_not_count`, `A_max_age_above_a_year_is_a_year`.
+
 ### M-4
+**Closed** in [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) (`8975ddc2`).
 **Redirects were followed**: the resolver's `HttpClient` has the default handler. RFC
 8461 §3.3: "HTTP 3xx redirects MUST NOT be followed".
 
+Fixed: the resolver's own handler follows no redirects, only a 200 counts, and a policy that a
+handler of the operator's (`SmtpOutboundConfig.MtaStsHttpHandler`) reached through a redirect is
+not taken. Tests: `A_redirect_is_not_a_policy` (a guard), `A_policy_reached_through_a_redirect_is_not_taken`.
+
 ### M-5
+**Closed** in [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) (`8975ddc2`).
 **A new policy went unseen, and no matching MX failed for good.** A cached policy is
 used until its max_age without a look at the TXT record, so a domain's new policy
 stays unknown for weeks; and when no MX matches an enforce policy, the delivery is a
@@ -750,11 +806,20 @@ compliant MTA MUST NOT permanently fail to deliver messages before checking, via
 for the presence of an updated policy ... MTAs SHOULD treat such failures as
 transient errors".
 
+Fixed: the TXT record is looked at on every attempt - a new id fetches the new policy, the cached
+one applies when no live one can be had - and no allowed MX is `451 4.7.5`, tried again. Tests:
+`A_new_policy_id_fetches_the_new_policy`, `The_cached_policy_applies_when_no_live_one_can_be_had`
+(a guard), `OutboundClientTests.No_MX_the_MTA_STS_policy_allows_is_a_temporary_failure`.
+
 ### M-6
+**Closed** in [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) (`8975ddc2`).
 **Through a smart host, the recipient domain's policy was applied to the smart
 host**: its enforce mode demands TLS with a valid certificate of the relay, which the
 policy does not name. RFC 8461 §3.4: "compliant senders MUST treat the smart host
 domain as the Policy Domain".
+
+Fixed: the smart host's own policy applies, its mx patterns included; an address literal has
+none. Test: `OutboundClientTests.Through_a_smart_host_the_recipient_domains_policy_does_not_apply`.
 
 ---
 
@@ -762,9 +827,10 @@ domain as the Policy Domain".
 
 RFC 7672 on the relay (`DaneResolver`, `DaneAuthenticator`, `SMTPOutboundClient`).
 `DaneResolverTests` signs a zone for the test and gives the resolver its trust anchor;
-N-3 and N-4 need the outbound client to trust such a zone, which the fix makes
-possible (`SmtpOutboundConfig.DnssecTrustAnchors`), and are tested in Hermod's
-`SMTPOutboundClientTests.Dane` until the pin.
+for N-3 and N-4 the outbound client trusts such a zone through
+`SmtpOutboundConfig.DnssecTrustAnchors`, which the fix added, and delivers to a smart
+host "localhost" whose certificate - and chain - the scripted server presents
+(`OutboundClientTests.Policies.cs`).
 
 ### N-1
 **A failed TLSA lookup was taken as "no TLSA records"** (`ResolveTlsaAsync`): an
@@ -803,6 +869,7 @@ strips the records produces, and DANE turns into opportunistic TLS. Tests:
 `No_TLSA_records_outside_a_signed_zone_is_no_DANE`. Blocked like N-1.
 
 ### N-3
+**Closed** in [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) (`3edbccd5`).
 **DANE-TA accepted any certificate of the trust anchor**
 (`DaneAuthenticator.Matches`): it checks that the anchor is in the chain - or that the
 record matches the server certificate itself - and not the name. RFC 7672 §3.2.2:
@@ -810,12 +877,23 @@ record matches the server certificate itself - and not the name. RFC 7672 §3.2.
 reference identifiers". With a public CA's intermediate as the anchor - "2 1 1" for
 Let's Encrypt is common - any certificate of that CA passes as the destination's.
 
+Fixed: a DANE-TA match counts when the anchor is in the presented chain and the certificate names
+the TLSA base domain or, for an MX host, the next-hop domain. Tests (against a zone signed for the
+test, trusted through `SmtpOutboundConfig.DnssecTrustAnchors`):
+`OutboundClientTests.DANE_TA_refuses_a_certificate_for_another_name`, and the guards
+`DANE_TA_accepts_a_certificate_for_the_host`, `DANE_EE_authenticates_the_next_hop`.
+
 ### N-4
+**Closed** in [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) (`3edbccd5`).
 **Secure but unusable TLSA records made delivery impossible.** A secure RRset of only
 PKIX-TA(0) or PKIX-EE(1) records - which SMTP does not use (§3.1.3) - counts as
 "DANE active", no record can ever match, and every attempt ends in a TLS failure until
 the message is given up. RFC 7672 §2.2: then "Any connection to the MTA MUST be made
 via TLS, but authentication is not required."
+
+Fixed: `DaneResult.RequiresTls` beside `IsUsable` - TLS for both, authentication only against
+usable records. Tests: `Unusable_TLSA_records_need_TLS_but_no_authentication`, and the guard
+`Unusable_TLSA_records_still_need_TLS`.
 
 ---
 

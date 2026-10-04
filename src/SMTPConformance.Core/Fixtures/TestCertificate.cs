@@ -71,6 +71,34 @@ public static class TestCertificate
 
 
     /// <summary>
+    /// A certification authority, and a server certificate it issued for the given name only -
+    /// for DANE-TA(2), where the authority is the trust anchor (RFC 7672 §3.1.2).
+    /// </summary>
+    public static (X509Certificate2 Authority, X509Certificate2 Server) CreateIssuedCertificate(String ServerName)
+    {
+
+        using var authorityKey = RSA.Create(2048);
+        var authorityRequest   = new CertificateRequest("CN=Conformance test authority", authorityKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        authorityRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+        authorityRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign, true));
+        using var authority    = authorityRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(8));
+
+        using var serverKey    = RSA.Create(2048);
+        var serverRequest      = new CertificateRequest($"CN={ServerName}", serverKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        serverRequest.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension([ new Oid("1.3.6.1.5.5.7.3.1") ], false));
+        var names              = new SubjectAlternativeNameBuilder();
+        names.AddDnsName(ServerName);
+        serverRequest.CertificateExtensions.Add(names.Build());
+        using var issued       = serverRequest.Create(authority, DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(7), RandomNumberGenerator.GetBytes(8));
+        using var server       = issued.CopyWithPrivateKey(serverKey);
+
+        return (X509CertificateLoader.LoadCertificate(authority.RawData),
+                X509CertificateLoader.LoadPkcs12(server.Export(X509ContentType.Pfx), null, X509KeyStorageFlags.Exportable));
+
+    }
+
+
+    /// <summary>
     /// Write a fresh server certificate to a PFX file in <paramref name="Directory"/>,
     /// protected with <see cref="PfxPassword"/>.
     /// </summary>
