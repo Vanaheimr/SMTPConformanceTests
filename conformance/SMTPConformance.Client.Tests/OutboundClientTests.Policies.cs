@@ -47,6 +47,7 @@ public sealed partial class OutboundClientTests
     {
 
         public StubDnsClient     Dns          { get; } = new();
+        public CapturingLogger   Log          { get; } = new();
         public DNSSECSigningKey  Key          { get; } = DNSSECSigningKey.Generate(DomainName.ParseLenient("localhost"), 13, KeySigningKey: true);
 
         public SignedLocalhost()
@@ -78,7 +79,7 @@ public sealed partial class OutboundClientTests
                     },
                     null,
                     Dns,
-                    new CapturingLogger());
+                    Log);
 
         public void Dispose()
             => Key.Dispose();
@@ -156,8 +157,8 @@ public sealed partial class OutboundClientTests
         var result = await SendWith(zone.ClientFor(server), Envelope([ "you@outbound.test" ]), server);
 
         Assert.Multiple(() => {
-            Assert.That(result.Status,                    Is.EqualTo(SendStatus.Success), Explain(server));
-            Assert.That(script.Transactions.Single().Tls, Is.True,                        Explain(server));
+            Assert.That(result.Status,                    Is.EqualTo(SendStatus.Success), Explain(server) + "\n--- client log ---\n" + zone.Log);
+            Assert.That(script.Transactions.Single().Tls, Is.True,                        Explain(server) + "\n--- client log ---\n" + zone.Log);
         });
 
     }
@@ -177,8 +178,8 @@ public sealed partial class OutboundClientTests
         var result = await SendWith(zone.ClientFor(server), Envelope([ "you@outbound.test" ]), server);
 
         Assert.Multiple(() => {
-            Assert.That(result.Status,       Is.EqualTo(SendStatus.TempFail), Explain(server));
-            Assert.That(script.Transactions, Is.Empty,                        "nothing is handed over" + Explain(server));
+            Assert.That(result.Status,       Is.EqualTo(SendStatus.TempFail), Explain(server) + "\n--- client log ---\n" + zone.Log);
+            Assert.That(script.Transactions, Is.Empty,                        "nothing is handed over" + Explain(server) + "\n--- client log ---\n" + zone.Log);
         });
 
     }
@@ -197,7 +198,7 @@ public sealed partial class OutboundClientTests
 
         var result = await SendWith(zone.ClientFor(server), Envelope([ "you@outbound.test" ]), server);
 
-        Assert.That(result.Status, Is.EqualTo(SendStatus.Success), Explain(server));
+        Assert.That(result.Status, Is.EqualTo(SendStatus.Success), Explain(server) + "\n--- client log ---\n" + zone.Log);
 
     }
 
@@ -216,8 +217,8 @@ public sealed partial class OutboundClientTests
         var result = await SendWith(zone.ClientFor(server), Envelope([ "you@outbound.test" ]), server);
 
         Assert.Multiple(() => {
-            Assert.That(result.Status,                    Is.EqualTo(SendStatus.Success), Explain(server));
-            Assert.That(script.Transactions.Single().Tls, Is.True,                        Explain(server));
+            Assert.That(result.Status,                    Is.EqualTo(SendStatus.Success), Explain(server) + "\n--- client log ---\n" + zone.Log);
+            Assert.That(script.Transactions.Single().Tls, Is.True,                        Explain(server) + "\n--- client log ---\n" + zone.Log);
         });
 
     }
@@ -236,8 +237,8 @@ public sealed partial class OutboundClientTests
         var result = await SendWith(zone.ClientFor(server), Envelope([ "you@outbound.test" ]), server);
 
         Assert.Multiple(() => {
-            Assert.That(result.Status,       Is.EqualTo(SendStatus.TempFail), Explain(server));
-            Assert.That(script.Transactions, Is.Empty,                        Explain(server));
+            Assert.That(result.Status,       Is.EqualTo(SendStatus.TempFail), Explain(server) + "\n--- client log ---\n" + zone.Log);
+            Assert.That(script.Transactions, Is.Empty,                        Explain(server) + "\n--- client log ---\n" + zone.Log);
         });
 
     }

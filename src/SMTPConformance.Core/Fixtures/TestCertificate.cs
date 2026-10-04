@@ -72,16 +72,25 @@ public static class TestCertificate
 
     /// <summary>
     /// A certification authority, and a server certificate it issued for the given name only -
-    /// for DANE-TA(2), where the authority is the trust anchor (RFC 7672 §3.1.2).
+    /// for DANE-TA(2), where the authority is the trust anchor (RFC 7672 §3.1.2). The authority
+    /// is an intermediate under a root of its own, as a public CA's is: a server sends it along,
+    /// where a self-signed root is not sent on every platform (.NET on Linux leaves it out).
     /// </summary>
     public static (X509Certificate2 Authority, X509Certificate2 Server) CreateIssuedCertificate(String ServerName)
     {
 
+        using var rootKey      = RSA.Create(2048);
+        var rootRequest        = new CertificateRequest("CN=Conformance test root", rootKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        rootRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+        rootRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign, true));
+        using var root         = rootRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-10), DateTimeOffset.UtcNow.AddDays(9));
+
         using var authorityKey = RSA.Create(2048);
         var authorityRequest   = new CertificateRequest("CN=Conformance test authority", authorityKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        authorityRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+        authorityRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
         authorityRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign, true));
-        using var authority    = authorityRequest.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(8));
+        using var issued0      = authorityRequest.Create(root, DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(8), RandomNumberGenerator.GetBytes(8));
+        using var authority    = issued0.CopyWithPrivateKey(authorityKey);
 
         using var serverKey    = RSA.Create(2048);
         var serverRequest      = new CertificateRequest($"CN={ServerName}", serverKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
