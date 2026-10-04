@@ -94,7 +94,7 @@ public sealed class InternationalizationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6531 §3.5: \"When messages are rejected because the MAIL command requires an ASCII address, the reply-code 550 is returned\" — a UTF-8 sender without SMTPUTF8")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-12")]
+    [Property("Finding", "S-12")]
     public async Task A_utf8_sender_without_smtputf8_is_rejected_with_550()
     {
 
@@ -108,7 +108,7 @@ public sealed class InternationalizationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6531 §3.5: \"When messages are rejected because the RCPT command requires an ASCII address, the reply-code 553 is returned\" — a UTF-8 recipient without SMTPUTF8")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-12")]
+    [Property("Finding", "S-12")]
     public async Task A_utf8_recipient_without_smtputf8_is_rejected_with_553()
     {
 

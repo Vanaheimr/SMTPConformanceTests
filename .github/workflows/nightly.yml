@@ -74,7 +74,7 @@ jobs:
             echo '## Open findings (KnownIssue tests — expected red)'
             echo
             echo '```'
-            grep -E "Failed!|Passed!|Fehler!|Bestanden!" known.txt
+            grep -E "Failed!|Passed!|Fehler!|Bestanden!" known.txt || echo 'No KnownIssue tests: no open findings.'
             echo '```'
             echo
             echo 'A KnownIssue test that **passes** means its finding is fixed: remove the tag and update FINDINGS.md.'

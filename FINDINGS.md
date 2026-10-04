@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
-**Hermod `1c056b32`** (Styx `c530de16`), which closes every finding but S-12 and S-13.
+**Hermod `96a8048d`** (Styx `c530de16`), which closes every one of them.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -17,12 +17,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [S-12](#s-12) | low | server | Non-ASCII addresses accepted without the SMTPUTF8 parameter | 2 |
-| [S-13](#s-13) | low | server | With `RequireStartTls`, only MAIL is gated; AUTH, VRFY, RSET are not | 3 |
-
-5 tests in all.
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -50,8 +45,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-3](#c-3) | low | client | EHLO keywords were matched case-sensitively | 1 | [Vanaheimr/Hermod#118](https://github.com/Vanaheimr/Hermod/pull/118) |
 | [C-6](#c-6) | low | client | Default EHLO argument was the bare host name, not an FQDN | 1 | [Vanaheimr/Hermod#119](https://github.com/Vanaheimr/Hermod/pull/119) |
 | [C-7](#c-7) | low | client | Declared `SIZE=` was two octets short | 1 | [Vanaheimr/Hermod#120](https://github.com/Vanaheimr/Hermod/pull/120) |
+| [S-12](#s-12) | low | server | Non-ASCII addresses were accepted without the SMTPUTF8 parameter | 2 | [Vanaheimr/Hermod#122](https://github.com/Vanaheimr/Hermod/pull/122) |
+| [S-13](#s-13) | low | server | With `RequireStartTls`, only MAIL was gated; AUTH, VRFY, RSET were not | 3 | [Vanaheimr/Hermod#123](https://github.com/Vanaheimr/Hermod/pull/123) |
 
-The 47 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
+The 52 tests for these are part of the merge gate now. Besides these, [observations](#observations-without-a-test-yet)
 from reading the code that are not pinned by a test yet.
 
 ---
@@ -220,14 +217,24 @@ Fixed: every command line is decoded as UTF-8 before it is parsed; octets that a
 not UTF-8 make it an invalid command (`500 5.5.2`). S-12 is untouched.
 
 ### S-12
-**Non-ASCII addresses are accepted without the SMTPUTF8 parameter.** RFC 6531 §3.5:
+**Closed** in [Vanaheimr/Hermod#122](https://github.com/Vanaheimr/Hermod/pull/122) (`5fc362d8`).
+**Non-ASCII addresses were accepted without the SMTPUTF8 parameter.** RFC 6531 §3.5:
 550 for MAIL, 553 for RCPT. Tests: two in `InternationalizationTests`.
 
+Fixed: `550 5.6.7` / `553 5.6.7` (RFC 6533: "Non-ASCII addresses not permitted for
+that sender/recipient"); the parameter counts per transaction. Clients with such
+addresses send it already - smtplib on its own, Hermod's submission client too.
+
 ### S-13
-**`RequireStartTls` gates only MAIL.** RFC 3207 §4: the server *"SHOULD return the
+**Closed** in [Vanaheimr/Hermod#123](https://github.com/Vanaheimr/Hermod/pull/123) (`96a8048d`).
+**`RequireStartTls` gated only MAIL.** RFC 3207 §4: the server *"SHOULD return the
 reply code: 530 Must issue a STARTTLS command first to every command other than
 NOOP, EHLO, STARTTLS, or QUIT."* AUTH (SCRAM is offered in cleartext), VRFY and
 RSET are answered normally. Tests: three cases in `RequireStartTlsTests`.
+
+Fixed as RFC 3207 has it - HELO and unknown commands are 530 too - and EHLO no
+longer advertises AUTH before TLS when TLS is required, like Postfix's
+`smtpd_tls_auth_only`.
 
 ### S-14
 **Closed** in [Vanaheimr/Hermod#100](https://github.com/Vanaheimr/Hermod/pull/100) (`0044ecf7`).

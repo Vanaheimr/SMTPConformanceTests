@@ -22,9 +22,9 @@ public sealed class RequireStartTlsTests : HermodServerTestBase
     public static IEnumerable<TestCaseData> GatedCommands()
     {
         yield return new TestCaseData("MAIL FROM:<sender@client.example>") .SetName("Before STARTTLS, MAIL is 530");
-        yield return new TestCaseData("AUTH SCRAM-SHA-256")                .SetName("Before STARTTLS, AUTH is 530").SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "S-13");
-        yield return new TestCaseData("VRFY alice")                        .SetName("Before STARTTLS, VRFY is 530").SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "S-13");
-        yield return new TestCaseData("RSET")                              .SetName("Before STARTTLS, RSET is 530").SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "S-13");
+        yield return new TestCaseData("AUTH SCRAM-SHA-256")                .SetName("Before STARTTLS, AUTH is 530").SetProperty("Finding", "S-13");
+        yield return new TestCaseData("VRFY alice")                        .SetName("Before STARTTLS, VRFY is 530").SetProperty("Finding", "S-13");
+        yield return new TestCaseData("RSET")                              .SetName("Before STARTTLS, RSET is 530").SetProperty("Finding", "S-13");
     }
 
 
