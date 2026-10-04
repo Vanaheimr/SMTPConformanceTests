@@ -8,8 +8,10 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
-numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Now pinned to
-**Hermod `96a8048d`** (Styx `c530de16`), which closes every one of them.
+numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
+**Hermod `96a8048d`** (Styx `c530de16`), which closes every one of them. The
+second round (S-18 and on, C-8 and on) comes from the observations the first one
+left without a test; its line numbers refer to `96a8048d`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -17,7 +19,15 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [C-8](#c-8) | medium | client | A failed attempt ends without QUIT, the connection left open | 7 |
+| [C-9](#c-9) | low | client | Each TCP read is decoded as UTF-8 on its own; surplus bytes are dropped | 1 |
+| [S-18](#s-18) | low | server | Listens on IPv4 `Any` only, no address choice, bound ports unknown | (with the API) |
+| [S-19](#s-19) | low | server | An idle session is closed without saying why (no 421) | 1 |
+| [C-10](#c-10) | low | client | PIPELINING and CHUNKING are never used | 2 |
+
+11 tests in all. S-18's test needs the API its fix adds and comes with it.
 
 ### Closed
 
@@ -287,6 +297,24 @@ client that RSETs (most do, between messages) is left unauthenticated with no
 legitimate way back; its next relay RCPT gets 550. Postfix, Exim and Dovecot
 keep the authentication. Test: `AuthTests.Rset_keeps_the_authentication`.
 
+### S-18
+**The server listens on IPv4 `Any` only** (`SMTPServer.cs:145`ff): every port is a
+`TcpListener(IPAddress.Any, port)`. There is no way to listen on loopback only, on one
+address of a multi-homed host, or on IPv6 - an MX reachable only over IPv6, or
+reachable over both (RFC 5321 §5.1 and RFC 3974 assume an MX answers on the
+addresses its name has), is out of reach. Nor can a caller learn the port the system
+chose for port 0, which is why the suite's fixture probes for free ports itself.
+The test comes with the API: the fixture binds loopback, port 0.
+
+### S-19
+**An idle session is closed without a word** (`SMTPSession.ReadLineAsync`,
+`:1420`ff: the timeout ends the read, the session loop ends, the socket closes). Not
+a violation - RFC 5321 §3.8 allows closing after the §4.5.3.2 timeout - but a
+`421 4.4.2 ... timeout` first, as Postfix sends and as §3.8 has it for a server that
+must end the session, tells the client that the server gave up rather than that the
+network broke. Test: `SessionTimeoutTests.An_idle_session_is_closed_with_421`; a
+second test guards that a client that keeps talking is not cut off.
+
 ---
 
 ## Submission client (`SMTPSubmissionClient`)
@@ -373,25 +401,41 @@ limit. Test: `SubmissionClientTests.Declared_size_covers_the_message`.
 Fixed: each line's UTF-8 octets and its CR LF; the client's own check against the
 server's limit now holds to the octet.
 
+### C-8
+**A failed attempt ends without QUIT.** RFC 5321 §4.1.1.10: *"The sender MUST NOT
+intentionally close the transmission channel until it sends a QUIT command, and it
+SHOULD wait until it receives the reply"*. A refused RCPT throws out of the send loop
+(`SMTPSubmissionClient.cs:1275`ff), as do a refused MAIL, DATA or message; STARTTLS
+refused, a message above the SIZE limit and 8-bit content without 8BITMIME `break`
+out of it. None of them sends QUIT, and the connection stays open until the next
+`Send` or `Dispose()` - the server holds a session slot for a client that has
+left. Tests: `SubmissionClientTests.A_failed_attempt_ends_with_QUIT`, seven cases.
+
+### C-9
+**Replies are decoded one TCP read at a time** (`ReadSMTPResponsesAsync`, `:386`):
+each read is turned into a string on its own, so a UTF-8 character split across two
+segments becomes two U+FFFD; and whatever followed the reply in the same read is
+dropped (`dataAfterLastReply`). Harmless while replies are ASCII and the client
+waits for each - but servers do put UTF-8 in reply text, and PIPELINING (C-10)
+needs the bytes behind a reply. Test:
+`SubmissionClientTests.A_reply_split_inside_a_UTF8_character_is_read_whole`.
+
+### C-10
+**PIPELINING and CHUNKING are never used**, even when offered. Not a conformance
+issue - both are MAY - but every RCPT costs a round trip of its own, and DATA one
+more for the 354. Tests: `SubmissionClientTests.With_PIPELINING_MAIL_and_RCPT_go_out_together`,
+`With_CHUNKING_the_message_goes_as_BDAT`.
+
 ---
 
 ## Observations without a test yet
 
-- **`VerifySpf` / `VerifyDkim` / `VerifyDmarc` have no effect.** `SMTPServerConfig`
-  carries them and `Start()` logs them, but `ProcessReceivedMessageAsync` (`:813`)
-  calls `DNSVerifier.VerifyAsync` unconditionally for every unauthenticated
-  sender. (The fixture therefore needs a stub DNS client even for plain tests.)
-- **The server always binds `IPAddress.Any`, IPv4 only** (`SMTPServer.cs`), with no
-  option for loopback, a specific address or IPv6, and no way to learn the bound
-  port — which is why the fixture has to pick free ports itself.
-- **Unbounded line reads.** The command-line limit (`MaxCommandLineLength`) is
-  checked *after* `StreamReader.ReadLineAsync` has buffered the whole line; a peer
-  that never sends LF grows the buffer until the session timeout.
-- **Session timeout closes without a 421** (RFC 5321 §4.5.3.2 / §3.8).
-- **Client: one refused RCPT aborts the whole transaction** without RSET or QUIT,
-  and after any exception the connection stays open until `Dispose()`.
-- **Client reply reader** decodes each TCP read as UTF-8 on its own (a multi-byte
-  character split across segments is corrupted) and keeps no surplus bytes
-  between replies.
-- **Client never uses PIPELINING or CHUNKING** even when advertised — not a
-  conformance issue, but a latency one.
+None left. Of those the first round noted:
+
+- **`VerifySpf` / `VerifyDkim` / `VerifyDmarc` had no effect** - fixed in Hermod
+  `0eb11d09` ("The verification switches and session limits are applied"), outside
+  this suite's PRs.
+- **Unbounded line reads** - fixed with S-1 ([Vanaheimr/Hermod#95](https://github.com/Vanaheimr/Hermod/pull/95)):
+  `SMTPLineReader` enforces the limit while reading, so a peer that never sends CR LF
+  cannot grow the buffer past it.
+- The others are S-18, S-19, C-8, C-9 and C-10 above.
