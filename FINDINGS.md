@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `3edbccd5`** (Styx `c530de16`), which closes every finding but N-1 and
+**Hermod `8dc9663a`** (Styx `c530de16`), which closes every finding but N-1 and
 N-2. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
@@ -857,8 +857,13 @@ Hermod's is not there yet:
   comes back as SERVFAIL.
 
 A resolver that defers on those would hold mail for every Cloudflare-hosted signed
-zone and every .org host. They belong to the DNS side
-([DNSConformanceTests](https://github.com/Vanaheimr/DNSConformanceTests)) first.
+zone and every .org host. They belonged to the DNS side
+([DNSConformanceTests](https://github.com/Vanaheimr/DNSConformanceTests)) first, and are
+fixed there: [Vanaheimr/Hermod#139](https://github.com/Vanaheimr/Hermod/pull/139) (the
+cache keeps signatures), [#140](https://github.com/Vanaheimr/Hermod/pull/140) (a zone
+with two key-signing keys), [#141](https://github.com/Vanaheimr/Hermod/pull/141)
+(compact denial). The same probe against `8dc9663a` finds every zone above "secure",
+and the denials of `mail.ietf.org A` and `_25._tcp.www.isc.org TLSA` validated.
 
 ### N-2
 **An empty TLSA answer in a signed zone was believed without a proof.** RFC 7672

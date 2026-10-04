@@ -13,7 +13,7 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `3edbccd5`):** 329 tests — 326 pass, **3 are open
+**State (2026-10-04, Hermod `8dc9663a`):** 329 tests — 326 pass, **3 are open
 findings**. A fourth round tested what the relay owes beyond delivery: the reports to
 the sender (DSN, D-1 to D-12), MTA-STS (M-1 to M-6) and DANE (N-1 to N-4) - 22
 findings, among them bounces with CR CR LF line ends and one Message-ID for all, a
@@ -21,8 +21,9 @@ message lost without a bounce because it mentioned "multipart/report", an MTA-ST
 wildcard matching any depth, and DANE-TA accepting a certificate for any name. 20 are
 fixed in [#134](https://github.com/Vanaheimr/Hermod/pull/134),
 [#135](https://github.com/Vanaheimr/Hermod/pull/135) and
-[#136](https://github.com/Vanaheimr/Hermod/pull/136); N-1 and N-2 wait for Hermod's DNS
-stack (its query cache, its validator and its client each failed a live probe). A third round tested `SMTPOutboundClient`, the relay side - against a
+[#136](https://github.com/Vanaheimr/Hermod/pull/136); N-1 and N-2 waited for Hermod's DNS
+stack (its query cache, its validator and its client each failed a live probe), which
+is fixed now (#139 to #141). A third round tested `SMTPOutboundClient`, the relay side - against a
 scripted next hop and against Postfix in both directions - and found eight findings
 (O-1 to O-8), with partial delivery in the submission client (C-11) all fixed in
 [#130](https://github.com/Vanaheimr/Hermod/pull/130) and [#131](https://github.com/Vanaheimr/Hermod/pull/131). A second round
