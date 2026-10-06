@@ -13,7 +13,7 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-10-04, Hermod `12baa4e6`):** 332 tests, **all pass**. A fourth round
+**State (2026-10-06, Hermod `bbbf88b6`):** 332 tests, **all pass**. A fourth round
 tested what the relay owes beyond delivery: the reports to the sender (DSN, D-1 to
 D-12), MTA-STS (M-1 to M-6) and DANE (N-1 to N-5) - 23 findings, among them bounces
 with CR CR LF line ends and one Message-ID for all, a message lost without a bounce

@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `12baa4e6`** (Styx `c530de16`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `bbbf88b6`** (Styx `c530de16`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
@@ -873,6 +873,14 @@ empty answer without a valid denial defers delivery. More tests for it: the guar
 `An_unsigned_host_is_not_asked_for_TLSA_records` (an unsigned host whose TLSA lookup
 fails is not held), and for N-2 `A_proven_absence_of_TLSA_records_is_no_DANE` (a signed
 zone's NXDOMAIN with its NSEC proof is no DANE).
+
+The guard first modelled the unsigned host as an unsigned A record inside the anchored
+zone. That is not an unsigned host but a stripped signature, and since
+[#155](https://github.com/Vanaheimr/Hermod/pull/155) (`903c82a6`) Hermod rightly calls it
+Bogus: an unsigned answer is Insecure only on a proof that a delegation between the
+anchor and the data is unsigned (RFC 4035 §4.3). The host now lies in `plain.dane.test`,
+an unsigned child of the signed zone, whose parent answers the DS query with its signed
+NSEC - NS set, DS and SOA clear (§5.2). Without that NSEC the guard fails.
 
 ### N-2
 **Closed** in [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) (`d0ddcc3f`), with N-1.
