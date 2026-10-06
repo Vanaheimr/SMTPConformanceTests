@@ -23,31 +23,56 @@ public sealed class DaneResolverTests
 
     /// <summary>
     /// A zone signed with a key generated for the test, whose DS is the trust anchor, with the
-    /// MX host's address record in it - signed, or (as in an unsigned zone) not.
+    /// MX host's signed address record in it - and a delegation to a child zone that is not
+    /// signed, with an unsigned host in it.
     /// </summary>
+    /// <remarks>
+    /// An unsigned host is one in an unsigned zone, and the signed parent proves the delegation
+    /// to it unsigned (RFC 4035 §4.3, §5.2). An unsigned address record in the signed zone itself
+    /// is not an unsigned host but a stripped signature, and Bogus.
+    /// </remarks>
     private sealed class SignedZone : IDisposable
     {
 
-        private readonly String         apex;
-        private readonly StubDnsClient  dns;
-        private readonly A              address;
+        private readonly String                apex;
+        private readonly StubDnsClient         dns;
+        private readonly IDNSResourceRecord[]  records;
 
         public DNSSECSigningKey  Key           { get; }
         public DS                TrustAnchor   { get; }
 
-        public SignedZone(String Apex, StubDnsClient Dns, Boolean SignedAddress = true)
+        public SignedZone(String Apex, StubDnsClient Dns)
         {
 
             apex         = Apex;
             dns          = Dns;
             Key          = DNSSECSigningKey.Generate(DomainName.ParseLenient(Apex), 13, KeySigningKey: true);
             TrustAnchor  = Key.DelegationSigner();
-            address      = new A(DomainName.Parse(MxHost), DNSQueryClasses.IN, TimeSpan.FromHours(1), IPv4Address.Parse("192.0.2.25"));
+
+            var address  = new A (DomainName.Parse(MxHost),        DNSQueryClasses.IN, TimeSpan.FromHours(1), IPv4Address.Parse("192.0.2.25"));
+            var cut      = new NS(DomainName.Parse(UnsignedChild), DNSQueryClasses.IN, TimeSpan.FromHours(1), DomainName.Parse("ns." + UnsignedChild));
+            records      = [ address, cut ];
 
             Dns.Answer(Apex,   DNSResourceRecordTypes.DNSKEY, Signed(Key.DNSKEY));
-            Dns.Answer(MxHost, DNSResourceRecordTypes.A,      SignedAddress ? Signed(address) : [ address ]);
+            Dns.Answer(MxHost, DNSResourceRecordTypes.A,      Signed(address));
+
+            // The parent's answer to the DS query for the child: no DS, and its NSEC at the
+            // child's name - NS set, SOA and DS clear - as the proof.
+            Dns.Proof(UnsignedChild, DNSResourceRecordTypes.DS, NSECChain());
+
+            Dns.Answer(UnsignedHost, DNSResourceRecordTypes.A,
+                       new A(DomainName.Parse(UnsignedHost), DNSQueryClasses.IN, TimeSpan.FromHours(1), IPv4Address.Parse("192.0.2.27")));
 
         }
+
+        /// <summary>
+        /// The zone's NSEC records and their signatures, as the signer builds them.
+        /// </summary>
+        private IDNSResourceRecord[] NSECChain()
+
+            => [ .. DNSSECZoneSigner.Sign(records, DomainName.ParseLenient(apex), [ Key ]).
+                        Where(record => record.Type == DNSResourceRecordTypes.NSEC ||
+                                        record is RRSIG rrsig && rrsig.TypeCovered == DNSResourceRecordTypes.NSEC) ];
 
         /// <summary>
         /// Answer a name of the zone as not existing, the way a signed zone does: NXDOMAIN, with the
@@ -55,13 +80,8 @@ public sealed class DaneResolverTests
         /// </summary>
         public void NoSuchName(String Name, DNSResourceRecordTypes Type)
         {
-
-            var signedZone = DNSSECZoneSigner.Sign([ address ], DomainName.ParseLenient(apex), [ Key ]);
-
             dns.Fail (Name, Type, DNSResponseCodes.NameError);
-            dns.Proof(Name, Type, [ .. signedZone.Where(record => record.Type == DNSResourceRecordTypes.NSEC ||
-                                                                  record is RRSIG rrsig && rrsig.TypeCovered == DNSResourceRecordTypes.NSEC) ]);
-
+            dns.Proof(Name, Type, NSECChain());
         }
 
         /// <summary>
@@ -75,9 +95,11 @@ public sealed class DaneResolverTests
 
     }
 
-    private const String Zone    = "dane.test";
-    private const String MxHost  = "mx.dane.test";
-    private const String Owner   = "_25._tcp.mx.dane.test";
+    private const String Zone           = "dane.test";
+    private const String MxHost         = "mx.dane.test";
+    private const String Owner          = "_25._tcp.mx.dane.test";
+    private const String UnsignedChild  = "plain.dane.test";
+    private const String UnsignedHost   = "mx.plain.dane.test";
 
     private static TLSA Tlsa(String Owner = Owner)
         => new (DomainName.ParseLenient(Owner), DNSQueryClasses.IN, TimeSpan.FromHours(1),
@@ -155,10 +177,10 @@ public sealed class DaneResolverTests
     {
 
         var dns = new StubDnsClient();
-        using var zone = new SignedZone(Zone, dns, SignedAddress: false);
-        dns.Fail(Owner, DNSResourceRecordTypes.TLSA, DNSResponseCodes.ServerFailure);
+        using var zone = new SignedZone(Zone, dns);
+        dns.Fail("_25._tcp." + UnsignedHost, DNSResourceRecordTypes.TLSA, DNSResponseCodes.ServerFailure);
 
-        var result = await ResolverFor(dns, zone).ResolveTlsaAsync(MxHost);
+        var result = await ResolverFor(dns, zone).ResolveTlsaAsync(UnsignedHost);
 
         Assert.Multiple(() => {
             Assert.That(result.Status,     Is.EqualTo(DaneStatus.NoRecord), result.Detail);
