@@ -9,7 +9,9 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `287d1c43`** (Styx `a6b9f9fb`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `fbbfe489`** (Styx `a6b9f9fb`), which closes all but seven: A-1 to A-5, V-3
+and V-4 are fixed in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260),
+not merged yet. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
@@ -37,28 +39,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [A-2](#a-2) | medium | ARC | An ARC-Seal with an h= tag is accepted | 1 |
 | [V-3](#v-3) | medium | DKIM, ARC | rsa-sha1 signatures verify | 2 |
 | [V-4](#v-4) | medium | DKIM, ARC | A signature whose b= tag comes first never verifies | 2 |
-| [R-1](#r-1) | medium | DMARC reports | The aggregate XML lacks sp, fo, envelope_from and the SPF scope, which Appendix C requires | 4 |
-| [R-2](#r-2) | medium | DMARC reports | The size limit of a report URI (`!10m`) is cut off and ignored | 1 |
-| [R-5](#r-5) | medium | DMARC reports | Failure reports lack Identity-Alignment and SPF-DNS (REQUIRED) | 2 |
-| [T-1](#t-1) | medium | TLS-RPT | Two records, a record not beginning with `v=TLSRPTv1;`, or `v=tlsrptv1` still name destinations | 3 |
-| [T-3](#t-3) | medium | TLS-RPT | Under an MTA-STS policy in testing mode, a certificate that fails the policy is reported as a success | 1 |
-| [Q-3](#q-3) | medium | MT-PRIORITY | A client nobody vouches for raises its own priority | 1 |
-| [L-1](#l-1) | medium | limits | 100 recipients per session, not per message: the second message runs short | 1 |
 | [A-3](#a-3) | low | ARC | A tag twice in an ARC tag-list: the last one counts (`cv=fail; cv=pass` passes) | 1 |
 | [A-4](#a-4) | low | ARC | The sealer seals a chain whose last seal says cv=fail once more | 1 |
 | [A-5](#a-5) | low | ARC | The sealer's AMS signs the ARC header fields it is configured to | 1 |
-| [R-3](#r-3) | low | DMARC reports | The Report-ID of the subject is no msg-id | 1 |
-| [R-4](#r-4) | low | DMARC reports | The rua of the destination's own record does not replace the policy domain's | 1 |
-| [R-6](#r-6) | low | DMARC reports | fo=1 is ignored: only DMARC failures are reported | 1 |
-| [R-7](#r-7) | low | DMARC | p=reject with pct=0 lets a failing message through as p=none, not quarantined | 1 |
-| [T-2](#t-2) | low | TLS-RPT | No policy-string in the JSON | 1 |
-| [T-4](#t-4) | low | TLS-RPT | Through a smart host, the session is reported to the recipient's domain, under the smart host's policy | 1 |
-| [Q-1](#q-1) | low | MT-PRIORITY | `+3`, `-0`, `05` are taken | 3 |
-| [Q-2](#q-2) | low | MT-PRIORITY | MT-PRIORITY twice is taken | 1 |
-| [Q-4](#q-4) | low | MT-PRIORITY | No PRIORITY clause in Received | 1 |
-| [L-2](#l-2) | low | limits | The 421/554 of a connection refused at accept ends in a bare LF on Linux | 1 |
-| [L-3](#l-3) | low | limits | After a 554 greeting the connection is closed, not held for QUIT | 1 |
-| [L-4](#l-4) | low | limits | After a 421 to AUTH the connection stays open | 1 |
 
 ### Closed
 
@@ -128,8 +111,27 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [V-1](#v-1) | medium | inbound | A DKIM key record without its optional `v=DKIM1` was not found: the signature failed | 1 | [Vanaheimr/Hermod#258](https://github.com/Vanaheimr/Hermod/pull/258) |
 | [V-2](#v-2) | low | inbound | Authentication-Results of a null sender: `smtp.mailfrom=<>`, not the HELO identity SPF checked | 1 | [Vanaheimr/Hermod#259](https://github.com/Vanaheimr/Hermod/pull/259) |
 | [P-1](#p-1) | low | outbound | `PublicAddressesOnly` took the IPv4 documentation ranges (RFC 5737) for public | 3 | [Vanaheimr/Hermod#257](https://github.com/Vanaheimr/Hermod/pull/257) |
+| [R-1](#r-1) | medium | DMARC reports | The aggregate XML lacked sp, fo, envelope_from and the SPF scope, which Appendix C requires | 4 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
+| [R-2](#r-2) | medium | DMARC reports | The size limit of a report URI (`!10m`) was cut off and ignored | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
+| [R-3](#r-3) | low | DMARC reports | The Report-ID of the subject was no msg-id | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
+| [R-4](#r-4) | low | DMARC reports | The rua of the destination's own record did not replace the policy domain's | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
+| [R-5](#r-5) | medium | DMARC reports | Failure reports lacked Identity-Alignment and SPF-DNS (REQUIRED) | 2 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
+| [R-6](#r-6) | low | DMARC reports | fo=1 was ignored: only DMARC failures were reported | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
+| [R-7](#r-7) | low | DMARC | p=reject with pct=0 let a failing message through as p=none, not quarantined | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
+| [T-1](#t-1) | medium | TLS-RPT | Two records, a record not beginning with `v=TLSRPTv1;`, or `v=tlsrptv1` still named destinations | 3 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
+| [T-2](#t-2) | low | TLS-RPT | No policy-string in the JSON | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
+| [T-3](#t-3) | medium | TLS-RPT | Under an MTA-STS policy in testing mode, a certificate that failed the policy was reported as a success | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
+| [T-4](#t-4) | low | TLS-RPT | Through a smart host, the session was reported to the recipient's domain, under the smart host's policy | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
+| [Q-1](#q-1) | low | MT-PRIORITY | `+3`, `-0`, `05` were taken | 3 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
+| [Q-2](#q-2) | low | MT-PRIORITY | MT-PRIORITY twice was taken | 1 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
+| [Q-3](#q-3) | medium | MT-PRIORITY | A client nobody vouched for raised its own priority | 1 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
+| [Q-4](#q-4) | low | MT-PRIORITY | No PRIORITY clause in Received | 1 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
+| [L-1](#l-1) | medium | limits | 100 recipients per session, not per message: the second message ran short | 1 | [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) |
+| [L-2](#l-2) | low | limits | The 421/554 of a connection refused at accept ended in a bare LF on Linux | 1 | [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) |
+| [L-3](#l-3) | low | limits | After a 554 greeting the connection was closed, not held for QUIT | 1 | [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) |
+| [L-4](#l-4) | low | limits | After a 421 to AUTH the connection stayed open | 1 | [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) |
 
-The 158 tests for these are part of the merge gate now; the observations the first
+The 185 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1119,7 +1121,8 @@ with fo=0 a message that passed is not reported; p=quarantine marks a failing me
 (`MessageAuthenticationTests`).
 
 ### R-1
-**Open.** **The aggregate XML lacks elements Appendix C requires**
+**Closed** in [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) (`631f6a92`).
+**The aggregate XML lacked elements Appendix C requires**
 (`Reporting/DmarcReportXml.cs:49` to `:87`): `sp` only when published, never `fo`, never
 `envelope_from`, never the SPF `scope`. RFC 7489 Appendix C: in `PolicyPublishedType`,
 `sp` and `fo` have no minOccurs, so one; in `IdentifierType`, `envelope_from` has
@@ -1128,29 +1131,48 @@ validates against the schema refuses the report; one that does not cannot tell a
 FROM result from a HELO one - a null sender is checked on the HELO identity (V-2). Tests:
 `The_XML_has_every_element_the_schema_requires`, four cases.
 
+Fixed: `sp` is always written (p when none is published), and so is `fo` (default "0");
+each row carries `envelope_from` (empty for a null sender) and the SPF `scope` (mfrom or
+helo). Rows that differ in these are no longer merged into one.
+
 ### R-2
-**Open.** **The size limit of a report URI is ignored** (`Reporting/DmarcReportService.cs:278`,
+**Closed** in [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) (`ccf11f89`).
+**The size limit of a report URI was ignored** (`Reporting/DmarcReportService.cs:278`,
 `u.IndexOf('!')`): `!10m` is cut off and not compared. RFC 7489 §7.2.1: "Any reporting URI
 that includes a size limitation exceeded by the generated report ... MUST NOT be used";
 if none can take it, a short report SHOULD say so (§7.2.2). Test:
 `A_destination_whose_size_limit_the_report_exceeds_receives_none`.
 
+Fixed: limits are parsed, k, m, g and t as powers of two. A rua report is measured as
+its gzipped, base64-encoded attachment, a ruf report as the whole message; a destination
+whose limit it exceeds is not used, and when none can take it, a short report (§7.2.2)
+goes to each destination whose limit that fits.
+
 ### R-3
-**Open.** **The Report-ID of the subject is no msg-id** (`Reporting/DmarcReportService.cs:114`
+**Closed** in [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) (`9a092e7e`).
+**The Report-ID of the subject was no msg-id** (`Reporting/DmarcReportService.cs:114`
 and `:164`): `Report-ID: mx.hermod.test!policy.test!1795115900!94c3...`. RFC 7489
 §7.2.1.1 makes it a `msg-id`, from RFC 5322: `"<" id-left "@" id-right ">"`. Test:
 `The_Report_ID_of_the_subject_is_a_msg_id`.
 
+Fixed: `Report-ID: <…@reporting-domain>`; the XML `report_id` is the same id without the
+angle brackets.
+
 ### R-4
-**Open.** **The rua of the destination's own record does not replace the policy domain's**
+**Closed** in [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) (`ccf11f89`).
+**The rua of the destination's own record did not replace the policy domain's**
 (`DNSVerifications/DNSVerifier.cs:891` to `:892`): the `_report._dmarc` record is looked
 for, and only that it begins with v=DMARC1 counts. RFC 7489 §7.1: "If a "rua" or "ruf"
 tag is thus discovered, replace the corresponding value extracted from the domain's
 DMARC policy record with the one found in this record", on the same host. Test:
 `The_destinations_own_rua_replaces_the_policy_domains`.
 
+Fixed: the rua and ruf of the `_report._dmarc` record replace the policy domain's; if
+the replacement names another host, neither address is used.
+
 ### R-5
-**Open.** **Failure reports lack fields RFC 7489 requires** (`Reporting/ArfReport.cs:77` to
+**Closed** in [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) (`2e007a1d`).
+**Failure reports lacked fields RFC 7489 requires** (`Reporting/ArfReport.cs:77` to
 `:87`): Feedback-Type, Version, Original-Mail-From, Arrival-Date, Source-IP,
 Reported-Domain, Auth-Failure and a `Delivered-To` that RFC 5965 does not define - no
 Identity-Alignment, no SPF-DNS. RFC 7489 §7.3.1: "Identity-Alignment (REQUIRED ...)",
@@ -1158,20 +1180,33 @@ Identity-Alignment, no SPF-DNS. RFC 7489 §7.3.1: "Identity-Alignment (REQUIRED 
 message was signed by DKIM". Tests: `The_failure_report_has_the_fields_RFC_7489_requires`,
 two cases.
 
+Fixed: the reports have Identity-Alignment, SPF-DNS (`txt : domain : "record"`), and
+DKIM-Domain, DKIM-Identity and DKIM-Selector when the message was signed. `Delivered-To`
+is gone.
+
 ### R-6
-**Open.** **fo= is read and not used** (`Reporting/DmarcReportService.cs:207` and `:212`):
+**Closed** in [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) (`3c2c40ad`).
+**fo= was read and not used** (`Reporting/DmarcReportService.cs:207` and `:212`):
 only a message that failed DMARC is reported. RFC 7489 §6.3: fo=1 - "Generate a DMARC
 failure report if any underlying authentication mechanism produced something other
 than an aligned "pass" result"; d and s for DKIM and SPF failures whatever the
 alignment. Test: `With_fo_1_a_failing_SPF_is_reported_although_DMARC_passed`.
 
+Fixed: fo=0 and fo=1 produce DMARC failure reports, fo=d DKIM reports (`Auth-Failure:
+signature`), fo=s SPF reports (`Auth-Failure: spf`). The session hands every evaluation
+that has a ruf to the reporter, which decides by fo.
+
 ### R-7
-**Open.** **p=reject with pct=0 is p=none** (`DNSVerifications/DNSVerifier.cs:855`,
+**Closed** in [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) (`c88f40a6`).
+**p=reject with pct=0 was p=none** (`DNSVerifications/DNSVerifier.cs:855`,
 `if (percent <= 0) return "none";`): a failing message is neither refused nor
 quarantined. RFC 7489 §6.6.4: under p=reject, for a message pct= does not select, "the
 Mail Receiver SHOULD treat the email as though the "quarantine" policy applies" - pct=0
 selects none, so every failing message is quarantined. Domains moving to p=reject start
 with pct=0 for exactly that. Test: `Under_p_reject_with_pct_0_a_failing_message_is_quarantined`.
+
+Fixed: pct=0 demotes p=reject to quarantine, as it does for every share pct= does not
+select.
 
 ## TLS reporting
 
@@ -1186,7 +1221,8 @@ the counts; under an enforced MTA-STS policy an untrusted certificate is a repor
 failure, and the delivery waits.
 
 ### T-1
-**Open.** **A domain without exactly one valid record still gets reports**
+**Closed** in [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) (`88f26f73`).
+**A domain without exactly one valid record still got reports**
 (`Reporting/TlsRptResolver.cs:77`, the first record that contains "v=TLSRPTv1" in any
 case, and `:107`): two records, `rua=...; v=TLSRPTv1`, or `v=tlsrptv1` each name a
 destination. RFC 8460 §3: "records that do not begin with "v=TLSRPTv1;" are discarded"
@@ -1194,15 +1230,25 @@ destination. RFC 8460 §3: "records that do not begin with "v=TLSRPTv1;" are dis
 assume the recipient domain does not implement TLSRPT". Tests:
 `A_domain_without_exactly_one_valid_record_gets_no_report`, three cases.
 
+Fixed: only records that begin with `v=TLSRPTv1` and `;`, whitespace before the `;`
+allowed, count, and only if exactly one does; `rua=` must be lower case.
+
 ### T-2
-**Open.** **No policy-string in the JSON** (`Reporting/TlsRptReportJson.cs:66` to `:74`):
+**Closed** in [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) (`7807bf38`).
+**No policy-string in the JSON** (`Reporting/TlsRptReportJson.cs:66` to `:74`):
 policy-type, mx-host and policy-domain only. RFC 8460 §4.4 lists policy-type,
 policy-string, policy-domain and mx-host for the policy object, none marked optional;
 policy-string is the policy applied, as a JSON array of strings - the receiver sees
 which policy version the sender had. Test: `Each_policy_says_which_policy_was_applied`.
 
+Fixed: every policy has `policy-string`: the lines of the MTA-STS policy, the TLSA
+records as "usage selector matching HEX", or an empty array for no-policy-found.
+Policies with different strings are reported in separate blocks; state files from before
+load as they did.
+
 ### T-3
-**Open.** **In MTA-STS testing mode a failed policy is reported as a success**
+**Closed** in [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) (`28252dc9`).
+**In MTA-STS testing mode a failed policy was reported as a success**
 (`SMTPOutboundClient.cs:445`, `validateStrict = mustEnforceTls || ...`, and `:490`,
 `RecordTls(true, null)`): testing mode delivers over TLS whatever the certificate - as
 it should - and then records the session as one that went well. RFC 8461 §5: in
@@ -1210,14 +1256,24 @@ testing mode "Sending MTAs that also implement the TLSRPT specification [RFC8460
 a report indicating policy application failures"; testing mode is there for that
 report. Test: `In_testing_mode_an_untrusted_certificate_is_reported_as_a_failure`.
 
+Fixed: delivery is unchanged; the report records `certificate-expired`,
+`certificate-host-mismatch`, `certificate-not-trusted`, `starttls-not-supported`, or
+`validation-failure` for an MX host the policy does not name. In testing mode STARTTLS
+is tried even with `PreferStartTls` off, and under enforce the failure, too, says what
+failed.
+
 ### T-4
-**Open.** **Through a smart host the session is reported to the recipient's domain**
+**Closed** in [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) (`4430e687`).
+**Through a smart host the session was reported to the recipient's domain**
 (`SMTPOutboundClient.cs:223`, `targetDomain` where `TrySendToMxAsync` takes the policy
 domain, `:285`): the MTA-STS policy is the smart host's (`:136`, RFC 8461 §3.4), the
 event names the recipient's domain - whose rua then receives a report on a policy it did
 not publish. RFC 8460 §4.4: policy-domain is "The Policy Domain against which the
 MTA-STS or DANE policy is defined". Test:
 `Through_a_smart_host_the_session_is_reported_to_the_smart_hosts_domain`.
+
+Fixed: `TrySendToMxAsync` takes the next-hop domain, for the DANE reference identifiers,
+and the policy domain, for TLS-RPT, separately.
 
 ## Priorities and limits
 
@@ -1229,19 +1285,27 @@ the 101st refused with 452 4.5.3; a connection over the limit per address gets 4
 is closed.
 
 ### Q-1
-**Open.** **Values the grammar does not produce are taken** (`ESMTPParameters.cs:149`,
+**Closed** in [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) (`625d1094`).
+**Values the grammar does not produce were taken** (`ESMTPParameters.cs:149`,
 `Int32.TryParse(value, ...) && priority is >= -9 and <= 9 && value.Length <= 2`): `+3`,
 `-0` and `05` are 250. RFC 6710 §7: `priority-value = (["-"] NZDIGIT) / "0"`; §4.1: the
 server MUST return an error for a syntactically invalid value. Tests:
 `A_value_the_grammar_does_not_produce_is_refused`, three cases.
 
+Fixed: only values the grammar produces are taken; anything else is 501 5.5.4.
+
 ### Q-2
-**Open.** **MT-PRIORITY twice is taken** (`ESMTPParameters.cs:95`): a second parameter with
+**Closed** in [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) (`625d1094`).
+**MT-PRIORITY twice was taken** (`ESMTPParameters.cs:95`): a second parameter with
 the same value passes. RFC 6710 §4.1: the server MUST return an error "if there is more
 than one MT-PRIORITY parameter". Test: `MT_PRIORITY_twice_is_refused`.
 
+Fixed: 501 5.5.4. For other parameters an identical repeat is still tolerated -
+CPython's smtplib repeats SMTPUTF8.
+
 ### Q-3
-**Open.** **A client nobody vouches for raises its own priority** (`SMTPSession.cs:725`,
+**Closed** in [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) (`bc71f855`).
+**A client nobody vouched for raised its own priority** (`SMTPSession.cs:725`,
 `_mtPriority = MtPriority.ParseFromMailParams(parameters)`, and `:1444`): the value is
 kept whoever asks, and goes into the relay queue - whose retries `FileMailQueue` hands out
 by it, and on to the next hop.
@@ -1249,39 +1313,67 @@ RFC 6710 §4.1: the server "MUST NOT allow "upgraded" (positive) priorities from
 untrusted" senders; it may let them lower their own. It matters where a client may relay
 without AUTH. Test: `A_client_nobody_vouches_for_does_not_raise_its_priority`.
 
+Fixed: a session that signed in is trusted, any other is not. A positive priority from
+an untrusted client becomes 0, and MAIL answers `250 2.3.6 0 Priority lowered: …`, the
+new priority first; such a client may still lower its priority (§4.1 MAY).
+
 ### Q-4
-**Open.** **No PRIORITY clause in Received** (`SMTPSession.cs:1562`, `BuildReceivedHeaderAsync`):
+**Closed** in [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) (`bc71f855`).
+**No PRIORITY clause in Received** (`SMTPSession.cs:1562`, `BuildReceivedHeaderAsync`):
 RFC 6710 §4.1: an MTA SHOULD record the priority in the Received field,
 `Pri = CFWS "PRIORITY" FWS priority-value`. Test: `The_Received_field_names_the_priority`.
 
+Fixed: when MAIL carried MT-PRIORITY, Received has `PRIORITY n` after the for-clause,
+where RFC 5321 §4.4 places additional clauses; n is the priority the message is relayed
+with.
+
 ### L-1
-**Open.** **100 recipients per session, not per message** (`SMTPSession.cs:770` and `:772`,
+**Closed** in [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) (`25b05a7c`).
+**100 recipients per session, not per message** (`SMTPSession.cs:770` and `:772`,
 `_counters.Recipients >= rateLimitConfig.MaxRcptPerSession`, the counter never reset):
 after 60 recipients in a first message, a second message in the same session is refused
 its 41st with `452 4.5.3 Too many recipients in this session`. RFC 5321 §4.5.3.1.8: "The
 minimum total number of recipients that MUST be buffered is 100 recipients" - for each
 message. Test: `A_second_message_in_the_session_takes_its_own_recipients`.
 
+Fixed: one message is limited by `MaxRecipients` (100, then 452 4.5.3) as before.
+`MaxRcptPerSession` is checked at MAIL, the way `MaxMessagesPerSession` is: once it is
+reached, the next MAIL gets 421 4.7.0 and the session ends, so a message is never cut
+short. Its default is now 1000.
+
 ### L-2
-**Open, Linux.** **The reply to a connection refused at accept ends in a bare LF**
+**Closed** in [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) (`8234c63f`).
+**The reply to a connection refused at accept ended in a bare LF**
 (`SMTPServer.cs:290` and `:299`, `new StreamWriter(...)` and `WriteLineAsync(message)`):
 the platform's line end - CR LF on Windows, LF on Linux. RFC 5321 §2.3.8: lines are
 "terminated by the sequence ASCII character "CR" (hex 0D) followed immediately by ASCII
 character "LF" (hex 0A)". Test: `The_421_of_a_refused_connection_ends_in_CRLF` - it
 passes on Windows and fails on Linux, where the nightly runs it.
 
+Fixed: `WriteReplyAsync` writes CR LF; no other wire writer used the platform's line
+end.
+
 ### L-3
-**Open.** **After a 554 greeting the connection is closed at once** (`SMTPServer.cs:292` and
+**Closed** in [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) (`dd8e2314`).
+**After a 554 greeting the connection was closed at once** (`SMTPServer.cs:292` and
 `:304`): RFC 5321 §3.1: a server that answers a connection with 554 "MUST still wait for
 the client to send a QUIT ... before closing the connection and SHOULD respond to any
 intervening commands with "503 bad sequence of commands"". Test:
 `After_554_the_server_waits_for_QUIT`.
 
+Fixed: the 554 connection is held beside the accept loop: QUIT gets 221, every other
+line 503 5.5.1. The hold is bounded - 30 s in all, 10 commands, lines no longer than
+`MaxCommandLineLength`, at most `MaxTotalConnections` refusals held at once; beyond that
+the server sends the 554 and closes, as before. A 421 refusal still closes at once.
+
 ### L-4
-**Open.** **After a 421 to AUTH the connection stays open** (`SMTPSession.cs:282`): the
+**Closed** in [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) (`c0aa1a1e`).
+**After a 421 to AUTH the connection stayed open** (`SMTPSession.cs:282`): the
 reply is sent, the session goes on, and answers the next command. RFC 5321 §3.8: 421
 means the server is closing the transmission channel - the client stops, the server
 holds a connection it said it would close. Test: `After_421_to_AUTH_the_connection_is_closed`.
+
+Fixed: the session ends, as at every other 421.
 
 ## Outbound security
 

@@ -49,7 +49,7 @@ public sealed class RecipientLimitTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.5.3.1.8: 100 recipients MUST be buffered - for each message: a second transaction in the same session is not short of recipients because the first had some")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "L-1")]
+    [Property("Finding", "L-1")]
     public async Task A_second_message_in_the_session_takes_its_own_recipients()
     {
 
@@ -137,7 +137,7 @@ public sealed class ConnectionLimitTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §2.3.8: \"Lines consist of zero or more data characters terminated by the sequence ASCII character \"CR\" (hex 0D) followed immediately by ASCII character \"LF\" (hex 0A)\" - the 421 of a refused connection too, on every platform")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "L-2")]
+    [Property("Finding", "L-2")]
     public async Task The_421_of_a_refused_connection_ends_in_CRLF()
     {
 
@@ -179,7 +179,7 @@ public sealed class RefusedClientTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §3.1: after a 554 greeting the server \"MUST still wait for the client to send a QUIT ... before closing the connection and SHOULD respond to any intervening commands with \"503 bad sequence of commands\"\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "L-3")]
+    [Property("Finding", "L-3")]
     public async Task After_554_the_server_waits_for_QUIT()
     {
 
@@ -222,7 +222,7 @@ public sealed class AuthenticationLimitTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §3.8: a 421 means the server is closing the transmission channel - after a 421 to AUTH no further command is answered")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "L-4")]
+    [Property("Finding", "L-4")]
     public async Task After_421_to_AUTH_the_connection_is_closed()
     {
 

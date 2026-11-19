@@ -74,7 +74,7 @@ public sealed class PriorityTests : HermodServerTestBase
     [TestCase("-0",  Description = "no minus zero")]
     [TestCase("05",  Description = "no leading zero")]
     [Test(Description = "RFC 6710 §7: priority-value = ([\"-\"] NZDIGIT) / \"0\" - no \"+\", no \"-0\", no leading zero; §4.1: a syntactically invalid value MUST be refused")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "Q-1")]
+    [Property("Finding", "Q-1")]
     public async Task A_value_the_grammar_does_not_produce_is_refused(String Value)
     {
 
@@ -88,7 +88,7 @@ public sealed class PriorityTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6710 §4.1: the server MUST return an error \"if there is more than one MT-PRIORITY parameter\" - the same value twice too")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "Q-2")]
+    [Property("Finding", "Q-2")]
     public async Task MT_PRIORITY_twice_is_refused()
     {
 
@@ -102,7 +102,7 @@ public sealed class PriorityTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6710 §4.1: \"MUST NOT allow \"upgraded\" (positive) priorities from untrusted\" senders - a client that did not sign in relays at 0 at most")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "Q-3")]
+    [Property("Finding", "Q-3")]
     public async Task A_client_nobody_vouches_for_does_not_raise_its_priority()
     {
 
@@ -124,7 +124,7 @@ public sealed class PriorityTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6710 §4.1: an MTA SHOULD write the priority into the Received field - Pri = CFWS \"PRIORITY\" FWS priority-value")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "Q-4")]
+    [Property("Finding", "Q-4")]
     public async Task The_Received_field_names_the_priority()
     {
 

@@ -219,7 +219,7 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 7489 §6.6.4: under p=reject, a message pct= does not select \"the Mail Receiver SHOULD treat the email as though the \"quarantine\" policy applies\" - with pct=0, every failing message")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "R-7")]
+    [Property("Finding", "R-7")]
     public async Task Under_p_reject_with_pct_0_a_failing_message_is_quarantined()
     {
 

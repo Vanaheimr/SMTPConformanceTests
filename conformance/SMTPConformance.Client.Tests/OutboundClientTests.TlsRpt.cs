@@ -60,7 +60,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 8460 §4.4: \"policy-domain\" is \"The Policy Domain against which the MTA-STS or DANE policy is defined\" - through a smart host its own (RFC 8461 §3.4), not the recipient's: the report goes to whose policy it was")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "T-4")]
+    [Property("Finding", "T-4")]
     public async Task Through_a_smart_host_the_session_is_reported_to_the_smart_hosts_domain()
     {
 
@@ -72,7 +72,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 8461 §5: in testing mode the mail goes out all the same, but \"Sending MTAs that also implement the TLSRPT specification [RFC8460] send a report indicating policy application failures\" - the session is a failure in the report, not a success")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "T-3")]
+    [Property("Finding", "T-3")]
     public async Task In_testing_mode_an_untrusted_certificate_is_reported_as_a_failure()
     {
 

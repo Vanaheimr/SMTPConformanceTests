@@ -169,7 +169,7 @@ public sealed class DmarcReportTests
     [TestCase("record/identifiers/envelope_from", TestName = "identifiers has envelope_from")]
     [TestCase("record/auth_results/spf/scope",  TestName = "spf has scope")]
     [Test(Description = "RFC 7489 Appendix C: PolicyPublishedType has sp and fo without minOccurs, IdentifierType envelope_from with minOccurs=\"1\", SPFAuthResultType scope with minOccurs=\"1\" - each required")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "R-1")]
+    [Property("Finding", "R-1")]
     public async Task The_XML_has_every_element_the_schema_requires(String Path)
     {
 
@@ -183,7 +183,7 @@ public sealed class DmarcReportTests
 
 
     [Test(Description = "RFC 7489 §7.2.1.1: Report-ID is a msg-id (RFC 5322 §3.6.4): \"<\" id-left \"@\" id-right \">\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "R-3")]
+    [Property("Finding", "R-3")]
     public async Task The_Report_ID_of_the_subject_is_a_msg_id()
     {
 
@@ -219,7 +219,7 @@ public sealed class DmarcReportTests
 
 
     [Test(Description = "RFC 7489 §7.2.1: \"Any reporting URI that includes a size limitation exceeded by the generated report ... MUST NOT be used\" - rua=mailto:...!10 is ten octets")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "R-2")]
+    [Property("Finding", "R-2")]
     public async Task A_destination_whose_size_limit_the_report_exceeds_receives_none()
     {
 
@@ -234,7 +234,7 @@ public sealed class DmarcReportTests
 
 
     [Test(Description = "RFC 7489 §7.1: \"If a \"rua\" or \"ruf\" tag is thus discovered, replace the corresponding value extracted from the domain's DMARC policy record with the one found in this record\" - on the same host")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "R-4")]
+    [Property("Finding", "R-4")]
     public async Task The_destinations_own_rua_replaces_the_policy_domains()
     {
 
@@ -286,7 +286,7 @@ public sealed class DmarcReportTests
     [TestCase("Identity-Alignment")]
     [TestCase("SPF-DNS")]
     [Test(Description = "RFC 7489 §7.3.1: in a DMARC failure report, \"Identity-Alignment (REQUIRED ...)\" and \"SPF-DNS (REQUIRED)\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "R-5")]
+    [Property("Finding", "R-5")]
     public async Task The_failure_report_has_the_fields_RFC_7489_requires(String Field)
     {
 
@@ -302,7 +302,7 @@ public sealed class DmarcReportTests
 
 
     [Test(Description = "RFC 7489 §6.3: fo=1 - \"Generate a DMARC failure report if any underlying authentication mechanism produced something other than an aligned \"pass\" result\" - DMARC passed on DKIM, SPF failed")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "R-6")]
+    [Property("Finding", "R-6")]
     public async Task With_fo_1_a_failing_SPF_is_reported_although_DMARC_passed()
     {
 

@@ -105,7 +105,7 @@ public sealed class TlsRptTests
     [TestCase("rua=mailto:a@policy.test; v=TLSRPTv1",                                                     TestName = "A record not beginning with v=TLSRPTv1: no report")]
     [TestCase("v=tlsrptv1; rua=mailto:a@policy.test",                                                     TestName = "A record with v=tlsrptv1 in lower case: no report")]
     [Test(Description = "RFC 8460 §3: \"records that do not begin with \"v=TLSRPTv1;\" are discarded\" (%s, case-sensitive); \"If the number of resulting records is not one, senders MUST assume the recipient domain does not implement TLSRPT\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "T-1")]
+    [Property("Finding", "T-1")]
     public async Task A_domain_without_exactly_one_valid_record_gets_no_report(String Records)
     {
 
@@ -185,7 +185,7 @@ public sealed class TlsRptTests
 
 
     [Test(Description = "RFC 8460 §4.4: the policy object has policy-type, policy-string, policy-domain and mx-host - none marked optional; policy-string the policy applied, a JSON array of strings")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "T-2")]
+    [Property("Finding", "T-2")]
     public async Task Each_policy_says_which_policy_was_applied()
     {
 
