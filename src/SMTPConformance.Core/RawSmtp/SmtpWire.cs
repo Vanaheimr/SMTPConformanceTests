@@ -325,6 +325,12 @@ public class SmtpWire : IAsyncDisposable
     #region TLS
 
     /// <summary>
+    /// What the peer presented in the last TLS handshake as the client: its certificate first,
+    /// then the others it sent along.
+    /// </summary>
+    public IReadOnlyList<X509Certificate2> PeerCertificates { get; private set; } = [];
+
+    /// <summary>
     /// Switch to TLS as the client. Any certificate is accepted: these tests are
     /// about SMTP, and the fixtures use self-signed ones.
     /// </summary>
@@ -334,7 +340,15 @@ public class SmtpWire : IAsyncDisposable
         if (BufferedBytes > 0)
             throw new InvalidOperationException($"{BufferedBytes} plaintext bytes are still buffered — the peer sent data after its STARTTLS reply.");
 
-        var tls = new SslStream(stream, leaveInnerStreamOpen: false, (_, _, _, _) => true);
+        // The chain handed to the callback is built from what the peer sent: its elements after
+        // the first are the issuers it could find - with the tests' certificates, which carry no
+        // issuer URL and are in no store, only those the peer sent along.
+        var tls = new SslStream(stream, leaveInnerStreamOpen: false, (_, certificate, chain, _) => {
+                      PeerCertificates = [ .. certificate is null ? [] : new[] { X509CertificateLoader.LoadCertificate(certificate.GetRawCertData()) },
+                                           .. chain?.ChainElements.Skip(1).Select(element => X509CertificateLoader.LoadCertificate(element.Certificate.RawData)) ?? [],
+                                           .. chain?.ChainPolicy.ExtraStore.Cast<X509Certificate2>() ?? [] ];
+                      return true;
+                  });
 
         await tls.AuthenticateAsClientAsync(
                   new SslClientAuthenticationOptions {

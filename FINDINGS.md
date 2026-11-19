@@ -9,12 +9,17 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `4b8be28a`** (Styx `a6b9f9fb`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `4b8be28a`** (Styx `a6b9f9fb`), which closes every finding of the first four rounds. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
 fourth (D-, M- and N-) tests what the relay owes beyond delivery: the reports to
-the sender (DSN), MTA-STS and DANE; its line numbers refer to `306f2d59`.
+the sender (DSN), MTA-STS and DANE; its line numbers refer to `306f2d59`. The fifth
+(V- and P-) tests what Hermod's SMTP gained between `bbbf88b6` and `4b8be28a` - SPF,
+DKIM and DMARC on inbound mail, DNS blocklists, recipient checks, the AUTH
+configuration, submission to the application, outbound mail to public addresses only,
+smart host credentials, DKIM signing, the file queue after a crash and the certificate
+chain; its line numbers refer to `4b8be28a`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -22,7 +27,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [V-1](#v-1) | medium | inbound | A DKIM key record without its optional `v=DKIM1` is not found: the signature fails | 1 |
+| [V-2](#v-2) | low | inbound | Authentication-Results of a null sender: `smtp.mailfrom=<>`, not the HELO identity SPF checked | 1 |
+| [P-1](#p-1) | low | outbound | `PublicAddressesOnly` takes the IPv4 documentation ranges (RFC 5737) for public | 3 |
 
 ### Closed
 
@@ -951,6 +960,64 @@ identifiers, and the chain engine could take one of an earlier test from its cac
 suite's `TestCertificate.CreateIssuedCertificate` does the same now).
 
 ---
+
+## Message authentication on inbound mail
+
+RFC 7208, RFC 6376, RFC 7489 and RFC 8601 as `SMTPSession` and `DNSVerifier` apply them
+to mail from other servers (`MessageAuthenticationTests`). The messages are signed by
+the suite's own DKIM signer (`TestDkimKey`), which `DkimToolingTests` checks against the
+suite's own verifier. Covered without a finding: two From: fields or two addresses in
+one do not pass DMARC on either; forwarded mail with the author's aligned signature
+passes DMARC despite an SPF fail, and with only a foreign one does not; DMARC passes on
+the author's signature behind a mail service's; a null sender is not exempt from DMARC.
+`BlocklistTests` (RFC 5782): the reversed octets and nibbles, a listed client refused
+with 5.7.1 at RCPT and still reaching the postmaster.
+
+### V-1
+**Open.** **A DKIM key record without a version tag is not found**
+(`DNSVerifier.cs:612`, `GetTxtRecordAsync(dkimDomain, "v=DKIM1", ct)`, and `:946`,
+`txt.Text.StartsWith(prefix, ...)`): a key record is taken only when it begins with
+"v=DKIM1", so "k=rsa; p=..." is "No DKIM record found", and the signature fails. RFC 6376
+§3.6.1: "v= Version of the DKIM key record (plain-text; RECOMMENDED, default is
+"DKIM1")". A domain whose record leaves the tag out has every signature fail - and with
+p=reject, its mail refused. Test: `A_key_record_without_a_version_tag_verifies`.
+
+### V-2
+**Open.** **The SPF result of a null sender does not name the identity checked**
+(`SMTPSession.cs:1516`, `var mailFrom = String.IsNullOrEmpty(_mailFrom) ? "<>" : _mailFrom;`,
+and `:1530`): since the security review a null reverse-path is checked on the HELO
+identity, as RFC 7208 §2.4 says - "When the reverse-path is null, this document defines
+the "MAIL FROM" identity to be the mailbox composed of the local-part "postmaster" and
+the "HELO" identity" - but the header says `spf=pass smtp.mailfrom=<>`. RFC 8601 §2.7.2:
+"For SPF, the ptype used is "smtp", and the property is either "mailfrom" or "helo",
+since those values are the ones SPF can evaluate". Either `smtp.helo=` the HELO name or
+`smtp.mailfrom=postmaster@` it says what passed; `<>` says nothing a filter can align.
+Test: `The_SPF_result_of_a_null_sender_names_the_HELO_identity`.
+
+## Outbound security
+
+`SMTPOutboundClient` with `PublicAddressesOnly`, smart host credentials, and DKIM
+signing (`OutboundClientTests.Security.cs`, `OutboundClientTests.Dkim.cs`). Covered
+without a finding: loopback, private, shared, link-local, benchmarking, "this host",
+ULA, IPv6 documentation, and the loopback inside mapped, NAT64 and 6to4 addresses are
+not connected to; a smart host on the loopback is; the password goes to a smart host
+only over TLS whose certificate is valid for its name - not across a network without
+STARTTLS, not to a certificate for another name or one nobody vouches for. RSA and
+Ed25519 signatures (RFC 8463), the key of the From: domain, and an 8-bit body verify with
+the suite's own verifier. `FileMailQueueTests` open the queue after a crash at each place
+it can come; `CertificateChainTests` see the intermediates of a fullchain.pem sent, and a
+renewed certificate presented without a restart.
+
+### P-1
+**Open.** **The IPv4 documentation ranges count as public** (`Hermod/IP/PublicAddresses.cs:92`
+to `:101`): the list leaves out 192.0.0.0/24 (`octets[2] == 0`), but not 192.0.2.0/24
+beside it, nor 198.51.100.0/24 and 203.0.113.0/24 - while 2001:db8::/32, their IPv6
+counterpart, is left out. RFC 6890 §2.2.2 lists all three with "Global:
+False", and RFC 5737 §3: "Addresses within the TEST-NET-1, TEST-NET-2, and TEST-NET-3
+blocks SHOULD NOT appear on the public Internet". With `PublicAddressesOnly`, an MX host
+at such an address is connected to - the delivery waits for a timeout and is tried
+again, instead of bouncing with 5.4.4 as for every other address that is not public.
+Tests: `An_MX_host_without_a_public_address_is_not_connected_to`, three cases.
 
 ## Observations without a test yet
 

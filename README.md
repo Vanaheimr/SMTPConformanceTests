@@ -13,7 +13,17 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-19, Hermod `4b8be28a`):** 332 tests, **all pass**. A fourth round
+**State (2026-11-19, Hermod `4b8be28a`):** 404 tests, 399 pass; 5 fail on three open
+findings. A fifth round tested what Hermod's SMTP gained between `bbbf88b6` and
+`4b8be28a` - SPF, DKIM and DMARC on inbound mail, DNS blocklists, recipient checks,
+the AUTH configuration, submission to the application (RFC 6409), outbound mail to
+public addresses only, smart host credentials, DKIM signing with RSA and Ed25519, the
+file queue after a crash, the certificate chain - with 72 tests, DKIM signed and
+verified by the suite's own code. Three findings: a DKIM key record without its
+optional `v=DKIM1` is not found, so the signature fails ([V-1](FINDINGS.md#v-1));
+the Authentication-Results of a bounce say `smtp.mailfrom=<>` instead of the HELO
+identity SPF checked ([V-2](FINDINGS.md#v-2)); `PublicAddressesOnly` takes the IPv4
+documentation ranges for public ([P-1](FINDINGS.md#p-1)). A fourth round
 tested what the relay owes beyond delivery: the reports to the sender (DSN, D-1 to
 D-12), MTA-STS (M-1 to M-6) and DANE (N-1 to N-5) - 23 findings, among them bounces
 with CR CR LF line ends and one Message-ID for all, a message lost without a bounce
@@ -143,15 +153,19 @@ vectors, and the four Linux tools.
 | RFC 6152 8BITMIME, RFC 6531 SMTPUTF8 | 6 | 0 | ~~S-6~~, ~~S-11~~, ~~S-12~~ fixed |
 | RFC 2034 / 3463 enhanced status codes | 16 | 0 | ~~S-4~~, ~~S-5~~ fixed |
 | RFC 3461 DSN parameters | 5 | 0 | ~~S-6~~ fixed |
-| RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS | 22 | 0 | ~~S-8~~, ~~S-13~~, ~~S-14~~ fixed |
-| RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 22 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
+| RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS, RFC 8446 §4.4.2 certificate chain | 24 | 0 | ~~S-8~~, ~~S-13~~, ~~S-14~~ fixed |
+| RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 32 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
 | Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 0 | ~~C-1~~ to ~~C-11~~ fixed |
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
 | Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
 | MTA-STS (RFC 8461), DANE (RFC 7672) | 41 | 0 | ~~M-1~~ to ~~M-6~~, ~~N-1~~ to ~~N-5~~ fixed |
-| RFC 5322 addresses, RFC 6376 DKIM canonicalization, RFC 7208 SPF macros | 35 | 0 | — |
+| Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 13 | 2 | V-1, V-2 |
+| RFC 5321 §3.3, §4.5.1, §6.1 recipient checks and storage failures; RFC 6409 submission to the application | 12 | 0 | — |
+| Outbound: RFC 6890 public addresses only, smart host credentials, DKIM signing (RFC 6376, RFC 8463) | 26 | 3 | P-1 |
+| RFC 5321 §6.1 the file queue after a crash | 5 | 0 | — |
+| RFC 5322 addresses, RFC 6376 DKIM canonicalization and the suite's DKIM signer/verifier, RFC 7208 SPF macros | 39 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **332** | **0** | |
+| **Total** | **404** | **5** | |
 
 ## External test partners
 

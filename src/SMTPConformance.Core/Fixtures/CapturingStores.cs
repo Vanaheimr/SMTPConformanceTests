@@ -40,11 +40,20 @@ public sealed class CapturingMailStorage : IMailStorage
     public IReadOnlyCollection<StoredMessage> Messages
         => stored;
 
+    /// <summary>
+    /// When set, storing a message whose raw text contains this marker throws - a disk that
+    /// is full, a database that is down.
+    /// </summary>
+    public String? FailFor { get; set; }
+
     public Task<String> StoreAsync(EMailMessage         message,
                                    String               envelopeFrom,
                                    IEnumerable<String>  envelopeTo,
                                    CancellationToken    ct = default)
     {
+
+        if (FailFor is not null && message.RawMessage.Contains(FailFor, StringComparison.Ordinal))
+            throw new IOException("The test's storage fails for this message.");
 
         var entry = new StoredMessage(message, envelopeFrom, [.. envelopeTo]);
 

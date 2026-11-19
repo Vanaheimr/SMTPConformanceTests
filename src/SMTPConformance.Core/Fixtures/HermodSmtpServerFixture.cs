@@ -28,6 +28,19 @@ public sealed class HermodSmtpServerFixtureOptions
     public Boolean                                    RequireStartTls          { get; init; } = false;
 
     /// <summary>
+    /// TLS with a PEM certificate file of the test's own (certbot's fullchain.pem: the
+    /// certificate, then its intermediates) and its key file, read once at start - instead of
+    /// the fixture's own certificate.
+    /// </summary>
+    public (String CertificatePath, String KeyPath)?  PemCertificate           { get; init; }
+
+    /// <summary>
+    /// TLS with a certificate the server asks for at every handshake - instead of the
+    /// fixture's own certificate.
+    /// </summary>
+    public Func<String?, org.GraphDefined.Vanaheimr.Hermod.ServerCertificateChain?>?  CertificateSelector  { get; init; }
+
+    /// <summary>
     /// Where the server listens, every port chosen by the system. Default: every IPv4 address -
     /// the interop tests reach the server from WSL, through the host's address, not loopback.
     /// </summary>
@@ -65,6 +78,36 @@ public sealed class HermodSmtpServerFixtureOptions
                                                                                                 };
 
     public StubDnsClient                              Dns                      { get; init; } = new();
+
+    /// <summary>
+    /// The DNS blocklists (RFC 5782) asked about clients; none by default.
+    /// </summary>
+    public DnsBlocklistConfig?                        DnsBlocklists            { get; init; }
+
+    /// <summary>
+    /// The SASL mechanisms offered and taken; null for the server's own choice.
+    /// </summary>
+    public IReadOnlyList<String>?                     AuthMechanisms           { get; init; }
+
+    /// <summary>
+    /// Whether AUTH is offered on the MTA port too, not on the submission ports only.
+    /// </summary>
+    public Boolean                                    AuthOnMtaPort            { get; init; } = true;
+
+    /// <summary>
+    /// Asked at RCPT whether a local recipient exists; none: every local address is taken.
+    /// </summary>
+    public IRecipientValidator?                       RecipientValidator       { get; init; }
+
+    /// <summary>
+    /// Takes the mail of a client that signed in (RFC 6409); none: the server stores or queues it.
+    /// </summary>
+    public IMailSubmission?                           MailSubmission           { get; init; }
+
+    /// <summary>
+    /// Whether the server has a queue for relayed mail at all.
+    /// </summary>
+    public Boolean                                    WithQueue                { get; init; } = true;
 
 }
 
@@ -144,7 +187,9 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
         String?            certificatePath  = null;
         X509Certificate2?  certificate      = null;
 
-        if (Options.EnableTls)
+        var ownCertificate = Options.PemCertificate is not null || Options.CertificateSelector is not null;
+
+        if (Options.EnableTls && !ownCertificate)
             (certificatePath, certificate) = TestCertificate.WritePfx(directory, Options.Hostname);
 
         // Port 0 everywhere: the system picks free ports while binding, so no other process can
@@ -155,10 +200,12 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
                           Port                     = 0,
                           SubmissionPort           = 0,
                           ImplicitTlsPort          = 0,
-                          EnableImplicitTls        = Options.EnableTls,
+                          EnableImplicitTls        = Options.EnableTls || ownCertificate,
                           MailStoragePath          = directory,
-                          CertificatePath          = certificatePath,
+                          CertificatePath          = Options.PemCertificate?.CertificatePath ?? certificatePath,
+                          CertificateKeyPath       = Options.PemCertificate?.KeyPath,
                           CertificatePassword      = certificatePath is not null ? TestCertificate.PfxPassword : null,
+                          ServerCertificateSelector = Options.CertificateSelector,
                           SessionTimeout           = Options.SessionTimeout,
                           MaxMessageSize           = Options.MaxMessageSize,
                           MaxRecipients            = Options.MaxRecipients,
@@ -167,7 +214,10 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
                           RequireStartTls          = Options.RequireStartTls,
                           LocalDomains             = [.. Options.LocalDomains],
                           RequireAuthForRelay      = Options.RequireAuthForRelay,
-                          RequireAuthOnSubmission  = Options.RequireAuthOnSubmission
+                          RequireAuthOnSubmission  = Options.RequireAuthOnSubmission,
+                          DnsBlocklists            = Options.DnsBlocklists,
+                          AuthMechanisms           = Options.AuthMechanisms,
+                          AuthOnMtaPort            = Options.AuthOnMtaPort
                       };
 
         var storage = new CapturingMailStorage();
@@ -179,9 +229,11 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
                                      Options.Dns,
                                      log,
                                      users,
-                                     queue,
+                                     Options.WithQueue ? queue : null,
                                      Options.RateLimits,
-                                     storage);
+                                     storage,
+                                     Options.RecipientValidator,
+                                     Options.MailSubmission);
 
         // Start() binds its listeners before its first await: a bind that failed shows up as an
         // already-faulted task, and the end points are known once it has returned.
@@ -226,6 +278,30 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
         var (client, _) = await ConnectMtaAsync();
         await client.EhloAsync(Domain);
         return client;
+    }
+
+
+    /// <summary>
+    /// Connect to the submission port (or the MTA port), EHLO, STARTTLS, EHLO, AUTH PLAIN -
+    /// and return the client signed in, ready for MAIL. Needs <see cref="HermodSmtpServerFixtureOptions.EnableTls"/>.
+    /// </summary>
+    public async Task<RawSmtpClient> ConnectSignedInAsync(String   User      = "alice",
+                                                          String   Password  = "correct horse battery staple",
+                                                          Boolean  MtaPort   = false)
+    {
+
+        var (client, _) = MtaPort ? await ConnectMtaAsync() : await ConnectSubmissionAsync();
+        await client.EhloAsync();
+        await client.StartTlsAsync();
+        await client.EhloAsync();
+
+        var auth = await client.CommandAsync("AUTH PLAIN " + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"\0{User}\0{Password}")));
+
+        if (auth.Code != 235)
+            throw new InvalidOperationException($"AUTH as {User} was answered {auth}.\n{client.Transcript}");
+
+        return client;
+
     }
 
 
