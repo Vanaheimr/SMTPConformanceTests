@@ -13,17 +13,18 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-19, Hermod `4b8be28a`):** 404 tests, 399 pass; 5 fail on three open
-findings. A fifth round tested what Hermod's SMTP gained between `bbbf88b6` and
+**State (2026-11-19, Hermod `287d1c43`):** 404 tests, **all pass**. A fifth round tested what Hermod's SMTP gained between `bbbf88b6` and
 `4b8be28a` - SPF, DKIM and DMARC on inbound mail, DNS blocklists, recipient checks,
 the AUTH configuration, submission to the application (RFC 6409), outbound mail to
 public addresses only, smart host credentials, DKIM signing with RSA and Ed25519, the
 file queue after a crash, the certificate chain - with 72 tests, DKIM signed and
 verified by the suite's own code. Three findings: a DKIM key record without its
-optional `v=DKIM1` is not found, so the signature fails ([V-1](FINDINGS.md#v-1));
-the Authentication-Results of a bounce say `smtp.mailfrom=<>` instead of the HELO
-identity SPF checked ([V-2](FINDINGS.md#v-2)); `PublicAddressesOnly` takes the IPv4
-documentation ranges for public ([P-1](FINDINGS.md#p-1)). A fourth round
+optional `v=DKIM1` was not found, so the signature failed ([V-1](FINDINGS.md#v-1));
+the Authentication-Results of a bounce said `smtp.mailfrom=<>` instead of the HELO
+identity SPF checked ([V-2](FINDINGS.md#v-2)); `PublicAddressesOnly` took the IPv4
+documentation ranges for public ([P-1](FINDINGS.md#p-1)). All three fixed in
+[#257](https://github.com/Vanaheimr/Hermod/pull/257) to
+[#259](https://github.com/Vanaheimr/Hermod/pull/259). A fourth round
 tested what the relay owes beyond delivery: the reports to the sender (DSN, D-1 to
 D-12), MTA-STS (M-1 to M-6) and DANE (N-1 to N-5) - 23 findings, among them bounces
 with CR CR LF line ends and one Message-ID for all, a message lost without a bounce
@@ -159,13 +160,13 @@ vectors, and the four Linux tools.
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
 | Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
 | MTA-STS (RFC 8461), DANE (RFC 7672) | 41 | 0 | ~~M-1~~ to ~~M-6~~, ~~N-1~~ to ~~N-5~~ fixed |
-| Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 13 | 2 | V-1, V-2 |
+| Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 13 | 0 | ~~V-1~~, ~~V-2~~ fixed |
 | RFC 5321 §3.3, §4.5.1, §6.1 recipient checks and storage failures; RFC 6409 submission to the application | 12 | 0 | — |
-| Outbound: RFC 6890 public addresses only, smart host credentials, DKIM signing (RFC 6376, RFC 8463) | 26 | 3 | P-1 |
+| Outbound: RFC 6890 public addresses only, smart host credentials, DKIM signing (RFC 6376, RFC 8463) | 26 | 0 | ~~P-1~~ fixed |
 | RFC 5321 §6.1 the file queue after a crash | 5 | 0 | — |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization and the suite's DKIM signer/verifier, RFC 7208 SPF macros | 39 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **404** | **5** | |
+| **Total** | **404** | **0** | |
 
 ## External test partners
 

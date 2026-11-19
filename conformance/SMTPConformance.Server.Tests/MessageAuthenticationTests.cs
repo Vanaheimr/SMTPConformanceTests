@@ -4,7 +4,6 @@ using NUnit.Framework;
 
 using org.GraphDefined.Vanaheimr.Hermod.DNS;
 
-using SMTPConformance.Core;
 using SMTPConformance.Core.Fixtures;
 using SMTPConformance.Core.RawSmtp;
 
@@ -129,7 +128,7 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6376 §3.6.1: the v= tag of a key record is \"RECOMMENDED, default is \"DKIM1\"\" - a key record without it is a key record")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-1")]
+    [Property("Finding", "V-1")]
     public async Task A_key_record_without_a_version_tag_verifies()
     {
 
@@ -271,7 +270,7 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 7208 §2.4: with a null reverse-path SPF checks postmaster@ the HELO identity; RFC 8601 §2.7.2 - the result names that identity, as smtp.helo or smtp.mailfrom")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-2")]
+    [Property("Finding", "V-2")]
     public async Task The_SPF_result_of_a_null_sender_names_the_HELO_identity()
     {
 

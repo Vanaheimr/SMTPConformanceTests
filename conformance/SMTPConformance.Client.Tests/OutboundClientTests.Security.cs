@@ -7,7 +7,6 @@ using org.GraphDefined.Vanaheimr.Hermod.DNS;
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
 using org.GraphDefined.Vanaheimr.Hermod.SMTP.Server;
 
-using SMTPConformance.Core;
 using SMTPConformance.Core.Fixtures;
 using SMTPConformance.Core.Scripted;
 
@@ -61,7 +60,7 @@ public sealed partial class OutboundClientTests
             => new TestCaseData(Address).SetName($"Not connected to: {What} ({Address})");
 
         TestCaseData Finding(String Address, String What, String Id)
-            => Case(Address, What).SetCategory(TestCategories.KnownIssue).SetProperty("Finding", Id);
+            => Case(Address, What).SetProperty("Finding", Id);
 
         yield return Case("127.0.0.1",          "the loopback");
         yield return Case("10.0.0.25",          "a private address (RFC 1918)");

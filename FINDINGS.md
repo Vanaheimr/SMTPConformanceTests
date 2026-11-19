@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `4b8be28a`** (Styx `a6b9f9fb`), which closes every finding of the first four rounds. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `287d1c43`** (Styx `a6b9f9fb`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
@@ -27,11 +27,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [V-1](#v-1) | medium | inbound | A DKIM key record without its optional `v=DKIM1` is not found: the signature fails | 1 |
-| [V-2](#v-2) | low | inbound | Authentication-Results of a null sender: `smtp.mailfrom=<>`, not the HELO identity SPF checked | 1 |
-| [P-1](#p-1) | low | outbound | `PublicAddressesOnly` takes the IPv4 documentation ranges (RFC 5737) for public | 3 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -98,8 +94,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [N-1](#n-1) | **high** | DANE | A failed TLSA lookup was taken as "no TLSA records" | 4 | [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
 | [N-2](#n-2) | **high** | DANE | An empty TLSA answer in a signed zone was believed without a proof | 3 | [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
 | [N-5](#n-5) | medium | DANE | DANE-TA depended on the platform downloading issuers: with an unreachable AIA URL, ~15 s of waiting | 1 | [Vanaheimr/Hermod#149](https://github.com/Vanaheimr/Hermod/pull/149) |
+| [V-1](#v-1) | medium | inbound | A DKIM key record without its optional `v=DKIM1` was not found: the signature failed | 1 | [Vanaheimr/Hermod#258](https://github.com/Vanaheimr/Hermod/pull/258) |
+| [V-2](#v-2) | low | inbound | Authentication-Results of a null sender: `smtp.mailfrom=<>`, not the HELO identity SPF checked | 1 | [Vanaheimr/Hermod#259](https://github.com/Vanaheimr/Hermod/pull/259) |
+| [P-1](#p-1) | low | outbound | `PublicAddressesOnly` took the IPv4 documentation ranges (RFC 5737) for public | 3 | [Vanaheimr/Hermod#257](https://github.com/Vanaheimr/Hermod/pull/257) |
 
-The 153 tests for these are part of the merge gate now; the observations the first
+The 158 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -974,7 +973,8 @@ the author's signature behind a mail service's; a null sender is not exempt from
 with 5.7.1 at RCPT and still reaching the postmaster.
 
 ### V-1
-**Open.** **A DKIM key record without a version tag is not found**
+**Closed** in [Vanaheimr/Hermod#258](https://github.com/Vanaheimr/Hermod/pull/258) (`4053085f`).
+**A DKIM key record without a version tag was not found**
 (`DNSVerifier.cs:612`, `GetTxtRecordAsync(dkimDomain, "v=DKIM1", ct)`, and `:946`,
 `txt.Text.StartsWith(prefix, ...)`): a key record is taken only when it begins with
 "v=DKIM1", so "k=rsa; p=..." is "No DKIM record found", and the signature fails. RFC 6376
@@ -982,8 +982,14 @@ with 5.7.1 at RCPT and still reaching the postmaster.
 "DKIM1")". A domain whose record leaves the tag out has every signature fail - and with
 p=reject, its mail refused. Test: `A_key_record_without_a_version_tag_verifies`.
 
+Fixed: a TXT record that does not begin with v=, or whose v= is "DKIM1" exactly, is a key
+record; one with another version is discarded, as §3.6.1 says - the prefix match had also
+taken "v=DKIM1.0", which it must not. Of several, the first with a p= tag. The ARC
+validator, which reads the same records, uses the same lookup.
+
 ### V-2
-**Open.** **The SPF result of a null sender does not name the identity checked**
+**Closed** in [Vanaheimr/Hermod#259](https://github.com/Vanaheimr/Hermod/pull/259) (`1cd85617`).
+**The SPF result of a null sender did not name the identity checked**
 (`SMTPSession.cs:1516`, `var mailFrom = String.IsNullOrEmpty(_mailFrom) ? "<>" : _mailFrom;`,
 and `:1530`): since the security review a null reverse-path is checked on the HELO
 identity, as RFC 7208 §2.4 says - "When the reverse-path is null, this document defines
@@ -993,6 +999,10 @@ the "HELO" identity" - but the header says `spf=pass smtp.mailfrom=<>`. RFC 8601
 since those values are the ones SPF can evaluate". Either `smtp.helo=` the HELO name or
 `smtp.mailfrom=postmaster@` it says what passed; `<>` says nothing a filter can align.
 Test: `The_SPF_result_of_a_null_sender_names_the_HELO_identity`.
+
+Fixed: a null reverse-path, or one without a domain, reports `smtp.helo=` the HELO name;
+a HELO that is an address literal gave SPF no domain, and its `spf=none` names no
+identity. A reverse-path with a domain still says `smtp.mailfrom=` it.
 
 ## Outbound security
 
@@ -1009,7 +1019,8 @@ it can come; `CertificateChainTests` see the intermediates of a fullchain.pem se
 renewed certificate presented without a restart.
 
 ### P-1
-**Open.** **The IPv4 documentation ranges count as public** (`Hermod/IP/PublicAddresses.cs:92`
+**Closed** in [Vanaheimr/Hermod#257](https://github.com/Vanaheimr/Hermod/pull/257) (`106b61b7`).
+**The IPv4 documentation ranges counted as public** (`Hermod/IP/PublicAddresses.cs:92`
 to `:101`): the list leaves out 192.0.0.0/24 (`octets[2] == 0`), but not 192.0.2.0/24
 beside it, nor 198.51.100.0/24 and 203.0.113.0/24 - while 2001:db8::/32, their IPv6
 counterpart, is left out. RFC 6890 §2.2.2 lists all three with "Global:
@@ -1018,6 +1029,9 @@ blocks SHOULD NOT appear on the public Internet". With `PublicAddressesOnly`, an
 at such an address is connected to - the delivery waits for a timeout and is tried
 again, instead of bouncing with 5.4.4 as for every other address that is not public.
 Tests: `An_MX_host_without_a_public_address_is_not_connected_to`, three cases.
+
+Fixed: 192.0.2.0/24, 198.51.100.0/24 and 203.0.113.0/24 are not public, also mapped into
+IPv6 or inside 6to4; such an MX bounces at once with 5.4.4.
 
 ## Observations without a test yet
 
