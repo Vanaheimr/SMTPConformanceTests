@@ -4,6 +4,7 @@ using NUnit.Framework;
 
 using org.GraphDefined.Vanaheimr.Hermod.DNS;
 
+using SMTPConformance.Core;
 using SMTPConformance.Core.Fixtures;
 using SMTPConformance.Core.RawSmtp;
 
@@ -143,6 +144,92 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
         Assert.Multiple(() => {
             Assert.That(final?.Code,                Is.EqualTo(250),  explanation);
             Assert.That(Says(results, "dkim=pass"),  Is.True,          results);
+        });
+
+    }
+
+
+    [Test(Description = "RFC 8301 §3.1: \"rsa-sha1 MUST NOT be used for signing or verifying\" - signatures with it \"have permanently failed evaluation\"")]
+    [Category(TestCategories.KnownIssue), Property("Finding", "V-3")]
+    public async Task A_signature_with_rsa_sha1_does_not_pass()
+    {
+
+        Publish("sha1.author.test", Dmarc: "v=DMARC1; p=none");
+        using var key = KeyFor("sha1.author.test");
+
+        var marker = Marker();
+        var (final, stored, explanation) = await Deliver("mx.sha1.author.test", "news@sha1.author.test",
+                                                         key.Sign(Message("From: <news@sha1.author.test>\r\n", marker), "rsa-sha1", false), marker);
+        var results = AuthenticationResults(stored);
+
+        Assert.Multiple(() => {
+            Assert.That(final?.Code,                 Is.EqualTo(250),  explanation);
+            Assert.That(Says(results, "dkim=pass"),   Is.False,         results);
+            Assert.That(Says(results, "dmarc=pass"),  Is.False,         results);
+        });
+
+    }
+
+
+    [Test(Description = "RFC 6376 §3.2: the tags of a tag-list come in any order; §3.7 - the b= value is removed wherever b= stands. A signature with b= first verifies")]
+    [Category(TestCategories.KnownIssue), Property("Finding", "V-4")]
+    public async Task A_signature_whose_b_tag_comes_first_verifies()
+    {
+
+        Publish("bfirst.author.test", Dmarc: "v=DMARC1; p=none");
+        using var key = KeyFor("bfirst.author.test");
+
+        var marker = Marker();
+        var (final, stored, explanation) = await Deliver("mx.bfirst.author.test", "news@bfirst.author.test",
+                                                         key.Sign(Message("From: <news@bfirst.author.test>\r\n", marker), "rsa-sha256", true), marker);
+        var results = AuthenticationResults(stored);
+
+        Assert.Multiple(() => {
+            Assert.That(final?.Code,                Is.EqualTo(250),  explanation);
+            Assert.That(Says(results, "dkim=pass"),  Is.True,          results);
+        });
+
+    }
+
+
+    /// <summary>
+    /// A message from the domain that fails DMARC: no SPF record, no signature.
+    /// </summary>
+    private async Task<(SmtpReply? Final, StoredMessage? Stored, String Explanation)> DeliverFailing(String Domain)
+    {
+        var marker = Marker();
+        return await Deliver($"mx.{Domain}", $"news@{Domain}", Message($"From: <news@{Domain}>\r\n", marker), marker);
+    }
+
+
+    [Test(Description = "RFC 7489 §6.3: p=quarantine - a message that fails DMARC is taken and marked for quarantine (X-DMARC-Quarantine); a guard for how Hermod marks it")]
+    public async Task A_message_failing_under_p_quarantine_is_quarantined()
+    {
+
+        Publish("quarantine.author.test", Dmarc: "v=DMARC1; p=quarantine");
+
+        var (final, stored, explanation) = await DeliverFailing("quarantine.author.test");
+
+        Assert.Multiple(() => {
+            Assert.That(final?.Code,   Is.EqualTo(250),                          explanation);
+            Assert.That(stored?.Raw,   Does.Contain("X-DMARC-Quarantine: true"), explanation);
+        });
+
+    }
+
+
+    [Test(Description = "RFC 7489 §6.6.4: under p=reject, a message pct= does not select \"the Mail Receiver SHOULD treat the email as though the \"quarantine\" policy applies\" - with pct=0, every failing message")]
+    [Category(TestCategories.KnownIssue), Property("Finding", "R-7")]
+    public async Task Under_p_reject_with_pct_0_a_failing_message_is_quarantined()
+    {
+
+        Publish("pct0.author.test", Dmarc: "v=DMARC1; p=reject; pct=0");
+
+        var (final, stored, explanation) = await DeliverFailing("pct0.author.test");
+
+        Assert.Multiple(() => {
+            Assert.That(final?.Code,   Is.EqualTo(250),                          explanation);
+            Assert.That(stored?.Raw,   Does.Contain("X-DMARC-Quarantine: true"), "not quarantined, as if p=none " + explanation);
         });
 
     }

@@ -13,7 +13,20 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-19, Hermod `287d1c43`):** 404 tests, **all pass**. A fifth round tested what Hermod's SMTP gained between `bbbf88b6` and
+**State (2026-11-19, Hermod `287d1c43`):** 482 tests, 445 pass; 37 fail on 26 open
+findings (36 on Windows: L-2 is Linux's). A sixth round tested the parts of Hermod's
+SMTP no round had tested - ARC (RFC 8617), the DMARC reports (RFC 7489 §7), TLS
+reporting (RFC 8460), MT-PRIORITY (RFC 6710), the connection and recipient limits - with
+78 tests, the ARC chains sealed and Hermod's seals validated by the suite's own code.
+The heaviest finding: an ARC instance number of 2147483647 in one header line keeps the
+validator counting forever, on every message from a client that did not sign in, and
+there is no limit of 50 sets ([A-1](FINDINGS.md#a-1)). Also: rsa-sha1 verifies, and a
+signature whose b= comes first never does, in DKIM and ARC alike ([V-3](FINDINGS.md#v-3),
+[V-4](FINDINGS.md#v-4)); the aggregate XML lacks elements Appendix C requires, and size
+limits of report URIs are ignored ([R-1](FINDINGS.md#r-1), [R-2](FINDINGS.md#r-2));
+MTA-STS testing mode reports failed sessions as successes ([T-3](FINDINGS.md#t-3)); a
+client nobody vouches for raises its own priority ([Q-3](FINDINGS.md#q-3)); 100
+recipients per session, not per message ([L-1](FINDINGS.md#l-1)). A fifth round tested what Hermod's SMTP gained between `bbbf88b6` and
 `4b8be28a` - SPF, DKIM and DMARC on inbound mail, DNS blocklists, recipient checks,
 the AUTH configuration, submission to the application (RFC 6409), outbound mail to
 public addresses only, smart host credentials, DKIM signing with RSA and Ed25519, the
@@ -160,13 +173,18 @@ vectors, and the four Linux tools.
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
 | Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
 | MTA-STS (RFC 8461), DANE (RFC 7672) | 41 | 0 | ~~M-1~~ to ~~M-6~~, ~~N-1~~ to ~~N-5~~ fixed |
-| Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 13 | 0 | ~~V-1~~, ~~V-2~~ fixed |
+| Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 8301, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 17 | 3 | V-3, V-4, R-7; ~~V-1~~, ~~V-2~~ fixed |
+| RFC 8617 ARC: validation on inbound mail, the sealer | 17 | 8 | A-1 to A-5, V-3, V-4 |
+| RFC 7489 §7 DMARC aggregate and failure reports, RFC 6591 | 16 | 10 | R-1 to R-6 |
+| RFC 8460 TLS reporting | 12 | 6 | T-1 to T-4 |
+| RFC 6710 MT-PRIORITY | 18 | 6 | Q-1 to Q-4 |
+| RFC 5321 §3.1, §3.8, §4.5.3.1.8 connection and recipient limits | 6 | 4 | L-1 to L-4 (L-2 on Linux) |
 | RFC 5321 §3.3, §4.5.1, §6.1 recipient checks and storage failures; RFC 6409 submission to the application | 12 | 0 | — |
 | Outbound: RFC 6890 public addresses only, smart host credentials, DKIM signing (RFC 6376, RFC 8463) | 26 | 0 | ~~P-1~~ fixed |
 | RFC 5321 §6.1 the file queue after a crash | 5 | 0 | — |
-| RFC 5322 addresses, RFC 6376 DKIM canonicalization and the suite's DKIM signer/verifier, RFC 7208 SPF macros | 39 | 0 | — |
+| RFC 5322 addresses, RFC 6376 DKIM canonicalization, the suite's DKIM signer/verifier and ARC sealer/validator, RFC 7208 SPF macros | 44 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **404** | **0** | |
+| **Total** | **482** | **37** | |
 
 ## External test partners
 

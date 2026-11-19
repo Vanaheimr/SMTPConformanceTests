@@ -40,49 +40,104 @@ public sealed partial class TestDkimKey : IDisposable
         => new (DNSServiceName.Parse(RecordName), DNSQueryClasses.IN, TimeSpan.FromHours(1),
                 (WithVersion ? "v=DKIM1; " : "") + $"k=rsa; p={Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo())}");
 
+    /// <summary>
+    /// The private key as PKCS#8 PEM - for a signer under test that is to sign with this key.
+    /// </summary>
+    public String ExportPrivateKeyPem()
+        => rsa.ExportPkcs8PrivateKeyPem();
+
+    /// <summary>
+    /// The public key, for checking what was signed with this key.
+    /// </summary>
+    public RSA PublicKey()
+    {
+        var key = RSA.Create();
+        key.ImportSubjectPublicKeyInfo(rsa.ExportSubjectPublicKeyInfo(), out _);
+        return key;
+    }
+
 
     /// <summary>
     /// The message with a DKIM-Signature field on top, over the given header fields and the
     /// body. CRLF line ends throughout.
     /// </summary>
     public String Sign(String Message, params String[] SignedHeaders)
+        => Sign(Message, "rsa-sha256", false, SignedHeaders);
+
+    /// <summary>
+    /// As above, with the algorithm named - "rsa-sha1", which RFC 8301 retired, hashes and
+    /// signs with SHA-1 - and, if asked, the b= tag first: RFC 6376 §3.2 leaves the order of
+    /// the tags free.
+    /// </summary>
+    public String Sign(String Message, String Algorithm, Boolean SignatureFirst, params String[] SignedHeaders)
     {
 
         if (SignedHeaders.Length == 0)
             SignedHeaders = [ "from", "to", "subject", "date", "message-id" ];
 
-        var split    = Message.IndexOf("\r\n\r\n", StringComparison.Ordinal);
-        var header   = Message[..(split + 2)];
-        var body     = Message[(split + 4)..];
-        var fields   = Fields(header);
+        var (header, body) = Split(Message);
+        var sha1     = Algorithm == "rsa-sha1";
 
-        var bodyHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(RelaxedBody(body))));
-        var tags     = $"v=1; a=rsa-sha256; c=relaxed/relaxed; d={Domain}; s={Selector}; " +
-                       $"t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}; h={String.Join(":", SignedHeaders)}; bh={bodyHash}; b=";
+        var bodyHash = Convert.ToBase64String(Hash(Encoding.UTF8.GetBytes(RelaxedBody(body)), sha1));
+        var rest     = $"v=1; a={Algorithm}; c=relaxed/relaxed; d={Domain}; s={Selector}; " +
+                       $"t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}; h={String.Join(":", SignedHeaders)}; bh={bodyHash}";
+        var empty    = SignatureFirst ? "b=; " + rest : rest + "; b=";
 
-        // RFC 6376 §5.4.2: each name picks the last instance not yet used, from the bottom up.
-        var used     = new HashSet<Int32>();
-        var input    = new StringBuilder();
+        // §3.7: the selected header fields, then the DKIM-Signature field itself, b= empty,
+        // without its final CRLF.
+        var input    = SelectedHeaders(Fields(header), SignedHeaders) +
+                       RelaxedHeader("DKIM-Signature", " " + empty);
 
-        foreach (var name in SignedHeaders)
+        var b        = Convert.ToBase64String(SignData(input, sha1));
+
+        return "DKIM-Signature: " + (SignatureFirst ? $"b={b}; " + rest : rest + "; b=" + b) + "\r\n" + Message;
+
+    }
+
+
+    /// <summary>
+    /// An RSA PKCS#1 v1.5 signature over the UTF-8 octets of the input, with SHA-256 or SHA-1.
+    /// </summary>
+    internal Byte[] SignData(String Input, Boolean Sha1 = false)
+        => rsa.SignData(Encoding.UTF8.GetBytes(Input), Sha1 ? HashAlgorithmName.SHA1 : HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+    internal static Byte[] Hash(Byte[] Data, Boolean Sha1 = false)
+        => Sha1 ? SHA1.HashData(Data) : SHA256.HashData(Data);
+
+    /// <summary>
+    /// A message split at its first empty line: the header with its last CRLF, and the body.
+    /// </summary>
+    internal static (String Header, String Body) Split(String Message)
+    {
+        var split = Message.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+        return (Message[..(split + 2)], Message[(split + 4)..]);
+    }
+
+    /// <summary>
+    /// The relaxed, CRLF-terminated header fields a signature's h= list names (RFC 6376
+    /// §5.4.2): each name picks the last instance not yet used, from the bottom up; a name
+    /// with no instance left adds nothing.
+    /// </summary>
+    internal static String SelectedHeaders(List<(String Name, String Value)> Fields, IEnumerable<String> Names)
+    {
+
+        var used  = new HashSet<Int32>();
+        var input = new StringBuilder();
+
+        foreach (var name in Names)
         {
-            for (var i = fields.Count - 1; i >= 0; i--)
+            for (var i = Fields.Count - 1; i >= 0; i--)
             {
-                if (!used.Contains(i) && fields[i].Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                if (!used.Contains(i) && Fields[i].Name.Trim().Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     used.Add(i);
-                    input.Append(RelaxedHeader(fields[i].Name, fields[i].Value)).Append("\r\n");
+                    input.Append(RelaxedHeader(Fields[i].Name, Fields[i].Value)).Append("\r\n");
                     break;
                 }
             }
         }
 
-        // §3.7: the DKIM-Signature field itself, b= empty, without its final CRLF.
-        input.Append(RelaxedHeader("DKIM-Signature", " " + tags));
-
-        var signature = rsa.SignData(Encoding.UTF8.GetBytes(input.ToString()), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-
-        return $"DKIM-Signature: {tags}{Convert.ToBase64String(signature)}\r\n" + Message;
+        return input.ToString();
 
     }
 
@@ -90,7 +145,7 @@ public sealed partial class TestDkimKey : IDisposable
     /// <summary>
     /// The header fields, unfolded only as far as splitting them goes: name and raw value.
     /// </summary>
-    private static List<(String Name, String Value)> Fields(String Header)
+    internal static List<(String Name, String Value)> Fields(String Header)
     {
 
         var fields = new List<(String Name, String Value)>();
@@ -120,14 +175,14 @@ public sealed partial class TestDkimKey : IDisposable
     /// RFC 6376 §3.4.2: name in lower case, unfolded, whitespace runs to one space, none at
     /// the ends of the value.
     /// </summary>
-    private static String RelaxedHeader(String Name, String Value)
+    internal static String RelaxedHeader(String Name, String Value)
         => Name.Trim().ToLowerInvariant() + ":" + Whitespace().Replace(Value.Replace("\r\n", ""), " ").Trim(' ');
 
     /// <summary>
     /// RFC 6376 §3.4.4: whitespace runs to one space, none at line ends, no empty lines at the
     /// end, and a CRLF after the last line of a body that is not empty.
     /// </summary>
-    private static String RelaxedBody(String Body)
+    internal static String RelaxedBody(String Body)
     {
 
         var lines = Body.Split("\r\n").

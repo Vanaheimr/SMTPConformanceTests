@@ -19,7 +19,11 @@ the sender (DSN), MTA-STS and DANE; its line numbers refer to `306f2d59`. The fi
 DKIM and DMARC on inbound mail, DNS blocklists, recipient checks, the AUTH
 configuration, submission to the application, outbound mail to public addresses only,
 smart host credentials, DKIM signing, the file queue after a crash and the certificate
-chain; its line numbers refer to `4b8be28a`.
+chain; its line numbers refer to `4b8be28a`. The sixth (A-, R-, T-, Q-, L-, V-3 and
+V-4) tests the parts of Hermod's SMTP no round had tested: ARC (RFC 8617), the DMARC
+reports (RFC 7489 §7), TLS reporting (RFC 8460), MT-PRIORITY (RFC 6710) and the
+connection and recipient limits; its line numbers refer to `287d1c43`, under
+`libs/Hermod/Hermod/SMTP/`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -27,7 +31,34 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [A-1](#a-1) | **high** | ARC | No limit of 50 ARC sets; `i=2147483647` keeps the validator counting forever, on every unauthenticated message | 2 |
+| [A-2](#a-2) | medium | ARC | An ARC-Seal with an h= tag is accepted | 1 |
+| [V-3](#v-3) | medium | DKIM, ARC | rsa-sha1 signatures verify | 2 |
+| [V-4](#v-4) | medium | DKIM, ARC | A signature whose b= tag comes first never verifies | 2 |
+| [R-1](#r-1) | medium | DMARC reports | The aggregate XML lacks sp, fo, envelope_from and the SPF scope, which Appendix C requires | 4 |
+| [R-2](#r-2) | medium | DMARC reports | The size limit of a report URI (`!10m`) is cut off and ignored | 1 |
+| [R-5](#r-5) | medium | DMARC reports | Failure reports lack Identity-Alignment and SPF-DNS (REQUIRED) | 2 |
+| [T-1](#t-1) | medium | TLS-RPT | Two records, a record not beginning with `v=TLSRPTv1;`, or `v=tlsrptv1` still name destinations | 3 |
+| [T-3](#t-3) | medium | TLS-RPT | Under an MTA-STS policy in testing mode, a certificate that fails the policy is reported as a success | 1 |
+| [Q-3](#q-3) | medium | MT-PRIORITY | A client nobody vouches for raises its own priority | 1 |
+| [L-1](#l-1) | medium | limits | 100 recipients per session, not per message: the second message runs short | 1 |
+| [A-3](#a-3) | low | ARC | A tag twice in an ARC tag-list: the last one counts (`cv=fail; cv=pass` passes) | 1 |
+| [A-4](#a-4) | low | ARC | The sealer seals a chain whose last seal says cv=fail once more | 1 |
+| [A-5](#a-5) | low | ARC | The sealer's AMS signs the ARC header fields it is configured to | 1 |
+| [R-3](#r-3) | low | DMARC reports | The Report-ID of the subject is no msg-id | 1 |
+| [R-4](#r-4) | low | DMARC reports | The rua of the destination's own record does not replace the policy domain's | 1 |
+| [R-6](#r-6) | low | DMARC reports | fo=1 is ignored: only DMARC failures are reported | 1 |
+| [R-7](#r-7) | low | DMARC | p=reject with pct=0 lets a failing message through as p=none, not quarantined | 1 |
+| [T-2](#t-2) | low | TLS-RPT | No policy-string in the JSON | 1 |
+| [T-4](#t-4) | low | TLS-RPT | Through a smart host, the session is reported to the recipient's domain, under the smart host's policy | 1 |
+| [Q-1](#q-1) | low | MT-PRIORITY | `+3`, `-0`, `05` are taken | 3 |
+| [Q-2](#q-2) | low | MT-PRIORITY | MT-PRIORITY twice is taken | 1 |
+| [Q-4](#q-4) | low | MT-PRIORITY | No PRIORITY clause in Received | 1 |
+| [L-2](#l-2) | low | limits | The 421/554 of a connection refused at accept ends in a bare LF on Linux | 1 |
+| [L-3](#l-3) | low | limits | After a 554 greeting the connection is closed, not held for QUIT | 1 |
+| [L-4](#l-4) | low | limits | After a 421 to AUTH the connection stays open | 1 |
 
 ### Closed
 
@@ -1003,6 +1034,254 @@ Test: `The_SPF_result_of_a_null_sender_names_the_HELO_identity`.
 Fixed: a null reverse-path, or one without a domain, reports `smtp.helo=` the HELO name;
 a HELO that is an address literal gave SPF no domain, and its `spf=none` names no
 identity. A reverse-path with a domain still says `smtp.mailfrom=` it.
+
+### V-3
+**Open.** **rsa-sha1 signatures verify** (`DNSVerifications/DNSVerifier.cs:629` and `:672`,
+`algorithm.Contains("sha256") ? ... SHA256 : ... SHA1`; the same in `Arc/ArcValidator.cs:127`
+and `:157`): an a= that does not say sha256 is verified with SHA-1, whatever it says. RFC
+8301 §3.1: "rsa-sha1 MUST NOT be used for signing or verifying", and signatures with it
+"have permanently failed evaluation". ARC imports the methods of RFC 6376 (RFC 8617 §5.2).
+A SHA-1 signature is a forgery target; DMARC passes on it. Tests:
+`A_signature_with_rsa_sha1_does_not_pass`, `A_chain_sealed_with_rsa_sha1_fails`.
+
+### V-4
+**Open.** **A signature whose b= tag comes first never verifies**
+(`DNSVerifications/DkimCanonicalization.cs:234` and `:252`): the b= value is removed with
+`(^|;)(\s*b\s*=)[^;]*` - run on the whole field, `DKIM-Signature: b=...`, where `^` is
+the start of the field name, not of the value. A b= right after the colon is neither, so
+its value stays in what is hashed, and the signature cannot match. RFC 6376 §3.2: tags
+come in any order; §3.7: the signature is computed "with the value of the "b=" tag
+(including all surrounding whitespace) deleted". DKIM, the AMS and the AS alike. Tests:
+`A_signature_whose_b_tag_comes_first_verifies`, `A_chain_whose_signatures_come_first_passes`
+- the suite's verifiers take both (`DkimToolingTests`, `ArcToolingTests`).
+
+## ARC
+
+RFC 8617 as `ArcValidator` checks the chain of every unauthenticated message and the
+server writes `arc=` into Authentication-Results (`ArcValidationTests`), and as
+`ArcSealer` seals (`ArcSealerTests`) - Hermod's server never calls the sealer; a
+forwarder built on Hermod would. The chains are sealed, and Hermod's seals validated, by
+the suite's own ARC implementation (`TestArc`), which `ArcToolingTests` checks. Covered
+without a finding: one and two sets pass; a changed body, a gap in the instances, an
+instance twice, cv=pass at instance 1 and cv=fail fail; Hermod's first seal and a seal on
+a passing chain validate, with cv=none and cv=pass, no v= in the AMS, no h= in the AS.
+
+### A-1
+**Open.** **No limit of 50 ARC sets - and an instance that keeps the validator counting
+forever** (`Arc/ArcChain.cs:70` and `:75`): `n` is the highest i= of any ARC header field,
+and `for (var i = 1; i <= n; i++)` counts up to it. A chain of 51 sets passes; RFC 8617
+§5.2 step 1: "The maximum number of ARC Sets that can be attached to a message is 50. If
+more than the maximum exist, the Chain Validation Status is "fail"", and §4.2.1:
+"Instance tag values can range from 1-50 (inclusive)". With `i=2147483647`, `i++` wraps
+to a negative number before it gets past `n`, and the loop never ends: the session hangs
+in a loop that keeps a core busy, for one header line in one message from anyone - the
+validation runs on every message from a client that did not sign in. Tests:
+`More_than_50_ARC_sets_fail`, `An_instance_number_beyond_50_is_answered_at_once` (on a
+fixture of its own; against the pin, its session is still counting when the test ends).
+
+### A-2
+**Open.** **An ARC-Seal with an h= tag is accepted** (`Arc/ArcValidator.cs:145`,
+`VerifySealAsync`): nothing looks for it. RFC 8617 §4.1.3: "the DKIM "h" tag is NOT
+allowed and, if found, MUST result in a cv status of "fail"". Test:
+`An_ARC_Seal_with_an_h_tag_fails`.
+
+### A-3
+**Open.** **A tag twice in a tag-list: the last one counts** (`Arc/ArcChain.cs:148`,
+`tags[name] = value`): `cv=fail; ...; cv=pass` reads as pass. RFC 6376 §3.2, whose
+tag-lists ARC uses: "Tags with duplicate names MUST NOT occur within a single tag-list;
+if a tag name does occur more than once, the entire tag-list is invalid". Test:
+`An_ARC_Seal_naming_cv_twice_fails`.
+
+### A-4
+**Open.** **The sealer seals a failed chain once more** (`Arc/ArcSealer.cs:68` and `:72`):
+it adds a set with cv=fail on top of one whose seal already says cv=fail. RFC 8617 §5.1
+step 2: with "the most recent AS reporting "cv=fail", there is no need to proceed and the
+algorithm stops here". Test: `A_chain_that_failed_is_not_sealed_again`.
+
+### A-5
+**Open.** **The AMS signs ARC header fields if the configuration names them**
+(`Arc/ArcSealer.cs:86`, `_config.SignedHeaders.Split(':')`): the list is taken as it is.
+RFC 8617 §4.1.2: "ARC-related header fields (ARC-Authentication-Results,
+ARC-Message-Signature, and ARC-Seal) MUST NOT be included". Test:
+`The_AMS_signs_no_ARC_header_field`.
+
+## DMARC reports
+
+RFC 7489 §7 as `DmarcReportService` writes the aggregate report and the failure report
+(`DmarcReportTests`, through the service directly; the server feeds it the same
+evaluations). Covered without a finding: the report goes to the rua address as a gzipped
+`application/gzip` attachment named receiver!policy-domain!begin!end.xml.gz; the subject
+names the report domain and the submitter; the XML has feedback, version 1.0, the
+metadata, the published policy and one record for two messages alike with their count;
+an outside destination receives reports only with its `_report._dmarc` record; a DMARC
+failure goes to ruf in the ARF (`Feedback-Type: auth-failure`, `Auth-Failure: dmarc`);
+with fo=0 a message that passed is not reported; p=quarantine marks a failing message
+(`MessageAuthenticationTests`).
+
+### R-1
+**Open.** **The aggregate XML lacks elements Appendix C requires**
+(`Reporting/DmarcReportXml.cs:49` to `:87`): `sp` only when published, never `fo`, never
+`envelope_from`, never the SPF `scope`. RFC 7489 Appendix C: in `PolicyPublishedType`,
+`sp` and `fo` have no minOccurs, so one; in `IdentifierType`, `envelope_from` has
+`minOccurs="1"`; in `SPFAuthResultType`, `scope` has `minOccurs="1"`. A reader that
+validates against the schema refuses the report; one that does not cannot tell a MAIL
+FROM result from a HELO one - a null sender is checked on the HELO identity (V-2). Tests:
+`The_XML_has_every_element_the_schema_requires`, four cases.
+
+### R-2
+**Open.** **The size limit of a report URI is ignored** (`Reporting/DmarcReportService.cs:278`,
+`u.IndexOf('!')`): `!10m` is cut off and not compared. RFC 7489 §7.2.1: "Any reporting URI
+that includes a size limitation exceeded by the generated report ... MUST NOT be used";
+if none can take it, a short report SHOULD say so (§7.2.2). Test:
+`A_destination_whose_size_limit_the_report_exceeds_receives_none`.
+
+### R-3
+**Open.** **The Report-ID of the subject is no msg-id** (`Reporting/DmarcReportService.cs:114`
+and `:164`): `Report-ID: mx.hermod.test!policy.test!1795115900!94c3...`. RFC 7489
+§7.2.1.1 makes it a `msg-id`, from RFC 5322: `"<" id-left "@" id-right ">"`. Test:
+`The_Report_ID_of_the_subject_is_a_msg_id`.
+
+### R-4
+**Open.** **The rua of the destination's own record does not replace the policy domain's**
+(`DNSVerifications/DNSVerifier.cs:891` to `:892`): the `_report._dmarc` record is looked
+for, and only that it begins with v=DMARC1 counts. RFC 7489 §7.1: "If a "rua" or "ruf"
+tag is thus discovered, replace the corresponding value extracted from the domain's
+DMARC policy record with the one found in this record", on the same host. Test:
+`The_destinations_own_rua_replaces_the_policy_domains`.
+
+### R-5
+**Open.** **Failure reports lack fields RFC 7489 requires** (`Reporting/ArfReport.cs:77` to
+`:87`): Feedback-Type, Version, Original-Mail-From, Arrival-Date, Source-IP,
+Reported-Domain, Auth-Failure and a `Delivered-To` that RFC 5965 does not define - no
+Identity-Alignment, no SPF-DNS. RFC 7489 §7.3.1: "Identity-Alignment (REQUIRED ...)",
+"SPF-DNS (REQUIRED)", and DKIM-Domain, DKIM-Identity, DKIM-Selector "REQUIRED if the
+message was signed by DKIM". Tests: `The_failure_report_has_the_fields_RFC_7489_requires`,
+two cases.
+
+### R-6
+**Open.** **fo= is read and not used** (`Reporting/DmarcReportService.cs:207` and `:212`):
+only a message that failed DMARC is reported. RFC 7489 §6.3: fo=1 - "Generate a DMARC
+failure report if any underlying authentication mechanism produced something other
+than an aligned "pass" result"; d and s for DKIM and SPF failures whatever the
+alignment. Test: `With_fo_1_a_failing_SPF_is_reported_although_DMARC_passed`.
+
+### R-7
+**Open.** **p=reject with pct=0 is p=none** (`DNSVerifications/DNSVerifier.cs:855`,
+`if (percent <= 0) return "none";`): a failing message is neither refused nor
+quarantined. RFC 7489 §6.6.4: under p=reject, for a message pct= does not select, "the
+Mail Receiver SHOULD treat the email as though the "quarantine" policy applies" - pct=0
+selects none, so every failing message is quarantined. Domains moving to p=reject start
+with pct=0 for exactly that. Test: `Under_p_reject_with_pct_0_a_failing_message_is_quarantined`.
+
+## TLS reporting
+
+RFC 8460 as `TlsRptReportService` reports (`TlsRptTests`, through the service directly;
+the outbound client feeds it the same events) and as `SMTPOutboundClient` records
+sessions (`OutboundClientTests.TlsRpt.cs`). Covered without a finding: the report goes
+to the record's mailto address, with https URIs and unknown fields beside it; no record,
+no report; the mail is multipart/report; report-type="tlsrpt" with an
+application/tlsrpt+gzip part, TLS-Report-Domain and TLS-Report-Submitter, the subject of
+§5.3 and the filename of §5.1; the JSON has the fields of §4.4 with RFC 3339 dates and
+the counts; under an enforced MTA-STS policy an untrusted certificate is a reported
+failure, and the delivery waits.
+
+### T-1
+**Open.** **A domain without exactly one valid record still gets reports**
+(`Reporting/TlsRptResolver.cs:77`, the first record that contains "v=TLSRPTv1" in any
+case, and `:107`): two records, `rua=...; v=TLSRPTv1`, or `v=tlsrptv1` each name a
+destination. RFC 8460 §3: "records that do not begin with "v=TLSRPTv1;" are discarded"
+(`%s`, case-sensitive), and "If the number of resulting records is not one, senders MUST
+assume the recipient domain does not implement TLSRPT". Tests:
+`A_domain_without_exactly_one_valid_record_gets_no_report`, three cases.
+
+### T-2
+**Open.** **No policy-string in the JSON** (`Reporting/TlsRptReportJson.cs:66` to `:74`):
+policy-type, mx-host and policy-domain only. RFC 8460 §4.4 lists policy-type,
+policy-string, policy-domain and mx-host for the policy object, none marked optional;
+policy-string is the policy applied, as a JSON array of strings - the receiver sees
+which policy version the sender had. Test: `Each_policy_says_which_policy_was_applied`.
+
+### T-3
+**Open.** **In MTA-STS testing mode a failed policy is reported as a success**
+(`SMTPOutboundClient.cs:445`, `validateStrict = mustEnforceTls || ...`, and `:490`,
+`RecordTls(true, null)`): testing mode delivers over TLS whatever the certificate - as
+it should - and then records the session as one that went well. RFC 8461 §5: in
+testing mode "Sending MTAs that also implement the TLSRPT specification [RFC8460] send
+a report indicating policy application failures"; testing mode is there for that
+report. Test: `In_testing_mode_an_untrusted_certificate_is_reported_as_a_failure`.
+
+### T-4
+**Open.** **Through a smart host the session is reported to the recipient's domain**
+(`SMTPOutboundClient.cs:223`, `targetDomain` where `TrySendToMxAsync` takes the policy
+domain, `:285`): the MTA-STS policy is the smart host's (`:136`, RFC 8461 §3.4), the
+event names the recipient's domain - whose rua then receives a report on a policy it did
+not publish. RFC 8460 §4.4: policy-domain is "The Policy Domain against which the
+MTA-STS or DANE policy is defined". Test:
+`Through_a_smart_host_the_session_is_reported_to_the_smart_hosts_domain`.
+
+## Priorities and limits
+
+RFC 6710 MT-PRIORITY on the server (`PriorityTests`), and the connection and recipient
+limits (`LimitTests.cs`). Covered without a finding: EHLO announces MT-PRIORITY; -9 to 9
+are taken, 10, -10, a word and nothing refused with 501; the relay queue carries the
+priority a client that signed in asked for; 100 recipients are taken in one message and
+the 101st refused with 452 4.5.3; a connection over the limit per address gets 421 and
+is closed.
+
+### Q-1
+**Open.** **Values the grammar does not produce are taken** (`ESMTPParameters.cs:149`,
+`Int32.TryParse(value, ...) && priority is >= -9 and <= 9 && value.Length <= 2`): `+3`,
+`-0` and `05` are 250. RFC 6710 §7: `priority-value = (["-"] NZDIGIT) / "0"`; §4.1: the
+server MUST return an error for a syntactically invalid value. Tests:
+`A_value_the_grammar_does_not_produce_is_refused`, three cases.
+
+### Q-2
+**Open.** **MT-PRIORITY twice is taken** (`ESMTPParameters.cs:95`): a second parameter with
+the same value passes. RFC 6710 §4.1: the server MUST return an error "if there is more
+than one MT-PRIORITY parameter". Test: `MT_PRIORITY_twice_is_refused`.
+
+### Q-3
+**Open.** **A client nobody vouches for raises its own priority** (`SMTPSession.cs:725`,
+`_mtPriority = MtPriority.ParseFromMailParams(parameters)`, and `:1444`): the value is
+kept whoever asks, and goes into the relay queue - whose retries `FileMailQueue` hands out
+by it, and on to the next hop.
+RFC 6710 §4.1: the server "MUST NOT allow "upgraded" (positive) priorities from
+untrusted" senders; it may let them lower their own. It matters where a client may relay
+without AUTH. Test: `A_client_nobody_vouches_for_does_not_raise_its_priority`.
+
+### Q-4
+**Open.** **No PRIORITY clause in Received** (`SMTPSession.cs:1562`, `BuildReceivedHeaderAsync`):
+RFC 6710 §4.1: an MTA SHOULD record the priority in the Received field,
+`Pri = CFWS "PRIORITY" FWS priority-value`. Test: `The_Received_field_names_the_priority`.
+
+### L-1
+**Open.** **100 recipients per session, not per message** (`SMTPSession.cs:770` and `:772`,
+`_counters.Recipients >= rateLimitConfig.MaxRcptPerSession`, the counter never reset):
+after 60 recipients in a first message, a second message in the same session is refused
+its 41st with `452 4.5.3 Too many recipients in this session`. RFC 5321 §4.5.3.1.8: "The
+minimum total number of recipients that MUST be buffered is 100 recipients" - for each
+message. Test: `A_second_message_in_the_session_takes_its_own_recipients`.
+
+### L-2
+**Open, Linux.** **The reply to a connection refused at accept ends in a bare LF**
+(`SMTPServer.cs:290` and `:299`, `new StreamWriter(...)` and `WriteLineAsync(message)`):
+the platform's line end - CR LF on Windows, LF on Linux. RFC 5321 §2.3.8: lines are
+"terminated by the sequence ASCII character "CR" (hex 0D) followed immediately by ASCII
+character "LF" (hex 0A)". Test: `The_421_of_a_refused_connection_ends_in_CRLF` - it
+passes on Windows and fails on Linux, where the nightly runs it.
+
+### L-3
+**Open.** **After a 554 greeting the connection is closed at once** (`SMTPServer.cs:292` and
+`:304`): RFC 5321 §3.1: a server that answers a connection with 554 "MUST still wait for
+the client to send a QUIT ... before closing the connection and SHOULD respond to any
+intervening commands with "503 bad sequence of commands"". Test:
+`After_554_the_server_waits_for_QUIT`.
+
+### L-4
+**Open.** **After a 421 to AUTH the connection stays open** (`SMTPSession.cs:282`): the
+reply is sent, the session goes on, and answers the next command. RFC 5321 §3.8: 421
+means the server is closing the transmission channel - the client stops, the server
+holds a connection it said it would close. Test: `After_421_to_AUTH_the_connection_is_closed`.
 
 ## Outbound security
 

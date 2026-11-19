@@ -144,6 +144,27 @@ public sealed class RawSmtpClient : SmtpWire
 
 
     /// <summary>
+    /// Send one command line and read its reply - or null if the connection is closed, before
+    /// the line or before a reply (or nothing came in time).
+    /// </summary>
+    public async Task<SmtpReply?> TryCommandAsync(String Line, TimeSpan? Timeout = null)
+    {
+
+        try
+        {
+            await WriteLineAsync(Line);
+        }
+        catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException)
+        {
+            return null;
+        }
+
+        return await TryReadReplyAsync(Timeout);
+
+    }
+
+
+    /// <summary>
     /// EHLO, returning the reply and the advertised extension keywords (upper-cased,
     /// parameters split off) — RFC 5321 §4.1.1.1: the first line is the greeting,
     /// every further line one ehlo-line.
