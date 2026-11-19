@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `bbbf88b6`** (Styx `c530de16`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `4b8be28a`** (Styx `a6b9f9fb`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
