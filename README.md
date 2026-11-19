@@ -13,24 +13,22 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-19, Hermod `fbbfe489`):** 482 tests, 472 pass; 10 fail on seven open
-findings, all fixed in [#260](https://github.com/Vanaheimr/Hermod/pull/260), which is not
-merged yet. A sixth round tested the parts of Hermod's
+**State (2026-11-20, Hermod `72c2366d`):** 482 tests, **all pass**. A sixth round tested the parts of Hermod's
 SMTP no round had tested - ARC (RFC 8617), the DMARC reports (RFC 7489 §7), TLS
 reporting (RFC 8460), MT-PRIORITY (RFC 6710), the connection and recipient limits - with
 78 tests, the ARC chains sealed and Hermod's seals validated by the suite's own code.
-The heaviest finding: an ARC instance number of 2147483647 in one header line keeps the
-validator counting forever, on every message from a client that did not sign in, and
-there is no limit of 50 sets ([A-1](FINDINGS.md#a-1)). Also: rsa-sha1 verifies, and a
-signature whose b= comes first never does, in DKIM and ARC alike ([V-3](FINDINGS.md#v-3),
-[V-4](FINDINGS.md#v-4)). The other 19 are fixed in
-[#261](https://github.com/Vanaheimr/Hermod/pull/261) to
-[#264](https://github.com/Vanaheimr/Hermod/pull/264): the aggregate XML lacked elements
+The heaviest of its 26 findings: an ARC instance number of 2147483647 in one header line
+kept the validator counting forever, on every message from a client that did not sign
+in, and there was no limit of 50 sets ([A-1](FINDINGS.md#a-1)). Also: rsa-sha1 verified,
+and a signature whose b= came first never did, in DKIM and ARC alike
+([V-3](FINDINGS.md#v-3), [V-4](FINDINGS.md#v-4)); the aggregate XML lacked elements
 Appendix C requires, and size limits of report URIs were ignored
 ([R-1](FINDINGS.md#r-1), [R-2](FINDINGS.md#r-2)); MTA-STS testing mode reported failed
 sessions as successes ([T-3](FINDINGS.md#t-3)); a client nobody vouched for raised its
 own priority ([Q-3](FINDINGS.md#q-3)); 100 recipients per session, not per message
-([L-1](FINDINGS.md#l-1)). A fifth round tested what Hermod's SMTP gained between `bbbf88b6` and
+([L-1](FINDINGS.md#l-1)). All 26 fixed in
+[#260](https://github.com/Vanaheimr/Hermod/pull/260) to
+[#264](https://github.com/Vanaheimr/Hermod/pull/264). A fifth round tested what Hermod's SMTP gained between `bbbf88b6` and
 `4b8be28a` - SPF, DKIM and DMARC on inbound mail, DNS blocklists, recipient checks,
 the AUTH configuration, submission to the application (RFC 6409), outbound mail to
 public addresses only, smart host credentials, DKIM signing with RSA and Ed25519, the
@@ -177,8 +175,8 @@ vectors, and the four Linux tools.
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
 | Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
 | MTA-STS (RFC 8461), DANE (RFC 7672) | 41 | 0 | ~~M-1~~ to ~~M-6~~, ~~N-1~~ to ~~N-5~~ fixed |
-| Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 8301, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 17 | 2 | V-3, V-4; ~~V-1~~, ~~V-2~~, ~~R-7~~ fixed |
-| RFC 8617 ARC: validation on inbound mail, the sealer | 17 | 8 | A-1 to A-5, V-3, V-4 |
+| Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 8301, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 17 | 0 | ~~V-1~~ to ~~V-4~~, ~~R-7~~ fixed |
+| RFC 8617 ARC: validation on inbound mail, the sealer | 17 | 0 | ~~A-1~~ to ~~A-5~~, ~~V-3~~, ~~V-4~~ fixed |
 | RFC 7489 §7 DMARC aggregate and failure reports, RFC 6591 | 16 | 0 | ~~R-1~~ to ~~R-6~~ fixed |
 | RFC 8460 TLS reporting | 12 | 0 | ~~T-1~~ to ~~T-4~~ fixed |
 | RFC 6710 MT-PRIORITY | 18 | 0 | ~~Q-1~~ to ~~Q-4~~ fixed |
@@ -188,7 +186,7 @@ vectors, and the four Linux tools.
 | RFC 5321 §6.1 the file queue after a crash | 5 | 0 | — |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, the suite's DKIM signer/verifier and ARC sealer/validator, RFC 7208 SPF macros | 44 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **482** | **10** | |
+| **Total** | **482** | **0** | |
 
 ## External test partners
 

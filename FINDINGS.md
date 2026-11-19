@@ -9,9 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `fbbfe489`** (Styx `a6b9f9fb`), which closes all but seven: A-1 to A-5, V-3
-and V-4 are fixed in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260),
-not merged yet. The second round (S-18 and on, C-8 and on) comes from the
+**Hermod `72c2366d`** (Styx `a6b9f9fb`), which closes every one of them. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
@@ -33,15 +31,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [A-1](#a-1) | **high** | ARC | No limit of 50 ARC sets; `i=2147483647` keeps the validator counting forever, on every unauthenticated message | 2 |
-| [A-2](#a-2) | medium | ARC | An ARC-Seal with an h= tag is accepted | 1 |
-| [V-3](#v-3) | medium | DKIM, ARC | rsa-sha1 signatures verify | 2 |
-| [V-4](#v-4) | medium | DKIM, ARC | A signature whose b= tag comes first never verifies | 2 |
-| [A-3](#a-3) | low | ARC | A tag twice in an ARC tag-list: the last one counts (`cv=fail; cv=pass` passes) | 1 |
-| [A-4](#a-4) | low | ARC | The sealer seals a chain whose last seal says cv=fail once more | 1 |
-| [A-5](#a-5) | low | ARC | The sealer's AMS signs the ARC header fields it is configured to | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -130,8 +120,15 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [L-2](#l-2) | low | limits | The 421/554 of a connection refused at accept ended in a bare LF on Linux | 1 | [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) |
 | [L-3](#l-3) | low | limits | After a 554 greeting the connection was closed, not held for QUIT | 1 | [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) |
 | [L-4](#l-4) | low | limits | After a 421 to AUTH the connection stayed open | 1 | [Vanaheimr/Hermod#264](https://github.com/Vanaheimr/Hermod/pull/264) |
+| [A-1](#a-1) | **high** | ARC | No limit of 50 ARC sets; `i=2147483647` kept the validator counting forever, on every unauthenticated message | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
+| [A-2](#a-2) | medium | ARC | An ARC-Seal with an h= tag was accepted | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
+| [A-3](#a-3) | low | ARC | A tag twice in an ARC tag-list: the last one counted (`cv=fail; cv=pass` passed) | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
+| [A-4](#a-4) | low | ARC | The sealer sealed a chain whose last seal said cv=fail once more | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
+| [A-5](#a-5) | low | ARC | The sealer's AMS signed the ARC header fields it was configured to | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
+| [V-3](#v-3) | medium | DKIM, ARC | rsa-sha1 signatures verified | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
+| [V-4](#v-4) | medium | DKIM, ARC | A signature whose b= tag came first never verified | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 
-The 185 tests for these are part of the merge gate now; the observations the first
+The 195 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1038,7 +1035,8 @@ a HELO that is an address literal gave SPF no domain, and its `spf=none` names n
 identity. A reverse-path with a domain still says `smtp.mailfrom=` it.
 
 ### V-3
-**Open.** **rsa-sha1 signatures verify** (`DNSVerifications/DNSVerifier.cs:629` and `:672`,
+**Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`1c051d7e`).
+**rsa-sha1 signatures verified** (`DNSVerifications/DNSVerifier.cs:629` and `:672`,
 `algorithm.Contains("sha256") ? ... SHA256 : ... SHA1`; the same in `Arc/ArcValidator.cs:127`
 and `:157`): an a= that does not say sha256 is verified with SHA-1, whatever it says. RFC
 8301 §3.1: "rsa-sha1 MUST NOT be used for signing or verifying", and signatures with it
@@ -1046,8 +1044,12 @@ and `:157`): an a= that does not say sha256 is verified with SHA-1, whatever it 
 A SHA-1 signature is a forgery target; DMARC passes on it. Tests:
 `A_signature_with_rsa_sha1_does_not_pass`, `A_chain_sealed_with_rsa_sha1_fails`.
 
+Fixed: DKIM accepts rsa-sha256 and ed25519-sha256, ARC rsa-sha256; any other a= fails.
+No Hermod signer writes rsa-sha1.
+
 ### V-4
-**Open.** **A signature whose b= tag comes first never verifies**
+**Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`b76deeb0`).
+**A signature whose b= tag came first never verified**
 (`DNSVerifications/DkimCanonicalization.cs:234` and `:252`): the b= value is removed with
 `(^|;)(\s*b\s*=)[^;]*` - run on the whole field, `DKIM-Signature: b=...`, where `^` is
 the start of the field name, not of the value. A b= right after the colon is neither, so
@@ -1056,6 +1058,9 @@ come in any order; §3.7: the signature is computed "with the value of the "b=" 
 (including all surrounding whitespace) deleted". DKIM, the AMS and the AS alike. Tests:
 `A_signature_whose_b_tag_comes_first_verifies`, `A_chain_whose_signatures_come_first_passes`
 - the suite's verifiers take both (`DkimToolingTests`, `ArcToolingTests`).
+
+Fixed: the b= value is removed from the field's value, wherever the tag stands (RFC 6376
+§3.7) - in DKIM, the AMS and the AS.
 
 ## ARC
 
@@ -1069,7 +1074,8 @@ instance twice, cv=pass at instance 1 and cv=fail fail; Hermod's first seal and 
 a passing chain validate, with cv=none and cv=pass, no v= in the AMS, no h= in the AS.
 
 ### A-1
-**Open.** **No limit of 50 ARC sets - and an instance that keeps the validator counting
+**Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`63fcf3cd`).
+**No limit of 50 ARC sets - and an instance that kept the validator counting
 forever** (`Arc/ArcChain.cs:70` and `:75`): `n` is the highest i= of any ARC header field,
 and `for (var i = 1; i <= n; i++)` counts up to it. A chain of 51 sets passes; RFC 8617
 §5.2 step 1: "The maximum number of ARC Sets that can be attached to a message is 50. If
@@ -1079,33 +1085,50 @@ to a negative number before it gets past `n`, and the loop never ends: the sessi
 in a loop that keeps a core busy, for one header line in one message from anyone - the
 validation runs on every message from a client that did not sign in. Tests:
 `More_than_50_ARC_sets_fail`, `An_instance_number_beyond_50_is_answered_at_once` (on a
-fixture of its own; against the pin, its session is still counting when the test ends).
+fixture of its own; against `287d1c43`, its session was still counting when the test ended).
+
+Fixed: a chain whose highest instance is above 50 fails before any loop runs, and
+`MaxInstance` is the highest instance found (§5.1). The sealer does not seal past 50,
+and a set sealed with cv=fail signs only its own set (§5.1.2).
 
 ### A-2
-**Open.** **An ARC-Seal with an h= tag is accepted** (`Arc/ArcValidator.cs:145`,
+**Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`ebf94993`).
+**An ARC-Seal with an h= tag was accepted** (`Arc/ArcValidator.cs:145`,
 `VerifySealAsync`): nothing looks for it. RFC 8617 §4.1.3: "the DKIM "h" tag is NOT
 allowed and, if found, MUST result in a cv status of "fail"". Test:
 `An_ARC_Seal_with_an_h_tag_fails`.
 
+Fixed: an h= tag in an ARC-Seal fails the chain.
+
 ### A-3
-**Open.** **A tag twice in a tag-list: the last one counts** (`Arc/ArcChain.cs:148`,
+**Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`c6aecb17`).
+**A tag twice in a tag-list: the last one counted** (`Arc/ArcChain.cs:148`,
 `tags[name] = value`): `cv=fail; ...; cv=pass` reads as pass. RFC 6376 §3.2, whose
 tag-lists ARC uses: "Tags with duplicate names MUST NOT occur within a single tag-list;
 if a tag name does occur more than once, the entire tag-list is invalid". Test:
 `An_ARC_Seal_naming_cv_twice_fails`.
 
+Fixed: the tag-list is invalid and the chain fails; an ARC header field without a valid
+instance makes the chain malformed.
+
 ### A-4
-**Open.** **The sealer seals a failed chain once more** (`Arc/ArcSealer.cs:68` and `:72`):
+**Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`480f58d4`).
+**The sealer sealed a failed chain once more** (`Arc/ArcSealer.cs:68` and `:72`):
 it adds a set with cv=fail on top of one whose seal already says cv=fail. RFC 8617 §5.1
 step 2: with "the most recent AS reporting "cv=fail", there is no need to proceed and the
 algorithm stops here". Test: `A_chain_that_failed_is_not_sealed_again`.
 
+Fixed: a message whose newest seal says cv=fail is returned unchanged.
+
 ### A-5
-**Open.** **The AMS signs ARC header fields if the configuration names them**
+**Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`67932b32`).
+**The AMS signed ARC header fields if the configuration named them**
 (`Arc/ArcSealer.cs:86`, `_config.SignedHeaders.Split(':')`): the list is taken as it is.
 RFC 8617 §4.1.2: "ARC-related header fields (ARC-Authentication-Results,
 ARC-Message-Signature, and ARC-Seal) MUST NOT be included". Test:
 `The_AMS_signs_no_ARC_header_field`.
+
+Fixed: ARC header fields are never in the AMS h=, whatever the configuration lists.
 
 ## DMARC reports
 

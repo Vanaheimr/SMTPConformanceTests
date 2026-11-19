@@ -158,7 +158,7 @@ public sealed class ArcValidationTests : HermodServerTestBase
     #region What a validator has to refuse
 
     [Test(Description = "RFC 8617 §5.2 step 1: \"The maximum number of ARC Sets that can be attached to a message is 50. If more than the maximum exist, the Chain Validation Status is \"fail\"\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "A-1")]
+    [Property("Finding", "A-1")]
     public async Task More_than_50_ARC_sets_fail()
     {
 
@@ -173,7 +173,7 @@ public sealed class ArcValidationTests : HermodServerTestBase
     }
 
     [Test(Description = "RFC 8617 §4.1.3: \"the DKIM \"h\" tag is NOT allowed and, if found, MUST result in a cv status of \"fail\"\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "A-2")]
+    [Property("Finding", "A-2")]
     public async Task An_ARC_Seal_with_an_h_tag_fails()
     {
         var marker = Marker();
@@ -181,7 +181,7 @@ public sealed class ArcValidationTests : HermodServerTestBase
     }
 
     [Test(Description = "RFC 6376 §3.2, which ARC's tag-lists follow: \"Tags with duplicate names MUST NOT occur within a single tag-list; if a tag name does occur more than once, the entire tag-list is invalid\" - cv=fail, then cv=pass")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "A-3")]
+    [Property("Finding", "A-3")]
     public async Task An_ARC_Seal_naming_cv_twice_fails()
     {
         var marker = Marker();
@@ -189,7 +189,7 @@ public sealed class ArcValidationTests : HermodServerTestBase
     }
 
     [Test(Description = "RFC 8617 §5.2 imports the signature methods of RFC 6376, and RFC 8301 §3.1: \"rsa-sha1 MUST NOT be used for signing or verifying\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-3")]
+    [Property("Finding", "V-3")]
     public async Task A_chain_sealed_with_rsa_sha1_fails()
     {
         var marker = Marker();
@@ -197,7 +197,7 @@ public sealed class ArcValidationTests : HermodServerTestBase
     }
 
     [Test(Description = "RFC 6376 §3.2: the tags of a tag-list may come in any order; §3.7: the b= value is removed wherever b= stands - b= first in the AMS and the AS")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-4")]
+    [Property("Finding", "V-4")]
     public async Task A_chain_whose_signatures_come_first_passes()
     {
         var marker = Marker();
@@ -218,7 +218,7 @@ public sealed class ArcInstanceLimitTests : HermodServerTestBase
 {
 
     [Test(Description = "RFC 8617 §4.2.1: \"Instance tag values can range from 1-50 (inclusive)\"; §5.2 step 1 - beyond, the chain fails, and the message is answered without delay")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "A-1")]
+    [Property("Finding", "A-1")]
     public async Task An_instance_number_beyond_50_is_answered_at_once()
     {
 
@@ -319,7 +319,7 @@ public sealed class ArcSealerTests
     }
 
     [Test(Description = "RFC 8617 §5.1 step 2: with the most recent AS reporting cv=fail, \"there is no need to proceed and the algorithm stops here\" - no further set")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "A-4")]
+    [Property("Finding", "A-4")]
     public void A_chain_that_failed_is_not_sealed_again()
     {
 
@@ -333,7 +333,7 @@ public sealed class ArcSealerTests
     }
 
     [Test(Description = "RFC 8617 §4.1.2: in the AMS, \"ARC-related header fields (ARC-Authentication-Results, ARC-Message-Signature, and ARC-Seal) MUST NOT be included\" - not even when the configuration names them")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "A-5")]
+    [Property("Finding", "A-5")]
     public void The_AMS_signs_no_ARC_header_field()
     {
 

@@ -150,7 +150,7 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8301 §3.1: \"rsa-sha1 MUST NOT be used for signing or verifying\" - signatures with it \"have permanently failed evaluation\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-3")]
+    [Property("Finding", "V-3")]
     public async Task A_signature_with_rsa_sha1_does_not_pass()
     {
 
@@ -172,7 +172,7 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6376 §3.2: the tags of a tag-list come in any order; §3.7 - the b= value is removed wherever b= stands. A signature with b= first verifies")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-4")]
+    [Property("Finding", "V-4")]
     public async Task A_signature_whose_b_tag_comes_first_verifies()
     {
 
