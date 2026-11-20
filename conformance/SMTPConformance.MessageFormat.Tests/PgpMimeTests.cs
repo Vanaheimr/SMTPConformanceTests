@@ -972,6 +972,39 @@ public sealed class PgpMimeTests
     }
 
 
+    [TestCase("Multipart/Signed")]
+    [TestCase("MULTIPART/SIGNED")]
+    [Test(Description = "RFC 2045 §5.1: \"The type, subtype, and parameter names are not case sensitive\" - a signed message whose type is not written in lower case verifies, and is not reported as unsigned")]
+    [Category(TestCategories.KnownIssue), Property("Finding", "E-14")]
+    public void A_signed_message_verifies_whatever_the_case_of_its_type(String Type)
+    {
+
+        var armored  = Sign(Encoding.ASCII.GetBytes(ForeignSignedPart), alice);
+        var message  = Parse(SignedMessage(ForeignSignedPart, SignaturePart(armored)).Replace("multipart/signed", Type));
+
+        Assert.Multiple(() => {
+            Assert.That(message.IsPgpSigned,                           Is.True);
+            Assert.That(message.VerifyPgpSignature(alicePub).Status,   Is.EqualTo(PgpVerificationStatus.Valid));
+        });
+
+    }
+
+
+    [TestCase("Multipart/Encrypted")]
+    [TestCase("MULTIPART/ENCRYPTED")]
+    [Test(Description = "RFC 2045 §5.1: \"The type, subtype, and parameter names are not case sensitive\" - an encrypted message whose type is not written in lower case is decrypted")]
+    [Category(TestCategories.KnownIssue), Property("Finding", "E-14")]
+    public void An_encrypted_message_decrypts_whatever_the_case_of_its_type(String Type)
+    {
+
+        var message  = Parse(EncryptedMessage(Armor(EncryptToBob(InnerPart("Hello Bob, in capitals.")))).Replace("multipart/encrypted", Type));
+
+        Assert.That(message.IsPgpEncrypted, Is.True);
+        Assert.That(String.Join("\r\n", message.DecryptPgp(bob, Passphrase).ToText()), Does.Contain("Hello Bob, in capitals."));
+
+    }
+
+
     [Test(Description = "RFC 3156 §6.1: \"the data is first signed as a multipart/signature body, and then encrypted\" - after decryption, the multipart/signed inside verifies")]
     public void A_signed_then_encrypted_message_decrypts_to_a_multipart_signed_that_verifies()
     {

@@ -28,7 +28,10 @@ connection and recipient limits; its line numbers refer to `287d1c43`, under
 code no round had tested, none of it changed since: MIME and the message format as Hermod
 builds and reads mail (RFC 2045 to 2047, 2231, 5322), the reports that arrive (DSN, DMARC,
 TLS-RPT), message disposition notifications (RFC 8098), PGP/MIME (RFC 3156) and the Public
-Suffix List under DMARC; its line numbers refer to `72c2366d`.
+Suffix List under DMARC; its line numbers refer to `72c2366d`. E-14 to E-16 follow it up:
+what the older `EMail.Parse` makes of a Content-Type that is not written in lower case, as
+the MIME reader would read it, seen while fixing the MDN findings; their line numbers refer to
+`0504586f`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -36,7 +39,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [E-14](#e-14) | medium | message format | `EMail.Parse` reads the media type and the name `boundary` with case: a `Multipart/Mixed` has no parts, a `Multipart/Signed` with a valid signature is "no signature", a `Multipart/Encrypted` cannot be decrypted | 9 |
+| [E-15](#e-15) | low | message format | `EMail.Parse` takes white space around `=` and comments in the Content-Type for part of the names and values | 3 |
+| [E-16](#e-16) | low | message format | `EMail.Parse` takes a body for a multipart when its Content-Type holds the text `boundary=`, not when it is a multipart: multipart/related has no parts, a text/plain loses what follows a line `--` | 2 |
 
 ### Closed
 
@@ -1705,6 +1712,47 @@ field bodies of printable US-ASCII. Test:
 
 Fixed: the description is written as a phrase (`MimeEncoding.Phrase`): atoms, a quoted
 string or encoded words.
+
+### E-14
+**Open.** **`EMail.Parse` reads the media type and the name `boundary` with case**
+(`EMail/Helpers/MailContentType.cs:148`, `EMail/Helpers/EMailBodypart.cs:172`, `:66` and
+`:72`): the media type is mapped to `MailContentTypes` with a case-sensitive
+`Enum.TryParse`, so `Multipart/Mixed`, `MULTIPART/SIGNED` or `Multipart/Report` is
+`unknown` and has no boundary; and the body is split only when the Content-Type text
+`Contains("boundary=")`, with that case, so `Boundary=xyz` is read as the boundary and then
+not used. RFC 2045 §5.1: "The type, subtype, and parameter names are not case sensitive."
+The parts of such a multipart are lost: the whole body is one text. A `Multipart/Signed`
+whose signature is valid is `IsPgpSigned` false, and `VerifyPgpSignature` says
+`NoSignature`; a `Multipart/Encrypted` is `IsPgpEncrypted` false, and `DecryptPgp` throws
+"This e-mail is not an OpenPGP/MIME encrypted message!" (`EMail.cs:512`). `MimeMessage`
+reads all of these. Tests: `The_media_type_and_parameter_names_are_read_without_case_by_EMail`
+(five spellings), `A_signed_message_verifies_whatever_the_case_of_its_type` and
+`An_encrypted_message_decrypts_whatever_the_case_of_its_type` (two each).
+
+### E-15
+**Open.** **`EMail.Parse` takes white space around `=` and comments in the Content-Type
+for part of the names and values** (`EMail/Helpers/MailContentType.cs:129` and `:174`): the
+value is split at every `;` and each piece trimmed; the type is the first piece as it
+stands, a parameter is found with `StartsWith("boundary=")`. So `boundary = xyz` is no
+boundary, `boundary=xyz (a comment)` the boundary `xyz (a comment)`, and `multipart/mixed (a
+comment)` an unknown type. RFC 2045 §1: the MIME header fields "are subject to the general
+syntactic rules for header fields specified in RFC 822" - white space between the tokens of
+a structured field - and "can include RFC 822 comments, which have no semantic content and
+should be ignored during MIME processing". `MimeMessage` reads them. Test:
+`White_space_and_comments_in_the_Content_Type_are_read_by_EMail` (three cases).
+
+### E-16
+**Open.** **`EMail.Parse` takes a body for a multipart when its Content-Type holds the text
+`boundary=`** (`EMail/Helpers/EMailBodypart.cs:172`): whether a body is split into parts is
+decided by `ContentType.Text.Contains("boundary=")`, not by the type. A multipart of a
+subtype `MailContentTypes` does not list - multipart/related, multipart/digest - is
+`unknown`, its boundary is not read, and it has no parts; RFC 2046 §5.1.7: "MIME
+implementations must in general treat unrecognized subtypes of "multipart" as being
+equivalent to "multipart/mixed"". A text/plain with a parameter `x-boundary=xyz` is split
+at the delimiter `"--" + null`, a line `--`: the text after it is gone. RFC 2045 §5.1:
+"Parameters are modifiers of the media subtype"; RFC 2046 §5.1.1 defines `boundary` for
+multipart. Tests: `An_unrecognised_multipart_subtype_is_read_as_mixed_by_EMail`,
+`A_text_with_a_parameter_ending_in_boundary_is_not_split_by_EMail`.
 
 ## Reports that arrive
 
