@@ -13,7 +13,22 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-20, Hermod `72c2366d`):** 482 tests, **all pass**. A sixth round tested the parts of Hermod's
+**State (2026-11-20, Hermod `72c2366d`):** 862 tests, 790 pass; 72 fail on 36 open
+findings. A seventh round tested what of Hermod's mail code no round had touched, none of
+it changed since - MIME and the message format as Hermod builds and reads mail (RFC 2045
+to 2047, 2231, 5322), the reports that arrive (DSN, DMARC, TLS-RPT), read receipts (RFC
+8098), PGP/MIME (RFC 3156) and the Public Suffix List under DMARC - with 380 tests, the
+MIME read back by the suite's own grammar and the signatures checked with BouncyCastle
+directly. Six findings are high: a comment after the address names the mailbox, so
+`From: mallory@evil.example (<ceo@company.example>)` is ceo@company.example to an
+application and to the DKIM signer, while DMARC checked evil.example
+([E-1](FINDINGS.md#e-1)); a gzipped TLS report of 175 KiB is inflated to 128 MiB before
+the reply to DATA, by anyone ([I-1](FINDINGS.md#i-1)); nested XML in a DMARC report ends
+the process ([I-2](FINDINGS.md#i-2)); read receipts go automatically to any address a
+message names ([K-1](FINDINGS.md#k-1)), and a header folded onto many lines holds the
+session for a time that grows with their square ([K-2](FINDINGS.md#k-2)); decryption
+ignores the integrity check, the EFAIL weakness ([G-1](FINDINGS.md#g-1)). The Public
+Suffix List passes all 78 of its official test vectors. A sixth round tested the parts of Hermod's
 SMTP no round had tested - ARC (RFC 8617), the DMARC reports (RFC 7489 §7), TLS
 reporting (RFC 8460), MT-PRIORITY (RFC 6710), the connection and recipient limits - with
 78 tests, the ARC chains sealed and Hermod's seals validated by the suite's own code.
@@ -82,11 +97,13 @@ src/SMTPConformance.Core/          shared infrastructure, no tests
   Wsl.cs, TestEnvironment.cs       WSL / native-Linux bridge and capability gating
 
 conformance/                       hermetic: no network, no external tools
-  SMTPConformance.Server.Tests     RFC 5321 core, 2920, 1870, 3030, 6152, 6531, 2034, 3461, smuggling
+  SMTPConformance.Server.Tests     RFC 5321 core, 2920, 1870, 3030, 6152, 6531, 2034, 3461, smuggling,
+                                   reports that arrive, RFC 8098 MDN
   SMTPConformance.Tls.Tests        RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS
   SMTPConformance.Auth.Tests       RFC 4954, 4616, LOGIN, RFC 5802/7677 SCRAM (own oracle), RFC 6409
   SMTPConformance.Client.Tests     SMTPSubmissionClient against scripted servers
-  SMTPConformance.MessageFormat.Tests  RFC 5322 App. A addresses, RFC 6376 §3.4.5 DKIM, RFC 7208 §7.4 SPF macros
+  SMTPConformance.MessageFormat.Tests  RFC 5322 App. A addresses, RFC 6376 §3.4.5 DKIM, RFC 7208 §7.4 SPF macros,
+                                   MIME (RFC 2045-2047, 2231, 5322), RFC 3156 PGP/MIME, Public Suffix List
 
 interop/                           category WSL: real tools, WSL on Windows, native on Linux
   SMTPInterop.LinuxTools.Tests     swaks, CPython smtplib, openssl s_client, Postfix smtp-sink
@@ -185,8 +202,13 @@ vectors, and the four Linux tools.
 | Outbound: RFC 6890 public addresses only, smart host credentials, DKIM signing (RFC 6376, RFC 8463) | 26 | 0 | ~~P-1~~ fixed |
 | RFC 5321 §6.1 the file queue after a crash | 5 | 0 | — |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, the suite's DKIM signer/verifier and ARC sealer/validator, RFC 7208 SPF macros | 44 | 0 | — |
+| RFC 2045, 2046, 2047, 2231, 5322, 2919: MIME and the message format, built and read | 129 | 31 | E-1 to E-13 |
+| Reports that arrive: RFC 3464 DSN, RFC 7489 Appendix C, RFC 8460; hostile input | 51 | 12 | I-1 to I-7 |
+| RFC 8098 message disposition notifications | 41 | 19 | K-1 to K-10 |
+| RFC 3156 PGP/MIME, RFC 9580 | 60 | 10 | G-1 to G-6 |
+| Public Suffix List (its 78 test vectors), RFC 7489 §3.2 Organizational Domain | 99 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **482** | **0** | |
+| **Total** | **862** | **72** | |
 
 ## External test partners
 

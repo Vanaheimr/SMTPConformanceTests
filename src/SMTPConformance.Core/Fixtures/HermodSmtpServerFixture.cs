@@ -109,6 +109,18 @@ public sealed class HermodSmtpServerFixtureOptions
     /// </summary>
     public Boolean                                    WithQueue                { get; init; } = true;
 
+    /// <summary>
+    /// Whether a stored message that asks for a read receipt is answered with an MDN (RFC 8098),
+    /// queued for relay.
+    /// </summary>
+    public Boolean                                    EnableAutoMdn            { get; init; } = false;
+
+    /// <summary>
+    /// Whether TLS reports (RFC 8460) delivered to a local mailbox are read and kept - under
+    /// <c>tls-reports-received</c> in the storage directory.
+    /// </summary>
+    public Boolean                                    EnableTlsRptIngestion    { get; init; } = false;
+
 }
 
 
@@ -217,7 +229,9 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
                           RequireAuthOnSubmission  = Options.RequireAuthOnSubmission,
                           DnsBlocklists            = Options.DnsBlocklists,
                           AuthMechanisms           = Options.AuthMechanisms,
-                          AuthOnMtaPort            = Options.AuthOnMtaPort
+                          AuthOnMtaPort            = Options.AuthOnMtaPort,
+                          EnableAutoMdn            = Options.EnableAutoMdn,
+                          EnableTlsRptIngestion    = Options.EnableTlsRptIngestion
                       };
 
         var storage = new CapturingMailStorage();
