@@ -13,7 +13,7 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-20, Hermod `111912f9`):** 862 tests, **all pass**. A seventh round tested what of Hermod's mail code no round had touched, none of
+**State (2026-11-20, Hermod `0504586f`):** 862 tests, **all pass**. A seventh round tested what of Hermod's mail code no round had touched, none of
 it changed since - MIME and the message format as Hermod builds and reads mail (RFC 2045
 to 2047, 2231, 5322), the reports that arrive (DSN, DMARC, TLS-RPT), read receipts (RFC
 8098), PGP/MIME (RFC 3156) and the Public Suffix List under DMARC - with 380 tests, the
@@ -28,7 +28,7 @@ message named ([K-1](FINDINGS.md#k-1)), and a header folded onto many lines held
 session for a time that grew with their square ([K-2](FINDINGS.md#k-2)); decryption
 ignored the integrity check, the EFAIL weakness ([G-1](FINDINGS.md#g-1)). All 36 fixed in
 [#269](https://github.com/Vanaheimr/Hermod/pull/269) to
-[#273](https://github.com/Vanaheimr/Hermod/pull/273). The Public
+[#274](https://github.com/Vanaheimr/Hermod/pull/274). The Public
 Suffix List passes all 78 of its official test vectors. A sixth round tested the parts of Hermod's
 SMTP no round had tested - ARC (RFC 8617), the DMARC reports (RFC 7489 §7), TLS
 reporting (RFC 8460), MT-PRIORITY (RFC 6710), the connection and recipient limits - with

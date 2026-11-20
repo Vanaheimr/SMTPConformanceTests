@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `111912f9`** (Styx `a6b9f9fb`), which closes every finding of all seven
+**Hermod `0504586f`** (Styx `a6b9f9fb`), which closes every finding of all seven
 rounds. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
@@ -163,7 +163,7 @@ None. A new finding gets a test tagged `KnownIssue` and a row here.
 | [K-6](#k-6) | low | MDN | `Build` addressed the receipt to the first of several requesters only | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
 | [K-7](#k-7) | low | MDN | `GoesElsewhere` compared the local-part without case and saw nothing to confirm without a Return-Path, with a null one, or with several requesters | 4 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
 | [K-8](#k-8) | low | MDN | `CreateReadReceipt` defaulted to automatic-action/MDN-sent-automatically | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
-| [K-9](#k-9) | low | MDN | The delivering server wrote no Original-Recipient header field from ORCPT | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-9](#k-9) | low | MDN | The delivering server wrote no Original-Recipient header field from ORCPT | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272), [#274](https://github.com/Vanaheimr/Hermod/pull/274) |
 | [K-10](#k-10) | low | MDN | The returned header lost all but the first of repeated fields and the white space of folded ones | 2 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
 | [G-4](#g-4) | low | PGP/MIME | A broken signature part threw out of `VerifyPgpSignature` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
@@ -2047,7 +2047,12 @@ Fixed: the session groups local recipients by ORCPT and stores one copy per grou
 `Original-Recipient: type;address` on top; recipients without ORCPT are stored together
 as before (`2b12e7da` keeps `FileMailStorage` from overwriting copies written in the
 same millisecond). When storing a later group fails, the client gets 451 although an
-earlier group is stored, and its retry stores that group again.
+earlier group is stored, and its retry stores that group again. An ORCPT of the
+recipient's own address - Postfix and Hermod's own client send one with every RCPT -
+counts as none since
+[Vanaheimr/Hermod#274](https://github.com/Vanaheimr/Hermod/pull/274) (`e28f36b5`):
+before, it split every message from Postfix into one copy per recipient, which the
+interop test `Postfix_delivers_one_message_to_two_recipients` caught.
 
 ### K-10
 **Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`5e37c756`).
