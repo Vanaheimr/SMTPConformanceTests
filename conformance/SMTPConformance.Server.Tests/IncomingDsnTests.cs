@@ -197,7 +197,7 @@ public sealed class IncomingDsnTests : HermodServerTestBase
     [TestCase(550, "550 5.1.01 leading zero in the detail",   TestName = "A detail with a leading zero is not taken as it is")]
     [TestCase(450, "450 4.007.000 leading zeros throughout",  TestName = "Leading zeros throughout are not taken as they are")]
     [Description("RFC 3463 §2 and RFC 3464 §2.3.4: \"Each numeric sub-field within the status-code MUST be expressed without leading zero digits\" - what a next hop sent with leading zeros is no status code, and does not go into the Status field of Hermod's DSN as it is")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "I-6")]
+    [Property("Finding", "I-6")]
     public void A_status_code_with_leading_zeros_does_not_go_into_a_DSN(Int32 Code, String Text)
     {
 

@@ -86,7 +86,7 @@ public sealed class MimeEncodingTests
 
 
     [Test(Description = "RFC 2045 §6.7 (3): \"when decoding a Quoted-Printable body, any trailing white space on a line must be deleted, as it will necessarily have been added by intermediate transport agents\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-11")]
+    [Property("Finding", "E-11")]
     public void Trailing_white_space_is_deleted_when_decoding()
     {
 

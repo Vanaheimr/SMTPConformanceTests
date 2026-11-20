@@ -135,7 +135,7 @@ public sealed class MimeStructureTests
 
 
     [Test(Description = "RFC 2046 §5.1.1: boundary := 0*69<bchars> bcharsnospace, bcharsnospace := DIGIT / ALPHA / \"'\" / \"(\" / \")\" / \"+\" / \"_\" / \",\" / \"-\" / \".\" / \"/\" / \":\" / \"=\" / \"?\" - the boundary of the older HTMLEMailBuilder")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-4")]
+    [Property("Finding", "E-4")]
     public void The_older_builders_boundary_follows_the_grammar()
     {
 
@@ -234,7 +234,7 @@ public sealed class MimeStructureTests
 
 
     [Test(Description = "RFC 2046 §5.1.1: transport-padding := *LWSP-char - \"receivers MUST be able to handle padding added by message transports\" - in the older EMail.Parse")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-5")]
+    [Property("Finding", "E-5")]
     public void Delimiter_lines_with_transport_padding_are_read_by_EMail()
     {
 
@@ -247,7 +247,7 @@ public sealed class MimeStructureTests
 
 
     [Test(Description = "Hostile input: a multipart without a single delimiter line is read without an exception by the older EMail.Parse - which MdnGeneratingMailStorage runs on every message it stores")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-5")]
+    [Property("Finding", "E-5")]
     public void A_multipart_without_delimiters_is_read_by_EMail()
     {
         Assert.That(() => EMail.Parse("From: someone@example.org\r\nContent-Type: multipart/mixed; boundary=xyz\r\n\r\nNo delimiter anywhere.".Split("\r\n")), Throws.Nothing);
@@ -283,7 +283,7 @@ public sealed class MimeStructureTests
 
 
     [Test(Description = "RFC 2045 §6.4: \"Any entity with an unrecognized Content-Transfer-Encoding must be treated as if it has a Content-Type of \"application/octet-stream\", regardless of what the Content-Type header field actually says\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-10")]
+    [Property("Finding", "E-10")]
     public void A_part_with_an_unknown_transfer_encoding_is_no_text()
     {
 

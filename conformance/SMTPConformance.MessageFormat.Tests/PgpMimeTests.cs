@@ -468,7 +468,7 @@ public sealed class PgpMimeTests
     [TestCase(HashAlgorithmTag.Sha3_256,  "pgp-sha3-256")]
     [TestCase(HashAlgorithmTag.Sha3_512,  "pgp-sha3-512")]
     [Test(Description = "RFC 3156 §5: \"Hash-symbols are constructed from the text names registered in [1] ... by converting the text name to lower case and prefixing it with the four characters \"pgp-\"\"; RFC 9580 §9.5 registers the text names \"SHA3-256\" and \"SHA3-512\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "G-6")]
+    [Property("Finding", "G-6")]
     public void The_micalg_of_a_SHA3_signature_is_its_registered_text_name(HashAlgorithmTag Hash, String MicAlg)
     {
 
@@ -542,7 +542,7 @@ public sealed class PgpMimeTests
 
 
     [Test(Description = "RFC 3156 §3: \"implementations MUST make sure that no trailing whitespace is present after the MIME encoding has been applied\"; §5: \"(signed message and transmitted message MUST be identical)\" - a text part the application attaches, with white space at the end of a line, is signed as it is sent")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "G-3")]
+    [Property("Finding", "G-3")]
     public void An_attached_text_part_with_trailing_white_space_is_signed_as_sent()
     {
 
@@ -564,7 +564,7 @@ public sealed class PgpMimeTests
 
 
     [Test(Description = "RFC 3156 §3: \"all data signed according to this protocol MUST be constrained to 7 bits (8-bit data MUST be encoded using either Quoted-Printable or Base64)\" - a text part the application attaches in 8 bit is encoded before it is signed")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "G-3")]
+    [Property("Finding", "G-3")]
     public void An_attached_8bit_text_part_is_signed_in_7bit()
     {
 
@@ -777,7 +777,7 @@ public sealed class PgpMimeTests
 
 
     [Test(Description = "RFC 3156 §3: \"implementations MUST make sure that no trailing whitespace is present after the MIME encoding has been applied\" - PgpMime.Signed, which refuses 8 bit and bare line ends for the same reason, takes white space at the end of a line")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "G-5")]
+    [Property("Finding", "G-5")]
     public void PgpMime_Signed_refuses_a_part_with_trailing_white_space()
     {
 
@@ -882,7 +882,7 @@ public sealed class PgpMimeTests
 
 
     [Test(Description = "RFC 3156 §5: \"The multipart/signed body MUST consist of exactly two parts\"; RFC 1847 §2.1: \"The multipart/signed content type contains exactly two body parts\" - a third part, which no signature covers, does not ride along as signed")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "G-2")]
+    [Property("Finding", "G-2")]
     public void A_multipart_signed_with_a_third_part_is_not_valid()
     {
 
@@ -913,8 +913,8 @@ public sealed class PgpMimeTests
     public static IEnumerable<TestCaseData> NoSignatures()
     {
         yield return new TestCaseData("not a signature at all").                                                     SetArgDisplayNames("no armor");
-        yield return new TestCaseData("-----BEGIN PGP SIGNATURE-----\r\n\r\nAAAA\r\n-----END PGP SIGNATURE-----").  SetArgDisplayNames("armor around a broken packet").   SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "G-4");
-        yield return new TestCaseData("-----BEGIN PGP SIGNATURE-----\r\n\r\n%%%%\r\n-----END PGP SIGNATURE-----").  SetArgDisplayNames("armor around no base64").         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "G-4");
+        yield return new TestCaseData("-----BEGIN PGP SIGNATURE-----\r\n\r\nAAAA\r\n-----END PGP SIGNATURE-----").  SetArgDisplayNames("armor around a broken packet").   SetProperty("Finding", "G-4");
+        yield return new TestCaseData("-----BEGIN PGP SIGNATURE-----\r\n\r\n%%%%\r\n-----END PGP SIGNATURE-----").  SetArgDisplayNames("armor around no base64").         SetProperty("Finding", "G-4");
     }
 
 
@@ -1000,7 +1000,7 @@ public sealed class PgpMimeTests
 
 
     [Test(Description = "RFC 9580 §5.13.1: \"A mismatch of the hash indicates that the message has been modified and MUST be treated as a security problem\"; §13.7: \"it SHOULD NOT attempt to parse nor release decrypted data to the user\" - a ciphertext changed in transit is refused, not decrypted")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "G-1")]
+    [Property("Finding", "G-1")]
     public void A_ciphertext_changed_in_transit_is_refused()
     {
 
@@ -1026,7 +1026,7 @@ public sealed class PgpMimeTests
 
 
     [Test(Description = "RFC 9580 §5.7: the Symmetrically Encrypted Data packet \"is obsolete\" ... \"An implementation SHOULD reject such a packet and stop processing the message. If an implementation chooses to process the packet anyway, it MUST return a clear warning that a non-integrity-protected packet has been processed\" - DecryptPgp has no warning to give, so it refuses")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "G-1")]
+    [Property("Finding", "G-1")]
     public void A_ciphertext_without_integrity_protection_is_refused()
     {
 

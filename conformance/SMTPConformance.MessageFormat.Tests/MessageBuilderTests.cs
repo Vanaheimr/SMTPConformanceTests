@@ -203,7 +203,7 @@ public sealed class MessageBuilderTests
     {
 
         TestCaseData Case(String name, Func<String> message)
-            => new TestCaseData(message).SetName(name).SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "E-3");
+            => new TestCaseData(message).SetName(name).SetProperty("Finding", "E-3");
 
         yield return Case("MimeMessageBuilder: a subject holding a URL of 1200 characters", () => {
             var builder = Full();
@@ -254,7 +254,7 @@ public sealed class MessageBuilderTests
     [TestCase("Message-ID",  "<another@example.com>",                     TestName = "A further Message-ID is not written twice")]
     [TestCase("To",          "everybody@example.com",                     TestName = "A further To is not written twice")]
     [Test(Description = "RFC 5322 §3.6: orig-date, from, sender, reply-to, to, cc, bcc, message-id, in-reply-to, references and subject have a maximum number of 1 - a further header of that name is refused, or replaces the builder's own")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-12")]
+    [Property("Finding", "E-12")]
     public void A_singular_field_among_the_further_headers_is_not_written_twice(String Name, String Value)
     {
 
@@ -325,7 +325,7 @@ public sealed class MessageBuilderTests
 
 
     [Test(Description = "RFC 2919 §3: \"The list header fields are subject to the encoding and character restrictions for mail headers\"; list-id-header = \"List-ID:\" [phrase] \"<\" list-id \">\" - a description that is not ASCII is an encoded word, one with a comma no bare phrase")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-13")]
+    [Property("Finding", "E-13")]
     public void A_list_description_is_written_as_a_phrase_of_ASCII()
     {
 

@@ -9,7 +9,7 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `72c2366d`** (Styx `a6b9f9fb`), which closes every finding of the first six
+**Hermod `111912f9`** (Styx `a6b9f9fb`), which closes every finding of all seven
 rounds. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to
 `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
@@ -36,44 +36,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [E-1](#e-1) | **high** | message format | A comment after the address names the mailbox: `From: mallory@evil.example (<ceo@company.example>)` reads as ceo@company.example, and is DKIM-signed for company.example | 7 |
-| [I-1](#i-1) | **high** | TLS-RPT ingest | A gzip bomb is inflated whole, in memory and onto disk, before the reply to DATA | 1 |
-| [I-2](#i-2) | **high** | DMARC reader | Deeply nested XML overflows the stack and ends the process | 1 |
-| [K-1](#k-1) | **high** | MDN | Read receipts are sent automatically to any address a message names - a third party, for a null reverse-path, to several | 4 |
-| [K-2](#k-2) | **high** | MDN | A field folded onto many lines keeps the session busy for a time that grows with the square of their number - 240000 lines, 34 seconds | 1 |
-| [G-1](#g-1) | **high** | PGP/MIME | A ciphertext is decrypted whether its MDC holds or not, and without one at all (EFAIL) | 2 |
-| [E-2](#e-2) | medium | message format | A date with nested comments takes quadratic time: 16 KB of `((…))` hold the parser for seconds, 1 MB for hours | 1 |
-| [E-3](#e-3) | medium | message format | Header lines of more than 998 characters: a long word, a long header value, a long non-ASCII file name | 4 |
-| [E-4](#e-4) | medium | message format | The older builders' boundary holds `<`, which is no bchars | 1 |
-| [E-5](#e-5) | medium | message format | `EMail.Parse` throws on delimiter lines with transport padding, and on a multipart without delimiters | 2 |
-| [I-3](#i-3) | medium | TLS-RPT ingest | A quoted-printable report part is not decoded, so the report is lost | 1 |
-| [I-4](#i-4) | medium | DMARC reader | XML in UTF-16, or in UTF-8 with a byte order mark, is no report | 3 |
-| [K-3](#k-3) | medium | MDN | The MDN is sent from the recipient's address, not from the null reverse-path | 1 |
-| [K-4](#k-4) | medium | MDN | An MDN is answered with an MDN | 1 |
-| [K-5](#k-5) | medium | MDN | No Original-Recipient field, from the message's header or from ORCPT | 3 |
-| [G-2](#g-2) | medium | PGP/MIME | A multipart/signed with a third, unsigned part verifies as valid | 1 |
-| [G-3](#g-3) | medium | PGP/MIME | An attached part is signed trimmed and sent untrimmed; 8 bit is signed as 8 bit | 2 |
-| [E-6](#e-6) | low | message format | White space or a comment inside the time (obsolete) makes the time 00:00:00 | 2 |
-| [E-7](#e-7) | low | message format | `EMail.Parse` does not read obsolete zones (EST, PDT, UT) or comments in the time: Date is 0001-01-01 | 4 |
-| [E-8](#e-8) | low | message format | An obsolete msg-id with CFWS (`<1234 @ local(blah) .machine .example>`) is kept as raw text | 1 |
-| [E-9](#e-9) | low | message format | A reply to a parent without References but with In-Reply-To leaves the grandparent out of References | 1 |
-| [E-10](#e-10) | low | message format | A part with an unknown Content-Transfer-Encoding is shown as the text of the message | 1 |
-| [E-11](#e-11) | low | message format | Quoted-printable decoding keeps trailing white space that RFC 2045 says must be deleted | 1 |
-| [E-12](#e-12) | low | message format | `MimeMessageBuilder` writes a second From, Date, Subject, Message-ID or To named among its further headers | 5 |
-| [E-13](#e-13) | low | message format | The older builders write the List-ID description raw: 8-bit and with specials | 1 |
-| [I-5](#i-5) | low | DMARC reader | A date_range outside years 1 to 9999 throws `ArgumentOutOfRangeException` | 2 |
-| [I-6](#i-6) | low | DSN | A next hop's status code with leading zeros goes into the DSN as it is | 3 |
-| [I-7](#i-7) | low | TLS-RPT ingest | The preamble of the multipart is read as a report part | 1 |
-| [K-6](#k-6) | low | MDN | `Build` addresses the receipt to the first of several requesters only | 1 |
-| [K-7](#k-7) | low | MDN | `GoesElsewhere` compares the local-part without case and sees nothing to confirm without a Return-Path, with a null one, or with several requesters | 4 |
-| [K-8](#k-8) | low | MDN | `CreateReadReceipt` defaults to automatic-action/MDN-sent-automatically | 1 |
-| [K-9](#k-9) | low | MDN | The delivering server writes no Original-Recipient header field from ORCPT | 1 |
-| [K-10](#k-10) | low | MDN | The returned header loses all but the first of repeated fields and the white space of folded ones | 2 |
-| [G-4](#g-4) | low | PGP/MIME | A broken signature part throws out of `VerifyPgpSignature` | 2 |
-| [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` takes a signed part with trailing white space | 1 |
-| [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -169,8 +132,44 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [A-5](#a-5) | low | ARC | The sealer's AMS signed the ARC header fields it was configured to | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [V-3](#v-3) | medium | DKIM, ARC | rsa-sha1 signatures verified | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [V-4](#v-4) | medium | DKIM, ARC | A signature whose b= tag came first never verified | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
+| [E-1](#e-1) | **high** | message format | A comment after the address named the mailbox: `From: mallory@evil.example (<ceo@company.example>)` read as ceo@company.example, and was DKIM-signed for company.example | 7 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
+| [I-1](#i-1) | **high** | TLS-RPT ingest | A gzip bomb was inflated whole, in memory and onto disk, before the reply to DATA | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
+| [I-2](#i-2) | **high** | DMARC reader | Deeply nested XML overflowed the stack and ended the process | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
+| [K-1](#k-1) | **high** | MDN | Read receipts were sent automatically to any address a message named - a third party, for a null reverse-path, to several | 4 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-2](#k-2) | **high** | MDN | A field folded onto many lines kept the session busy for a time that grew with the square of their number - 240000 lines, 34 seconds | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [G-1](#g-1) | **high** | PGP/MIME | A ciphertext was decrypted whether its MDC held or not, and without one at all (EFAIL) | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
+| [E-2](#e-2) | medium | message format | A date with nested comments took quadratic time: 16 KB of `((…))` held the parser for seconds, 1 MB for hours | 1 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
+| [E-3](#e-3) | medium | message format | Header lines of more than 998 characters: a long word, a long header value, a long non-ASCII file name | 4 | [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) |
+| [E-4](#e-4) | medium | message format | The older builders' boundary held `<`, which is no bchars | 1 | [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) |
+| [E-5](#e-5) | medium | message format | `EMail.Parse` threw on delimiter lines with transport padding, and on a multipart without delimiters | 2 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
+| [I-3](#i-3) | medium | TLS-RPT ingest | A quoted-printable report part was not decoded, so the report was lost | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
+| [I-4](#i-4) | medium | DMARC reader | XML in UTF-16, or in UTF-8 with a byte order mark, was no report | 3 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
+| [K-3](#k-3) | medium | MDN | The MDN was sent from the recipient's address, not from the null reverse-path | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-4](#k-4) | medium | MDN | An MDN was answered with an MDN | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-5](#k-5) | medium | MDN | No Original-Recipient field, from the message's header or from ORCPT | 3 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [G-2](#g-2) | medium | PGP/MIME | A multipart/signed with a third, unsigned part verified as valid | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
+| [G-3](#g-3) | medium | PGP/MIME | An attached part was signed trimmed and sent untrimmed; 8 bit was signed as 8 bit | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
+| [E-6](#e-6) | low | message format | White space or a comment inside the time (obsolete) made the time 00:00:00 | 2 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
+| [E-7](#e-7) | low | message format | `EMail.Parse` did not read obsolete zones (EST, PDT, UT) or comments in the time: Date was 0001-01-01 | 4 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
+| [E-8](#e-8) | low | message format | An obsolete msg-id with CFWS (`<1234 @ local(blah) .machine .example>`) was kept as raw text | 1 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
+| [E-9](#e-9) | low | message format | A reply to a parent without References but with In-Reply-To left the grandparent out of References | 1 | [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) |
+| [E-10](#e-10) | low | message format | A part with an unknown Content-Transfer-Encoding was shown as the text of the message | 1 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
+| [E-11](#e-11) | low | message format | Quoted-printable decoding kept trailing white space that RFC 2045 says must be deleted | 1 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
+| [E-12](#e-12) | low | message format | `MimeMessageBuilder` wrote a second From, Date, Subject, Message-ID or To named among its further headers | 5 | [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) |
+| [E-13](#e-13) | low | message format | The older builders wrote the List-ID description raw: 8-bit and with specials | 1 | [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) |
+| [I-5](#i-5) | low | DMARC reader | A date_range outside years 1 to 9999 threw `ArgumentOutOfRangeException` | 2 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
+| [I-6](#i-6) | low | DSN | A next hop's status code with leading zeros went into the DSN as it was | 3 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
+| [I-7](#i-7) | low | TLS-RPT ingest | The preamble of the multipart was read as a report part | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
+| [K-6](#k-6) | low | MDN | `Build` addressed the receipt to the first of several requesters only | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-7](#k-7) | low | MDN | `GoesElsewhere` compared the local-part without case and saw nothing to confirm without a Return-Path, with a null one, or with several requesters | 4 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-8](#k-8) | low | MDN | `CreateReadReceipt` defaulted to automatic-action/MDN-sent-automatically | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-9](#k-9) | low | MDN | The delivering server wrote no Original-Recipient header field from ORCPT | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-10](#k-10) | low | MDN | The returned header lost all but the first of repeated fields and the white space of folded ones | 2 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [G-4](#g-4) | low | PGP/MIME | A broken signature part threw out of `VerifyPgpSignature` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
+| [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
+| [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 195 tests for these are part of the merge gate now; the observations the first
+The 267 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1505,7 +1504,8 @@ sections, a Content-Type comment a million deep, multiparts and `message/rfc822`
 100 000 parts, a missing close delimiter.
 
 ### E-1
-**Open.** **A comment after the address names the mailbox**
+**Closed** in [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) (`f627d5a3`).
+**A comment after the address named the mailbox**
 (`EMail/Mime/MailboxAddress.cs:107` and `:113`, used by
 `DNSVerifications/DkimSigning.cs:58`): `Parse` takes the address from the *last* `<` outside
 quotes - `var lt = LastTopLevel(Mailbox, '<')` - which does not skip comments, and keeps
@@ -1526,8 +1526,16 @@ name "Alice <alice@example.org>". Tests: `Comments_are_no_part_of_the_address` (
 A.5 twice, A.6.1, A.6.3, two comments after the address),
 `The_DKIM_signing_domain_is_the_From_domain_RFC_5322_reads`.
 
+Fixed: the `<` and `>` of the angle-addr are looked for outside quotes and comments, and
+the addr-spec is read by the new `MailAddressParser.NormalizeAddrSpec`: comments and the
+white space around words, dots and `@` go. `mallory@evil.example
+(<ceo@company.example>)` is mallory@evil.example in `MimeMessage`, `EMail`, the read
+receipt and `DkimSigning`, as for the DMARC check. In the old form `addr (Name)` a
+comment that holds an `@` names nobody.
+
 ### E-2
-**Open.** **A date with nested comments takes quadratic time**
+**Closed** in [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) (`3cdea7d4`).
+**A date with nested comments took quadratic time**
 (`EMail/Mime/MimeDate.cs:76`): `while (Comment.IsMatch(text)) text = Comment.Replace(text, "
 ");` with `Comment` = `\([^()]*\)` removes one level per pass and copies the whole value
 each time - a comment n deep costs n passes over 2n characters. RFC 5322 §3.2.2: `comment =
@@ -1537,8 +1545,12 @@ sender writes the Date, and every application reading mail with `MimeMessage.Par
 it (the server itself does not call it). Test:
 `A_date_with_deeply_nested_comments_is_parsed_in_time` (no result after 2 s).
 
+Fixed: one pass turns every comment, however deep, into a space; a Date with a comment
+10 000 deep is read at once.
+
 ### E-3
-**Open.** **Header lines of more than 998 characters** (`EMail/Mime/MimeEncoding.cs:218`,
+**Closed** in [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) (`c2c3d7b3`).
+**Header lines of more than 998 characters** (`EMail/Mime/MimeEncoding.cs:218`,
 `:253` and `:332`): `Fold` breaks only between the pieces it is given - for ASCII
 `Text.Split(' ')` - so a piece longer than a line stays one line; `Parameter` writes a
 non-ASCII value as one `name*=utf-8''…` without RFC 2231 continuations. RFC 5322 §2.1.1:
@@ -1550,8 +1562,14 @@ line of 1102. Relays cut, wrap or refuse such lines; a cut breaks the DKIM signa
 Encoded words and RFC 2231 §3 continuations exist for this. Tests:
 `No_line_is_longer_than_998_characters`, four cases.
 
+Fixed: a piece too long for a line is broken where the field's grammar allows: free text
+and a display name as encoded words, a parameter in RFC 2231 continuations, a long ASCII
+word in a further header of `MimeMessageBuilder` folded inside; `Fold` refuses what has
+no place to fold, such as a message id that long.
+
 ### E-4
-**Open.** **The older builders' boundary holds `<`**
+**Closed** in [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) (`789aab82`).
+**The older builders' boundary held `<`**
 (`EMail/Helpers/MailContentType.cs:235`): `MIMEBoundary = "-8<--" + ContentType… + "--8<--"
 + … + "--8<-"`. RFC 2046 §5.1.1: `boundary := 0*69<bchars> bcharsnospace`, `bcharsnospace :=
 DIGIT / ALPHA / "'" / "(" / ")" / "+" / "_" / "," / "-" / "." / "/" / ":" / "=" / "?"` - "a
@@ -1560,9 +1578,12 @@ Every multipart `TextEMailBuilder`/`HTMLEMailBuilder` write (text with HTML, att
 PGP/MIME) carries one; a reader holding to the grammar finds no parts. Test:
 `The_older_builders_boundary_follows_the_grammar`.
 
+Fixed: the older builders take the MIME writer's boundary, `=_` and 32 hex digits.
+
 ### E-5
-**Open.** **`EMail.Parse` throws on transport padding and on a multipart without
-delimiters** (`EMail/Helpers/EMailBodypart.cs:183` and `:195`): a delimiter is `line == "--"
+**Closed** in [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) (`d51d3a28`).
+**`EMail.Parse` threw on transport padding and on a multipart without delimiters**
+(`EMail/Helpers/EMailBodypart.cs:183` and `:195`): a delimiter is `line == "--"
 + boundary`, exactly, so one with spaces or a tab after it is none; with none found,
 `this.MailBody = listOfList[0]` indexes an empty list - `ArgumentOutOfRangeException`. RFC
 2046 §5.1.1: `transport-padding := *LWSP-char ; Composers MUST NOT generate non-zero length
@@ -1574,8 +1595,12 @@ any multipart without delimiter lines, makes `EMail.Parse` throw -
 exception. Tests: `Delimiter_lines_with_transport_padding_are_read_by_EMail`,
 `A_multipart_without_delimiters_is_read_by_EMail`.
 
+Fixed: spaces and tabs at the end of a line are ignored when it is compared with the
+delimiters, and a multipart without a delimiter line keeps its body and has no parts.
+
 ### E-6
-**Open.** **White space or a comment inside the time makes it 00:00:00**
+**Closed** in [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) (`3cdea7d4`).
+**White space or a comment inside the time made it 00:00:00**
 (`EMail/Mime/MimeDate.cs:79` and `:93`): the value is split into tokens at white space and
 the time must be one token matching `^(\d{1,2}):(\d{2})(?::(\d{2}))?$`; `09 : 55 : 06` is
 five tokens, none a time, and the date comes back without its time - silently wrong. RFC
@@ -1584,8 +1609,12 @@ five tokens, none a time, and the date comes back without its time - silently wr
 conformant receiver". Tests: `White_space_and_comments_inside_the_time_are_parsed`, two
 cases.
 
+Fixed: the white space around the colons of the time is removed after the comments, so
+`09(comment):   55  :  06` is 09:55:06.
+
 ### E-7
-**Open.** **`EMail.Parse` does not read obsolete zones or comments in the time**
+**Closed** in [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) (`da5e79b2`).
+**`EMail.Parse` did not read obsolete zones or comments in the time**
 (`EMail/EMail.cs:161`, `ParseDate`): only a trailing comment is removed, the rest goes to
 `DateTimeOffset.TryParseExact`/`TryParse`, which know neither "EST" nor "UT" nor CFWS in the
 time; Date is then `default` - 0001-01-01. RFC 5322 §4.3: `obs-zone = "UT" / "GMT" / "EST" /
@@ -1593,8 +1622,12 @@ time; Date is then `default` - 0001-01-01. RFC 5322 §4.3: `obs-zone = "UT" / "G
 [CFWS]`; §4: "MUST be accepted and parsed". `MimeMessage` reads the zones, `EMail` does not.
 Tests: `An_obsolete_date_is_parsed_by_EMail`, four cases.
 
+Fixed: `EMail.ParseDate` asks `MimeDate` first, and the .NET parsers only for what it
+does not read.
+
 ### E-8
-**Open.** **An obsolete msg-id is kept as raw text** (`EMail/Mime/MimeMessage.cs:272` and
+**Closed** in [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) (`b879bcb0`).
+**An obsolete msg-id was kept as raw text** (`EMail/Mime/MimeMessage.cs:272` and
 `:371`): `MessageIdPattern = <([^<>\s]+)>` allows no white space or comment inside the
 brackets; without a match `MessageId` is the whole header value, brackets and blanks
 included - which a reply cannot name (`MimeMessageBuilder` refuses it). RFC 5322 §4.5.4:
@@ -1602,8 +1635,12 @@ included - which a reply cannot name (`MimeMessageBuilder` refuses it). RFC 5322
 local(blah)  .machine .example>` is 1234@local.machine.example; §4: "MUST be accepted and
 parsed". Test: `An_obsolete_message_id_is_read`.
 
+Fixed: msg-ids are read in one walk over the value that skips quoted phrases and
+comments, and what is between `<` and `>` goes through `NormalizeAddrSpec`.
+
 ### E-9
-**Open.** **A reply to a parent without References forgets its In-Reply-To**
+**Closed** in [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) (`54257198`).
+**A reply to a parent without References forgot its In-Reply-To**
 (`EMail/Mime/MailReplies.cs:123`): `var thread =
 Original.References.Concat(Original.MessageId…)` - the parent's In-Reply-To is never looked
 at. RFC 5322 §3.6.4: a reply "SHOULD have "In-Reply-To:" and "References:" fields as
@@ -1614,8 +1651,12 @@ by the contents of the parent's "Message-ID:" field". Replies to mail from progr
 write only In-Reply-To lose the thread's first message. Test:
 `A_reply_to_a_parent_without_References_takes_its_In_Reply_To`.
 
+Fixed: a parent without References but with one id in In-Reply-To gives that id followed
+by its Message-ID.
+
 ### E-10
-**Open.** **A part with an unknown Content-Transfer-Encoding is shown as text**
+**Closed** in [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) (`a2815740`).
+**A part with an unknown Content-Transfer-Encoding was shown as text**
 (`EMail/Mime/TransferEncodings.cs:48`, `EMail/Mime/MimeMessage.cs:685`): an encoding other
 than base64/quoted-printable is taken as the octets themselves (`_ => Body.ToArray()`), and
 the part stays `text/plain` - `TextBody`, not an attachment. RFC 2045 §6.4: "Any entity with
@@ -1623,15 +1664,22 @@ an unrecognized Content-Transfer-Encoding must be treated as if it has a Content
 "application/octet-stream", regardless of what the Content-Type header field actually says".
 Test: `A_part_with_an_unknown_transfer_encoding_is_no_text`.
 
+Fixed: such a part is application/octet-stream, its parameters kept - an attachment.
+
 ### E-11
-**Open.** **Quoted-printable decoding keeps trailing white space**
+**Closed** in [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) (`c9d139bb`).
+**Quoted-printable decoding kept trailing white space**
 (`EMail/Mime/TransferEncodings.cs:115`): every octet but "=" is copied. RFC 2045 §6.7 rule
 3: "when decoding a Quoted-Printable body, any trailing white space on a line must be
 deleted, as it will necessarily have been added by intermediate transport agents". Test:
 `Trailing_white_space_is_deleted_when_decoding`.
 
+Fixed: spaces and tabs before a line end or the end of the body are deleted; `=20`,
+`=09` and the white space before a soft line break stay.
+
 ### E-12
-**Open.** **`MimeMessageBuilder` writes a singular field twice**
+**Closed** in [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) (`e0181d57`).
+**`MimeMessageBuilder` wrote a singular field twice**
 (`EMail/Mime/MimeMessageBuilder.cs:163` to `:165`): the further `Headers` are checked only
 for a valid name (`IsFieldName`) and written after the builder's own, so
 `Headers.Add(("From", …))` gives two From fields - though the builder's remarks say refusing
@@ -1641,8 +1689,12 @@ in-reply-to, references, subject. Readers pick different ones (Hermod's `MimeMes
 first). Tests: `A_singular_field_among_the_further_headers_is_not_written_twice`, five
 cases.
 
+Fixed: a further header named like a field of maximum one is refused with an
+`ArgumentException`; each of them is written from its own property only.
+
 ### E-13
-**Open.** **The older builders write the List-ID description raw** (`EMail/Builder.cs:448`,
+**Closed** in [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) (`a16dfd1a`).
+**The older builders wrote the List-ID description raw** (`EMail/Builder.cs:448`,
 `EMail/Helpers/ListId.cs:65`): `SetEMailHeader("List-ID", ListId.Value.ToString())`, `Value`
 = `$"{Name} <{Identification}>"` with the decoded name - `List-ID: Grüße, Freunde
 <friends.list.example.org>`: 8-bit in a 7bit message, a comma in what must be a phrase. RFC
@@ -1650,6 +1702,9 @@ cases.
 mail headers", `list-id-header = "List-ID:" [phrase] "<" list-id ">" CRLF`; RFC 5322 §2.2:
 field bodies of printable US-ASCII. Test:
 `A_list_description_is_written_as_a_phrase_of_ASCII`.
+
+Fixed: the description is written as a phrase (`MimeEncoding.Phrase`): atoms, a quoted
+string or encoded words.
 
 ## Reports that arrive
 
@@ -1687,8 +1742,9 @@ values, the Status grammar, dates, Original-Recipient only with ORCPT. `StatusOf
 detail.
 
 ### I-1
-**Open.** **A gzip bomb is inflated whole, in memory and onto disk, before the reply to
-DATA** (`Reporting/TlsRptIngestor.cs:203` to `:210`, `Gunzip`: `gz.CopyTo(output)` into a
+**Closed** in [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) (`a3270801`).
+**A gzip bomb was inflated whole, in memory and onto disk, before the reply to DATA**
+(`Reporting/TlsRptIngestor.cs:203` to `:210`, `Gunzip`: `gz.CopyTo(output)` into a
 `MemoryStream` with no limit, then `:155`, `Encoding.UTF8.GetString(bytes)`, and `:341`,
 `File.WriteAllText(..., json)`): 175 KiB of mail whose application/tlsrpt+gzip part inflates
 to 128 MiB of valid JSON make the server allocate 1430 MiB and keep the 128 MiB on disk
@@ -1705,8 +1761,14 @@ that again, and a JSON string under 1 GiB is written to disk once per message.
 `DmarcReportReader` has the limit this code lacks (`ReadAtMost`, 20 MiB). Test:
 `A_gzip_bomb_is_not_unpacked_whole`.
 
+Fixed: a report is unpacked in blocks and given up once it would pass a limit, the new
+`SMTPServerConfig.MaxTlsRptReportSize` (default 10 MiB); anything larger is no report -
+nothing parsed, kept or written. Ingestion is still not limited to the rua mailbox, as
+Hermod has no setting that names it.
+
 ### I-2
-**Open.** **Deeply nested XML overflows the stack and ends the process**
+**Closed** in [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) (`376946a8`).
+**Deeply nested XML overflowed the stack and ended the process**
 (`Reporting/DmarcReportReader.cs:284`, `Text`: `Child(Parent, Name)?.Value`): the
 `XmlReader` at `:212` sets no limit on depth, so `XDocument.Load` builds a tree of any
 depth, and `XElement.Value` collects the text of an element through `XContainer.AppendText`,
@@ -1720,8 +1782,12 @@ server does not call the reader, but any application reading its rua mailbox wit
 one report. Test: `Deep_nesting_is_read_or_refused` ("Nesting 50000 deep does not end the
 process", in a child process; the 1000-deep case passes).
 
+Fixed: `Parse` reads the document once first and returns null for anything nested deeper
+than `DmarcReportReader.MaxDepth` = 32; only then is the tree built.
+
 ### I-3
-**Open.** **A quoted-printable report part is not decoded, so the report is lost**
+**Closed** in [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) (`22aa8de3`).
+**A quoted-printable report part was not decoded, so the report was lost**
 (`Reporting/TlsRptIngestor.cs:191` to `:200`, `DecodeBody`: only base64 is decoded -
 "quoted-printable(best-effort as-is): treat as raw text bytes"): soft line breaks and `=3D`
 stay in the JSON, which does not parse. RFC 2049 §2: "A mail user agent that is
@@ -1731,8 +1797,11 @@ uncompressed application/tlsrpt+json report (RFC 8460 §5.3) is usually one JSON
 than the 998 octets RFC 5322 §2.1.1 allows, so the sender has to encode it, and
 quoted-printable is one of the two ways. Test: `A_quoted_printable_report_is_read`.
 
+Fixed: `DecodeBody` decodes quoted-printable.
+
 ### I-4
-**Open.** **XML in UTF-16, or in UTF-8 with a byte order mark, is no report**
+**Closed** in [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) (`f853d998`).
+**XML in UTF-16, or in UTF-8 with a byte order mark, was no report**
 (`Reporting/DmarcReportReader.cs:165`, `Encoding.UTF8.GetString(xml)`, then `:212`, an
 `XmlReader` over a `StringReader`): the octets are decoded as UTF-8 whatever they are. With
 a UTF-8 BOM the string starts with U+FEFF and the XmlReader refuses the declaration after
@@ -1746,8 +1815,12 @@ finding: XML does not require that encoding). Tests:
 `A_report_in_either_encoding_XML_requires_is_read`, three cases (UTF-8 with BOM, the same
 gzipped, UTF-16).
 
+Fixed: the encoding is found from the octets - byte order mark or declaration, UTF-8 if
+neither - and a leading byte order mark in decoded text is dropped.
+
 ### I-5
-**Open.** **A date_range outside years 1 to 9999 throws `ArgumentOutOfRangeException`**
+**Closed** in [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) (`febac950`).
+**A date_range outside years 1 to 9999 threw `ArgumentOutOfRangeException`**
 (`Reporting/DmarcReportReader.cs:287` to `:290`, `Seconds`:
 `DateTimeOffset.FromUnixTimeSeconds(seconds)` for any Int64, while only `XmlException` is
 caught, at `:265`): `<begin>99999999999999</begin>` does not make `Parse` return null, as
@@ -1757,8 +1830,11 @@ the schema. A reader that throws on a value a stranger writes loses that report 
 its caller was doing, the loop over a mailbox for one. Tests:
 `A_date_range_out_of_range_does_not_throw`, two cases.
 
+Fixed: such a date is none, and the rest of the report is read.
+
 ### I-6
-**Open.** **A next hop's status code with leading zeros goes into the DSN as it is**
+**Closed** in [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) (`ea4f3004`).
+**A next hop's status code with leading zeros went into the DSN as it was**
 (`DsnGenerator.cs:338`, `^(?:\d{3}[ -])?([245]\.\d{1,3}\.\d{1,3})(?:\s|$)`, and `:307`,
 `return match.Groups[1].Value`): `\d{1,3}` matches `01` and `007`, so `StatusOf(550, "550
 5.01.1 ...")` returns `5.01.1`, which `BounceHandler.cs:278` writes into the `Status:` field
@@ -1768,8 +1844,11 @@ without leading zero digits"; RFC 3464 §2.3.4 takes its Status from there. A re
 it already does for `5.1.1000`. Tests:
 `A_status_code_with_leading_zeros_does_not_go_into_a_DSN`, three cases.
 
+Fixed: a sub-code with a leading zero falls back to the reply class, 5.0.0 or 4.0.0.
+
 ### I-7
-**Open.** **The preamble of the multipart is read as a report part**
+**Closed** in [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) (`0b96e51c`).
+**The preamble of the multipart was read as a report part**
 (`Reporting/TlsRptIngestor.cs:169` to `:186`, `SplitMultipart`: `body.Split(delimiter)`, and
 every segment but the closing one is a candidate, the preamble included; the delimiter is
 found anywhere, not only at the start of a line): a preamble with a header block naming
@@ -1780,6 +1859,9 @@ boundary delimiter line or after the last one"; "The boundary delimiter MUST occ
 beginning of a line". Little harm - the sender of the preamble wrote the report too - but
 what is logged and kept is not the report that was sent. Test:
 `The_preamble_is_not_read_as_a_report`.
+
+Fixed: the multipart is split line by line at delimiter lines; the preamble is skipped,
+and reading stops at the close delimiter.
 
 ## Message disposition notifications
 
@@ -1805,7 +1887,8 @@ so for a third party and not for the domain in capitals. Line numbers refer to `
 under `libs/Hermod/Hermod/SMTP/`.
 
 ### K-1
-**Open.** **Read receipts are sent automatically to any address a message names**
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`16812647`).
+**Read receipts were sent automatically to any address a message named**
 (`MailStorage/MdnGeneratingMailStorage.cs:91`, `await GenerateReadReceiptsAsync(message,
 envelopeTo, ct);` - the reverse-path is not passed on - and `:110` to `:123`, which answer
 every `IsReadReceiptRequested` with `sender.SendAsync(mdn, ...)`). Whatever
@@ -1825,9 +1908,14 @@ mail bomb with as many targets as the header holds, each MDN confirming that the
 address is read. Tests:
 `No_MDN_is_sent_automatically_to_an_address_the_reverse_path_does_not_vouch_for`, four cases.
 
+Fixed: the storage gets the reverse-path and sends a receipt automatically only when
+there is exactly one requester and it is the reverse-path; for a null or unknown one,
+none.
+
 ### K-2
-**Open.** **A field folded onto many lines keeps the session busy for a time that grows with
-the square of their number** (`MailStorage/MdnGeneratingMailStorage.cs:108`,
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`d1a3203a`).
+**A field folded onto many lines kept the session busy for a time that grew with the square
+of their number** (`MailStorage/MdnGeneratingMailStorage.cs:108`,
 `EMail.Parse(message.RawMessage.Split(...))`, through `EMail/EMail.cs:193`,
 `AggregateIndentedLines()`, which is Styx's
 `CurrentLine = CurrentLine + Enumerator.Current.TrimStart();` -
@@ -1842,8 +1930,13 @@ folded onto any number of lines; a parser that loops on input any sender control
 remote denial of service. Test: `A_field_folded_onto_240000_lines_does_not_hold_up_delivery`
 (against `72c2366d` its session keeps counting for half a minute after the test ends).
 
+Fixed: `EMail.Parse` unfolds each field with a `StringBuilder` (Styx's
+`AggregateIndentedLines` is no longer used there), and the storage parses nothing
+without a Disposition-Notification-To at the start of a header line.
+
 ### K-3
-**Open.** **The MDN is sent from the recipient's address, not from the null reverse-path**
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`16812647`).
+**The MDN was sent from the recipient's address, not from the null reverse-path**
 (`MailStorage/MdnGeneratingMailStorage.cs:123`, `sender.SendAsync(mdn, ...)`, the
 `SendAsync(EMail)` overload of `MailSender.cs:219`, whose `EMailEnvelop(EMail)` takes the
 reverse-path from From: - `EMail/EMailEnvelop.cs:112`,
@@ -1856,8 +1949,11 @@ not exist - with K-1, any address a sender writes into the header - bounces into
 user's mailbox, and auto-responders answer it. Hermod's own `MdnStorageTests` asserts the
 recipient as reverse-path. Test: `The_MDN_is_sent_from_the_null_reverse_path`.
 
+Fixed: the MDN is queued with MAIL FROM:<>.
+
 ### K-4
-**Open.** **An MDN is answered with an MDN** (`MailStorage/MdnGeneratingMailStorage.cs:110`,
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`76d88464`).
+**An MDN was answered with an MDN** (`MailStorage/MdnGeneratingMailStorage.cs:110`,
 `if (!mail.IsReadReceiptRequested) return;` - nothing else is looked at): a
 multipart/report; report-type=disposition-notification that carries
 Disposition-Notification-To is answered with an MDN of its own. RFC 8098 §2.1: "An MDN MUST
@@ -1866,8 +1962,12 @@ response to an MDN." The first sentence binds the sender, the second the receive
 own MDNs ask for none, but a peer's MDN that does (by mistake or on purpose) starts a loop
 between two servers that answer automatically. Test: `No_MDN_is_sent_in_answer_to_an_MDN`.
 
+Fixed: `CreateReadReceipt` returns null for a multipart/report with
+report-type=disposition-notification.
+
 ### K-5
-**Open.** **No Original-Recipient field, from the message's header or from ORCPT**
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`615b309f`).
+**No Original-Recipient field, from the message's header or from ORCPT**
 (`EMail/EMail.cs:561`, `$"Final-Recipient: rfc822; {reporter}"`, followed by
 Original-Message-ID and Disposition only; `EMail/Mime/DispositionNotification.cs:119`
 alike): a message with `Original-Recipient: rfc822;alias@hermod.test`, or delivered with
@@ -1880,8 +1980,13 @@ MDNs with the original message on a per-recipient basis"); after an alias it can
 `Original_Recipient_is_taken_from_the_message`, `Original_Recipient_is_taken_from_ORCPT`,
 `A_confirmed_receipt_returns_the_Original_Recipient`.
 
+Fixed: `CreateReadReceipt` and `Build` write Original-Recipient before Final-Recipient,
+from a new optional parameter or from the message's header, which the server now writes
+from ORCPT ([K-9](#k-9)).
+
 ### K-6
-**Open.** **`Build` addresses the receipt to the first of several requesters only**
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`9ff2c72f`).
+**`Build` addressed the receipt to the first of several requesters only**
 (`EMail/Mime/DispositionNotification.cs:57`, `RequestedBy` is
 `MailboxAddress.ParseList(...).FirstOrDefault(...)`, and `:108`, `builder.To.Add(to);`):
 `Disposition-Notification-To: bernd@example.net, Carla <carla@example.org>` gives a receipt
@@ -1891,9 +1996,12 @@ Disposition-Notification-To header field". `Build` is the receipt a reader confi
 confirmation §2.1 asks for when there are several addresses - and the others never get it.
 Test: `A_confirmed_receipt_goes_to_every_address_that_asked`.
 
+Fixed: the receipt is addressed to every distinct requester.
+
 ### K-7
-**Open.** **`GoesElsewhere` compares the local-part without case and sees nothing to confirm
-without a Return-Path, with a null one, or with several requesters**
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`9ff2c72f`).
+**`GoesElsewhere` compared the local-part without case and saw nothing to confirm without a
+Return-Path, with a null one, or with several requesters**
 (`EMail/Mime/DispositionNotification.cs:72` and `:73`,
 `from.Address.Equals(To.Address, StringComparison.OrdinalIgnoreCase)` and
 `EnvelopeFrom is { Length: > 0 } envelopeFrom && !envelopeFrom.Equals(To.Address,
@@ -1907,8 +2015,11 @@ answer to whether the reader has to be asked; an application that trusts it send
 without consent where the RFC requires it. Tests:
 `A_request_the_RFC_wants_confirmed_goes_elsewhere`, four cases.
 
+Fixed: the local-part is compared with case, and each of those cases asks first.
+
 ### K-8
-**Open.** **`CreateReadReceipt` defaults to automatic-action/MDN-sent-automatically**
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`4be61b67`).
+**`CreateReadReceipt` defaulted to automatic-action/MDN-sent-automatically**
 (`EMail/EMail.cs:529`, `var disposition = Disposition ??
 MessageDisposition.DisplayedAutomatically;`): the method a mail client calls "when the user
 displays (or otherwise disposes of) the message", given no disposition, writes
@@ -1918,8 +2029,11 @@ preserve the user's privacy, this MUST be the default for MUAs", and the same fo
 "MDN-sent-manually". §6.2: the disposition mode "can leak information about recipient's MUA
 configuration". Test: `CreateReadReceipt_defaults_to_manual_action_and_MDN_sent_manually`.
 
+Fixed: the default is manual-action/MDN-sent-manually.
+
 ### K-9
-**Open.** **The delivering server writes no Original-Recipient header field from ORCPT**
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`615b309f`).
+**The delivering server wrote no Original-Recipient header field from ORCPT**
 (`SMTPSession.cs:1413`, `storage.StoreAsync(stampedMessage, ...)` - the stamped message gets
 Authentication-Results and Received, nothing from the recipients' ORCPT): `RCPT
 TO:<alice@hermod.test> ORCPT=rfc822;alias@hermod.test` is accepted and the stored message
@@ -1929,9 +2043,16 @@ message (along with the Return-Path header field)" - the only way the mail clien
 address it is to return in its MDN (K-5). Test:
 `The_delivering_server_writes_Original_Recipient_from_ORCPT`.
 
+Fixed: the session groups local recipients by ORCPT and stores one copy per group, with
+`Original-Recipient: type;address` on top; recipients without ORCPT are stored together
+as before (`2b12e7da` keeps `FileMailStorage` from overwriting copies written in the
+same millisecond). When storing a later group fails, the client gets 451 although an
+earlier group is stored, and its retry stores that group again.
+
 ### K-10
-**Open.** **The returned header loses all but the first of repeated fields and the white
-space of folded ones** (`EMail/EMail.cs:577`, `lines.AddRange(ToText().TakeWhile(...))`, from
+**Closed** in [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) (`5e37c756`).
+**The returned header lost all but the first of repeated fields and the white space of
+folded ones** (`EMail/EMail.cs:577`, `lines.AddRange(ToText().TakeWhile(...))`, from
 the fields `EMail.Parse` kept: `:119`, `headers.TryAdd(kvp.Key, kvp.Value);` into a
 dictionary, and `:193`, `AggregateIndentedLines()`, which drops the white space with the
 line break): the text/rfc822-headers part of the MDN has Hermod's Received field but not the
@@ -1944,6 +2065,8 @@ header fields"; RFC 5322 §2.2.3: "Unfolding is accomplished by simply removing 
 is immediately followed by WSP" - the WSP stays. The MDN's own Subject is built the same way.
 Tests: `The_returned_header_has_every_Received_field`,
 `A_folded_field_is_returned_with_its_white_space`.
+
+Fixed: `EMail.Parse` keeps the raw header lines, and `CreateReadReceipt` returns them.
 
 ## PGP/MIME and the Public Suffix List
 
@@ -1988,7 +2111,8 @@ the Organizational Domain; the Organizational Domain under `*.ck` is found three
 an author domain in U-labels aligns with its A-label signature and record (RFC 8616 §6).
 
 ### G-1
-**Open.** **A ciphertext is decrypted whether or not its integrity holds**
+**Closed** in [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) (`fd87ea38`).
+**A ciphertext was decrypted whether or not its integrity held**
 (`../BouncyCastle/OpenPGP.cs:440` to `:516`, `DecryptAndVerify`, which `EMail.DecryptPgp`
 and `EMail.DecryptAndVerifyPgp` call): `var clearFactory = new
 PgpObjectFactory(encrypted.GetDataStream(privateKey));` reads the literal data and `return
@@ -2010,8 +2134,13 @@ an unsigned one is not protected by anything. Tests:
 `A_ciphertext_changed_in_transit_is_refused`,
 `A_ciphertext_without_integrity_protection_is_refused`.
 
+Fixed: a packet without integrity protection (SED) is refused before anything is
+decrypted, and an MDC that does not hold throws `PgpException`; no plaintext is
+released.
+
 ### G-2
-**Open.** **A multipart/signed with a third part verifies as valid** (`EMail/EMail.cs:320`
+**Closed** in [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) (`56d719bf`).
+**A multipart/signed with a third part verified as valid** (`EMail/EMail.cs:320`
 to `:325`): `var parts = Body.NestedBodyparts.ToList(); if (parts.Count < 2) ...` takes
 `parts[0]` and `parts[1]` and never looks at how many there are. RFC 3156 §5: "The
 multipart/signed body MUST consist of exactly two parts"; RFC 1847 §2.1: "The
@@ -2020,8 +2149,11 @@ signed message of Alice's can add a part ("P.S.: No, pay the invoice to account 
 instead.") and `VerifyPgpSignature` still says `Valid` - for a message whose body now
 carries text no signature covers. Test: `A_multipart_signed_with_a_third_part_is_not_valid`.
 
+Fixed: more than two parts are `Invalid`.
+
 ### G-3
-**Open.** **A part the application attaches is signed as it is not sent**
+**Closed** in [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) (`fde0662d`).
+**A part the application attached was signed as it was not sent**
 (`EMail/Builder.cs:731` and `:737`): the signed material is
 `bodypartToBeSecured.ToText().Select(line => line.TrimEnd())`, and `//ToDo: Apply
 Content-Transfer-Encoding`. The trimming applies to what is signed only; the part goes out
@@ -2036,8 +2168,12 @@ encoding has been applied"; §5: "(signed message and transmitted message MUST b
 identical)". Tests: `An_attached_text_part_with_trailing_white_space_is_signed_as_sent`,
 `An_attached_8bit_text_part_is_signed_in_7bit`.
 
+Fixed: a part that needs it is encoded as quoted-printable or base64 before signing,
+signed untrimmed and sent as signed; the application's part is not changed.
+
 ### G-4
-**Open.** **A broken signature part throws instead of failing verification**
+**Closed** in [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) (`56d719bf`).
+**A broken signature part threw instead of failing verification**
 (`EMail/EMail.cs:342` and `:344`, into `../BouncyCastle/OpenPGP.cs:337` to `:340`):
 `PgpUtilities.GetDecoderStream(ArmoredSignature)` and `factory.NextPgpObject()` are not
 guarded. An armor header around a broken packet throws `IOException: invalid header
@@ -2048,8 +2184,11 @@ verification, a result the sender of the message controls; plain text without ar
 gives `NoSignature`. Test: `A_signature_part_without_a_signature_is_not_valid` (two of its
 three cases).
 
+Fixed: a signature part that does not read is `Invalid`.
+
 ### G-5
-**Open.** **`PgpMime.Signed` takes a signed part with trailing white space**
+**Closed** in [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) (`7be69186`).
+**`PgpMime.Signed` took a signed part with trailing white space**
 (`EMail/Mime/PgpMime.cs:52`, `CheckSignedPart`, `:151` to `:180`): it refuses 8 bit, bare CR
 and LF and lines over 998 octets - "anything else some relay on the way would change, and the
 signature with it" - but not white space at the end of a line, which relays change as well.
@@ -2058,8 +2197,11 @@ MIME encoding has been applied", and the note: "The restrictions on whitespace a
 in order to make the hash calculated invariant under the text and binary mode signature
 mechanisms". Test: `PgpMime_Signed_refuses_a_part_with_trailing_white_space`.
 
+Fixed: a space or tab before CR LF or at the very end is refused.
+
 ### G-6
-**Open.** **micalg for SHA3 is `pgp-sha3_256`, not `pgp-sha3-256`**
+**Closed** in [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) (`fde0662d`).
+**micalg for SHA3 was `pgp-sha3_256`, not `pgp-sha3-256`**
 (`EMail/Builder.cs:745`): `MicAlg = "pgp-" + HashAlgorithm.ToString().ToLowerInvariant()`
 spells the BouncyCastle enum, `Sha3_256`. RFC 3156 §5: "Hash-symbols are constructed from the
 text names registered in [1] or according to the mechanism defined in that document by
@@ -2068,6 +2210,8 @@ RFC 9580 §9.5 registers "SHA3-256" and "SHA3-512". The signature itself is made
 so a reader that takes micalg at its word hashes for an algorithm that does not exist.
 (`PgpMime.MicAlg` refuses SHA3 rather than misname it.) Test:
 `The_micalg_of_a_SHA3_signature_is_its_registered_text_name` (SHA3-256, SHA3-512).
+
+Fixed: the new `PgpMime.MicAlg(HashAlgorithmTag)` names hashes as RFC 9580 does.
 
 ## Observations without a test yet
 

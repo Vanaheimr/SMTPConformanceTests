@@ -121,7 +121,7 @@ public sealed class MimeHeaderTests
     [TestCase("Fri, 21 Nov 1997 09(comment):   55  :  06 -0600", TestName = "RFC 5322 A.6.3: a comment and white space inside the time")]
     [TestCase("Fri, 21 Nov 1997 09 : 55 : 06 -0600",            TestName = "RFC 5322 §4.3: obs-hour, obs-minute, obs-second with CFWS")]
     [Test(Description = "RFC 5322 §4.3: obs-hour = [CFWS] 2DIGIT [CFWS], obs-minute and obs-second alike; §4: obsolete forms \"MUST be accepted and parsed by a conformant receiver\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-6")]
+    [Property("Finding", "E-6")]
     public void White_space_and_comments_inside_the_time_are_parsed(String Date)
     {
         Assert.That(Message("Date: " + Date).Date, Is.EqualTo(DateTimeOffset.Parse("1997-11-21T09:55:06-06:00")));
@@ -129,7 +129,7 @@ public sealed class MimeHeaderTests
 
 
     [Test(Description = "RFC 5322 §3.2.2: comment = \"(\" *([FWS] ccontent) [FWS] \")\", ccontent = ctext / quoted-pair / comment - nested comments are legal; a date with a 20 KB comment nested 10 000 deep is parsed in time")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-2")]
+    [Property("Finding", "E-2")]
     public async Task A_date_with_deeply_nested_comments_is_parsed_in_time()
     {
 
@@ -164,7 +164,7 @@ public sealed class MimeHeaderTests
     [TestCase("Fri, 21 Nov 1997 09:55:06 UT",                      "1997-11-21T09:55:06+00:00", TestName = "EMail: obs-zone UT")]
     [TestCase("Fri, 21 Nov 1997 09(comment):   55  :  06 -0600",   "1997-11-21T09:55:06-06:00", TestName = "EMail: RFC 5322 A.6.3 comment in the time")]
     [Test(Description = "RFC 5322 §4.3 obs-zone and obs-time, read by the older EMail.Parse; §4: obsolete forms \"MUST be accepted and parsed by a conformant receiver\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-7")]
+    [Property("Finding", "E-7")]
     public void An_obsolete_date_is_parsed_by_EMail(String Date, String Expected)
     {
         Assert.That(OldMessage("From: someone@example.org\r\nDate: " + Date).Date, Is.EqualTo(DateTimeOffset.Parse(Expected)));
@@ -211,7 +211,7 @@ public sealed class MimeHeaderTests
 
         TestCaseData Case(String source, String header, params String[] expected)
             => new TestCaseData(header, expected).SetName($"{source}: {header.Replace("\r\n", " ")}").
-                   SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "E-1");
+                   SetProperty("Finding", "E-1");
 
         yield return Case("RFC 5322 A.5",          "Pete(A nice \\) chap) <pete(his account)@silly.test(his host)>",          "Pete|pete@silly.test");
         yield return Case("RFC 5322 A.5",          "A Group(Some people)\r\n     :Chris Jones <c@(Chris's host.)public.example>,\r\n         joe@example.org,\r\n  John <jdoe@one.test> (my dear friend); (the end of the group)",
@@ -233,7 +233,7 @@ public sealed class MimeHeaderTests
 
 
     [Test(Description = "RFC 5322 §3.4: a comment after the addr-spec names no mailbox - the From domain Hermod signs for (DKIM) is the one RFC 5322 and its own DMARC check read")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-1")]
+    [Property("Finding", "E-1")]
     public void The_DKIM_signing_domain_is_the_From_domain_RFC_5322_reads()
     {
 
@@ -264,7 +264,7 @@ public sealed class MimeHeaderTests
 
 
     [Test(Description = "RFC 5322 Appendix A.6.3, §4.5.4: obs-id-left = local-part, obs-id-right = domain - with their CFWS: \"<1234   @   local(blah)  .machine .example>\"; §4: \"MUST be accepted and parsed\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-8")]
+    [Property("Finding", "E-8")]
     public void An_obsolete_message_id_is_read()
     {
         Assert.That(Message("Message-ID  : <1234   @   local(blah)  .machine .example>").MessageId, Is.EqualTo("1234@local.machine.example"));
@@ -300,7 +300,7 @@ public sealed class MimeHeaderTests
 
 
     [Test(Description = "RFC 5322 §3.6.4: \"If the parent message does not contain a \"References:\" field but does have an \"In-Reply-To:\" field containing a single message identifier, then the \"References:\" field will contain the contents of the parent's \"In-Reply-To:\" field followed by the contents of the parent's \"Message-ID:\" field\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-9")]
+    [Property("Finding", "E-9")]
     public void A_reply_to_a_parent_without_References_takes_its_In_Reply_To()
     {
 

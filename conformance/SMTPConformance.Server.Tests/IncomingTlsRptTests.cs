@@ -193,7 +193,7 @@ public sealed class IncomingTlsRptTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8460 §5.3: application/tlsrpt+json; RFC 2049 §2: a MIME-conformant agent MUST \"decode all received data encoded by either quoted-printable or base64\" - a report in quoted-printable (its one JSON line is longer than the 998 octets RFC 5322 §2.1.1 allows, so it must be encoded) is read")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "I-3")]
+    [Property("Finding", "I-3")]
     public async Task A_quoted_printable_report_is_read()
     {
 
@@ -211,7 +211,7 @@ public sealed class IncomingTlsRptTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 2046 §5.1.1: multipart-body := [preamble CRLF] dash-boundary ..., preamble := discard-text; \"implementations must ignore anything that appears before the first boundary delimiter line\" - a report written into the preamble is not the report")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "I-7")]
+    [Property("Finding", "I-7")]
     public async Task The_preamble_is_not_read_as_a_report()
     {
 
@@ -324,7 +324,7 @@ public sealed class IncomingTlsRptTests : HermodServerTestBase
     #region Hostile reports
 
     [Test(Description = "RFC 8460 §6.5 (application/tlsrpt+gzip): \"Security considerations related to gzip compression are discussed in RFC 6713\", RFC 6713 §4: fields \"could contain anything. Applications should treat any data with due skepticism\" - 170 KiB of mail whose report unpacks to 128 MiB is not unpacked whole, before the reply to DATA, by a server anyone may send to")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "I-1")]
+    [Property("Finding", "I-1")]
     [CancelAfter(120_000)]
     public async Task A_gzip_bomb_is_not_unpacked_whole()
     {

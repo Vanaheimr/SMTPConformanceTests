@@ -173,19 +173,19 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
         yield return new TestCaseData(Sender, "victim@elsewhere.example").
                          SetName("{m}(a third party)").
-                         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "K-1");
+                         SetProperty("Finding", "K-1");
 
         yield return new TestCaseData("", Sender).
                          SetName("{m}(a null reverse-path)").
-                         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "K-1");
+                         SetProperty("Finding", "K-1");
 
         yield return new TestCaseData(Sender, "Sender@client.example").
                          SetName("{m}(a local-part in another case)").
-                         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "K-1");
+                         SetProperty("Finding", "K-1");
 
         yield return new TestCaseData(Sender, "sender@client.example, victim@elsewhere.example").
                          SetName("{m}(two distinct addresses)").
-                         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "K-1");
+                         SetProperty("Finding", "K-1");
 
     }
 
@@ -204,7 +204,7 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8098 §2.1: \"An MDN MUST NOT be generated in response to an MDN\" - not even to one that, against §3, asks for a receipt itself")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-4")]
+    [Property("Finding", "K-4")]
     public async Task No_MDN_is_sent_in_answer_to_an_MDN()
     {
 
@@ -295,7 +295,7 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8098 §3: \"The envelope sender address (i.e., SMTP \"MAIL FROM\") of the MDN MUST be null (<>)\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-3")]
+    [Property("Finding", "K-3")]
     public async Task The_MDN_is_sent_from_the_null_reverse_path()
     {
 
@@ -404,7 +404,7 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8098 §3.2.3: \"If there is an Original-Recipient header field in the message ... then the Original-Recipient field MUST be included\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-5")]
+    [Property("Finding", "K-5")]
     public async Task Original_Recipient_is_taken_from_the_message()
     {
 
@@ -418,7 +418,7 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8098 §3.2.3: \"if information about the original recipient is reliably available some other way, then the Original-Recipient field MUST be included\" - §5: as the ORCPT of RFC 3461 carries it")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-5")]
+    [Property("Finding", "K-5")]
     public async Task Original_Recipient_is_taken_from_ORCPT()
     {
 
@@ -432,7 +432,7 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8098 §2.3: \"if the ORCPT information is available, the delivering MTA SHOULD insert an Original-Recipient header field at the beginning of the message\" - so that the MUA can return it in its MDN")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-9")]
+    [Property("Finding", "K-9")]
     public async Task The_delivering_server_writes_Original_Recipient_from_ORCPT()
     {
 
@@ -448,7 +448,7 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 6522 §4: \"The text/rfc822-headers body part SHOULD contain all the mail header fields from the message\" - its Received fields too, what the returned header is for: \"diagnostics based on the Received header fields\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-10")]
+    [Property("Finding", "K-10")]
     public async Task The_returned_header_has_every_Received_field()
     {
 
@@ -464,7 +464,7 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5322 §2.2.3: \"Unfolding is accomplished by simply removing any CRLF that is immediately followed by WSP\" - the white space stays; a folded field comes back with its words apart, not run together")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-10")]
+    [Property("Finding", "K-10")]
     public async Task A_folded_field_is_returned_with_its_white_space()
     {
 
@@ -521,7 +521,7 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5322 §2.2.3: a field may be folded onto any number of lines - one folded onto 240000 lines (under 1 MB) is read in time and the message answered within 10 seconds; without EnableAutoMdn it takes well under one")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-2")]
+    [Property("Finding", "K-2")]
     public async Task A_field_folded_onto_240000_lines_does_not_hold_up_delivery()
     {
 
@@ -615,19 +615,19 @@ public sealed class DispositionNotificationApiTests
 
         yield return new TestCaseData("Bernd@example.net", "bernd@example.net").
                          SetName("{m}(a local-part in another case)").
-                         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "K-7");
+                         SetProperty("Finding", "K-7");
 
         yield return new TestCaseData("bernd@example.net", null).
                          SetName("{m}(no Return-Path)").
-                         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "K-7");
+                         SetProperty("Finding", "K-7");
 
         yield return new TestCaseData("bernd@example.net", "").
                          SetName("{m}(a null Return-Path)").
-                         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "K-7");
+                         SetProperty("Finding", "K-7");
 
         yield return new TestCaseData("bernd@example.net, tracker@collect.example", "bernd@example.net").
                          SetName("{m}(two distinct addresses)").
-                         SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "K-7");
+                         SetProperty("Finding", "K-7");
 
     }
 
@@ -670,7 +670,7 @@ public sealed class DispositionNotificationApiTests
 
 
     [Test(Description = "RFC 8098 §3: \"The MDN MUST be addressed ... to the address(es) from the Disposition-Notification-To header field\" - every one of them, once the reader confirmed")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-6")]
+    [Property("Finding", "K-6")]
     public void A_confirmed_receipt_goes_to_every_address_that_asked()
     {
 
@@ -683,7 +683,7 @@ public sealed class DispositionNotificationApiTests
 
 
     [Test(Description = "RFC 8098 §3.2.3: \"If there is an Original-Recipient header field in the message ... then the Original-Recipient field MUST be included\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-5")]
+    [Property("Finding", "K-5")]
     public void A_confirmed_receipt_returns_the_Original_Recipient()
     {
 
@@ -735,7 +735,7 @@ public sealed class DispositionNotificationApiTests
 
 
     [Test(Description = "RFC 8098 §3.2.6.1: manual-action - \"in order to preserve the user's privacy, this MUST be the default for MUAs\"; MDN-sent-manually - \"this MUST be the default for MUAs\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "K-8")]
+    [Property("Finding", "K-8")]
     public void CreateReadReceipt_defaults_to_manual_action_and_MDN_sent_manually()
     {
 

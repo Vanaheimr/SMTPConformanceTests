@@ -265,11 +265,11 @@ public sealed class IncomingDmarcReportTests
     public static IEnumerable<TestCaseData> Encodings()
     {
         yield return new TestCaseData(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(Report())).ToArray()).
-                         SetName("UTF-8 with a Byte Order Mark is read").SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "I-4");
+                         SetName("UTF-8 with a Byte Order Mark is read").SetProperty("Finding", "I-4");
         yield return new TestCaseData(Gzip([ .. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(Report()) ])).
-                         SetName("UTF-8 with a Byte Order Mark is read, gzipped").SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "I-4");
+                         SetName("UTF-8 with a Byte Order Mark is read, gzipped").SetProperty("Finding", "I-4");
         yield return new TestCaseData(Encoding.Unicode.GetPreamble().Concat(Encoding.Unicode.GetBytes(Report().Replace("UTF-8", "UTF-16"))).ToArray()).
-                         SetName("UTF-16 is read").SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "I-4");
+                         SetName("UTF-16 is read").SetProperty("Finding", "I-4");
         yield return new TestCaseData(Encoding.UTF8.GetBytes(Report())).
                          SetName("UTF-8 without a Byte Order Mark is read");
     }
@@ -287,7 +287,7 @@ public sealed class IncomingDmarcReportTests
     [TestCase("99999999999999",          "1700092799",  TestName = "A begin beyond the year 9999 does not throw")]
     [TestCase("1700006400",              "-99999999999", TestName = "An end before the year 1 does not throw")]
     [Description("RFC 7489 Appendix C: begin and end are xs:integer - seconds since the epoch a foreign receiver writes, any integer; a reader that throws on one loses the report and whatever its caller was doing")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "I-5")]
+    [Property("Finding", "I-5")]
     public void A_date_range_out_of_range_does_not_throw(String Begin, String End)
     {
 
@@ -421,7 +421,7 @@ public sealed class IncomingDmarcReportTests
     {
         yield return new TestCaseData(1_000). SetName("Nesting 1000 deep is read");
         yield return new TestCaseData(50_000).SetName("Nesting 50000 deep does not end the process").
-                                              SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "I-2");
+                                              SetProperty("Finding", "I-2");
     }
 
     [TestCaseSource(nameof(Depths))]
