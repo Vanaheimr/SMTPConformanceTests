@@ -9,10 +9,10 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
 numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `0504586f`** (Styx `a6b9f9fb`), which closes every finding of all seven
-rounds. The second round (S-18 and on, C-8 and on) comes from the
-observations the first one left without a test; its line numbers refer to
-`96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
+**Hermod `887a8795`** (Styx `a6b9f9fb`), which closes every finding of all seven
+rounds and of the follow-up E-14 to E-16. The second round (S-18 and on, C-8 and
+on) comes from the observations the first one left without a test; its line
+numbers refer to `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
 which the first two did not test at all; its line numbers refer to `d2d608d2`. The
 fourth (D-, M- and N-) tests what the relay owes beyond delivery: the reports to
 the sender (DSN), MTA-STS and DANE; its line numbers refer to `306f2d59`. The fifth
@@ -39,11 +39,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [E-14](#e-14) | medium | message format | `EMail.Parse` reads the media type and the name `boundary` with case: a `Multipart/Mixed` has no parts, a `Multipart/Signed` with a valid signature is "no signature", a `Multipart/Encrypted` cannot be decrypted | 9 |
-| [E-15](#e-15) | low | message format | `EMail.Parse` takes white space around `=` and comments in the Content-Type for part of the names and values | 3 |
-| [E-16](#e-16) | low | message format | `EMail.Parse` takes a body for a multipart when its Content-Type holds the text `boundary=`, not when it is a multipart: multipart/related has no parts, a text/plain loses what follows a line `--` | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -164,6 +160,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [E-11](#e-11) | low | message format | Quoted-printable decoding kept trailing white space that RFC 2045 says must be deleted | 1 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
 | [E-12](#e-12) | low | message format | `MimeMessageBuilder` wrote a second From, Date, Subject, Message-ID or To named among its further headers | 5 | [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) |
 | [E-13](#e-13) | low | message format | The older builders wrote the List-ID description raw: 8-bit and with specials | 1 | [Vanaheimr/Hermod#270](https://github.com/Vanaheimr/Hermod/pull/270) |
+| [E-14](#e-14) | medium | message format | `EMail.Parse` read the media type and the name `boundary` with case: a `Multipart/Mixed` had no parts, a `Multipart/Signed` with a valid signature was "no signature", a `Multipart/Encrypted` could not be decrypted | 9 | [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) |
+| [E-15](#e-15) | low | message format | `EMail.Parse` took white space around `=` and comments in the Content-Type for part of the names and values | 3 | [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) |
+| [E-16](#e-16) | low | message format | `EMail.Parse` took a body for a multipart when its Content-Type held the text `boundary=`, not when it was a multipart: multipart/related had no parts, a text/plain lost what followed a line `--` | 2 | [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) |
 | [I-5](#i-5) | low | DMARC reader | A date_range outside years 1 to 9999 threw `ArgumentOutOfRangeException` | 2 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-6](#i-6) | low | DSN | A next hop's status code with leading zeros went into the DSN as it was | 3 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-7](#i-7) | low | TLS-RPT ingest | The preamble of the multipart was read as a report part | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -176,7 +175,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 267 tests for these are part of the merge gate now; the observations the first
+The 281 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1714,7 +1713,8 @@ Fixed: the description is written as a phrase (`MimeEncoding.Phrase`): atoms, a 
 string or encoded words.
 
 ### E-14
-**Open.** **`EMail.Parse` reads the media type and the name `boundary` with case**
+**Closed** in [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) (`76eb49e8`).
+**`EMail.Parse` read the media type and the name `boundary` with case**
 (`EMail/Helpers/MailContentType.cs:148`, `EMail/Helpers/EMailBodypart.cs:172`, `:66` and
 `:72`): the media type is mapped to `MailContentTypes` with a case-sensitive
 `Enum.TryParse`, so `Multipart/Mixed`, `MULTIPART/SIGNED` or `Multipart/Report` is
@@ -1729,8 +1729,13 @@ reads all of these. Tests: `The_media_type_and_parameter_names_are_read_without_
 (five spellings), `A_signed_message_verifies_whatever_the_case_of_its_type` and
 `An_encrypted_message_decrypts_whatever_the_case_of_its_type` (two each).
 
+Fixed: `MailContentType.TryParse` reads the value with `MimeContentType.Parse`, the parser
+of the MIME reader, and maps the lower-cased type to `MailContentTypes`; the boundary is
+read whatever the case of its name.
+
 ### E-15
-**Open.** **`EMail.Parse` takes white space around `=` and comments in the Content-Type
+**Closed** in [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) (`76eb49e8`).
+**`EMail.Parse` took white space around `=` and comments in the Content-Type
 for part of the names and values** (`EMail/Helpers/MailContentType.cs:129` and `:174`): the
 value is split at every `;` and each piece trimmed; the type is the first piece as it
 stands, a parameter is found with `StartsWith("boundary=")`. So `boundary = xyz` is no
@@ -1741,8 +1746,12 @@ a structured field - and "can include RFC 822 comments, which have no semantic c
 should be ignored during MIME processing". `MimeMessage` reads them. Test:
 `White_space_and_comments_in_the_Content_Type_are_read_by_EMail` (three cases).
 
+Fixed: the same parser drops comments and the white space between tokens, unquotes values
+and joins RFC 2231 sections.
+
 ### E-16
-**Open.** **`EMail.Parse` takes a body for a multipart when its Content-Type holds the text
+**Closed** in [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) (`76eb49e8`).
+**`EMail.Parse` took a body for a multipart when its Content-Type held the text
 `boundary=`** (`EMail/Helpers/EMailBodypart.cs:172`): whether a body is split into parts is
 decided by `ContentType.Text.Contains("boundary=")`, not by the type. A multipart of a
 subtype `MailContentTypes` does not list - multipart/related, multipart/digest - is
@@ -1753,6 +1762,10 @@ at the delimiter `"--" + null`, a line `--`: the text after it is gone. RFC 2045
 "Parameters are modifiers of the media subtype"; RFC 2046 §5.1.1 defines `boundary` for
 multipart. Tests: `An_unrecognised_multipart_subtype_is_read_as_mixed_by_EMail`,
 `A_text_with_a_parameter_ending_in_boundary_is_not_split_by_EMail`.
+
+Fixed: the new `MailContentType.IsMultipart` is true for every multipart subtype, also one
+the enum does not list; `EMailBodypart` splits a body when it is a multipart with a
+boundary, and the boundary is read for multiparts only.
 
 ## Reports that arrive
 

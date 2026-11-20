@@ -975,7 +975,7 @@ public sealed class PgpMimeTests
     [TestCase("Multipart/Signed")]
     [TestCase("MULTIPART/SIGNED")]
     [Test(Description = "RFC 2045 §5.1: \"The type, subtype, and parameter names are not case sensitive\" - a signed message whose type is not written in lower case verifies, and is not reported as unsigned")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-14")]
+    [Property("Finding", "E-14")]
     public void A_signed_message_verifies_whatever_the_case_of_its_type(String Type)
     {
 
@@ -993,7 +993,7 @@ public sealed class PgpMimeTests
     [TestCase("Multipart/Encrypted")]
     [TestCase("MULTIPART/ENCRYPTED")]
     [Test(Description = "RFC 2045 §5.1: \"The type, subtype, and parameter names are not case sensitive\" - an encrypted message whose type is not written in lower case is decrypted")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-14")]
+    [Property("Finding", "E-14")]
     public void An_encrypted_message_decrypts_whatever_the_case_of_its_type(String Type)
     {
 

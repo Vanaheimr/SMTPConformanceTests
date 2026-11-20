@@ -13,12 +13,13 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-20, Hermod `0504586f`):** 878 tests, 864 pass; 14 fail on three open
-findings. The older `EMail.Parse` reads a Content-Type with case, against RFC 2045 §5.1: a
-`Multipart/Signed` whose signature is valid is reported as unsigned, a `Multipart/Encrypted`
-is not decrypted ([E-14](FINDINGS.md#e-14)); white space and comments in it break the
-boundary ([E-15](FINDINGS.md#e-15)); and the text `boundary=`, not the type, makes a body a
-multipart ([E-16](FINDINGS.md#e-16)). A seventh round tested what of Hermod's mail code no round had touched, none of
+**State (2026-11-20, Hermod `887a8795`):** 878 tests, **all pass**. The older
+`EMail.Parse` read a Content-Type with case, against RFC 2045 §5.1: a `Multipart/Signed`
+whose signature was valid was reported as unsigned, a `Multipart/Encrypted` was not
+decrypted ([E-14](FINDINGS.md#e-14)); white space and comments in it broke the boundary
+([E-15](FINDINGS.md#e-15)); and the text `boundary=`, not the type, made a body a multipart
+([E-16](FINDINGS.md#e-16)). All three fixed in
+[#276](https://github.com/Vanaheimr/Hermod/pull/276). A seventh round tested what of Hermod's mail code no round had touched, none of
 it changed since - MIME and the message format as Hermod builds and reads mail (RFC 2045
 to 2047, 2231, 5322), the reports that arrive (DSN, DMARC, TLS-RPT), read receipts (RFC
 8098), PGP/MIME (RFC 3156) and the Public Suffix List under DMARC - with 380 tests, the
@@ -208,13 +209,13 @@ vectors, and the four Linux tools.
 | Outbound: RFC 6890 public addresses only, smart host credentials, DKIM signing (RFC 6376, RFC 8463) | 26 | 0 | ~~P-1~~ fixed |
 | RFC 5321 §6.1 the file queue after a crash | 5 | 0 | — |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, the suite's DKIM signer/verifier and ARC sealer/validator, RFC 7208 SPF macros | 44 | 0 | — |
-| RFC 2045, 2046, 2047, 2231, 5322, 2919: MIME and the message format, built and read | 141 | 10 | E-14 to E-16; ~~E-1~~ to ~~E-13~~ fixed |
+| RFC 2045, 2046, 2047, 2231, 5322, 2919: MIME and the message format, built and read | 141 | 0 | ~~E-1~~ to ~~E-16~~ fixed |
 | Reports that arrive: RFC 3464 DSN, RFC 7489 Appendix C, RFC 8460; hostile input | 51 | 0 | ~~I-1~~ to ~~I-7~~ fixed |
 | RFC 8098 message disposition notifications | 41 | 0 | ~~K-1~~ to ~~K-10~~ fixed |
-| RFC 3156 PGP/MIME, RFC 9580 | 64 | 4 | E-14; ~~G-1~~ to ~~G-6~~ fixed |
+| RFC 3156 PGP/MIME, RFC 9580 | 64 | 0 | ~~G-1~~ to ~~G-6~~, ~~E-14~~ fixed |
 | Public Suffix List (its 78 test vectors), RFC 7489 §3.2 Organizational Domain | 99 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **878** | **14** | |
+| **Total** | **878** | **0** | |
 
 ## External test partners
 

@@ -284,7 +284,7 @@ public sealed class MimeStructureTests
     [TestCase("multipart/mixed; BOUNDARY=\"xyz\"",                                      Description = "the parameter name in upper case, the value quoted")]
     [TestCase("Multipart/Report; report-type=disposition-notification; boundary=xyz",   Description = "a read receipt as some agents write it")]
     [Test(Description = "RFC 2045 §5.1: \"The type, subtype, and parameter names are not case sensitive\" - the older EMail.Parse finds the parts of a multipart whatever the case of its type and of \"boundary\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-14")]
+    [Property("Finding", "E-14")]
     public void The_media_type_and_parameter_names_are_read_without_case_by_EMail(String ContentType)
     {
         Assert.That(PartsOf(ParseByEMail(ContentType)), Is.EqualTo(new[] { "one", "two" }));
@@ -304,7 +304,7 @@ public sealed class MimeStructureTests
     [TestCase("multipart/mixed; boundary=xyz (a comment)",    Description = "a comment after the value")]
     [TestCase("multipart/mixed (a comment); boundary=xyz",    Description = "a comment after the subtype")]
     [Test(Description = "RFC 2045 §1: the MIME header fields \"are subject to the general syntactic rules for header fields specified in RFC 822\" - white space between the tokens of a structured field - and \"can include RFC 822 comments, which have no semantic content and should be ignored\" - the older EMail.Parse reads such a Content-Type as the MIME reader does")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-15")]
+    [Property("Finding", "E-15")]
     public void White_space_and_comments_in_the_Content_Type_are_read_by_EMail(String ContentType)
     {
         Assert.That(PartsOf(ParseByEMail(ContentType)), Is.EqualTo(new[] { "one", "two" }));
@@ -312,7 +312,7 @@ public sealed class MimeStructureTests
 
 
     [Test(Description = "RFC 2046 §5.1.7: \"MIME implementations must in general treat unrecognized subtypes of \"multipart\" as being equivalent to \"multipart/mixed\"\" - the older EMail.Parse finds the parts of multipart/related")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-16")]
+    [Property("Finding", "E-16")]
     public void An_unrecognised_multipart_subtype_is_read_as_mixed_by_EMail()
     {
         Assert.That(PartsOf(ParseByEMail("multipart/related; boundary=xyz")), Is.EqualTo(new[] { "one", "two" }));
@@ -320,7 +320,7 @@ public sealed class MimeStructureTests
 
 
     [Test(Description = "RFC 2045 §5.1: parameters are \"modifiers of the media subtype\", and RFC 2046 §5.1.1 defines \"boundary\" for multipart only - a text/plain with a parameter that ends in \"boundary\" is no multipart, and a line \"--\" in it is text")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "E-16")]
+    [Property("Finding", "E-16")]
     public void A_text_with_a_parameter_ending_in_boundary_is_not_split_by_EMail()
     {
 
