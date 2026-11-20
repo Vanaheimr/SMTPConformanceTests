@@ -7,31 +7,36 @@ the test turns green, the nightly reports it as "now passing", and the tag
 comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
-First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line
-numbers refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to
-**Hermod `887a8795`** (Styx `a6b9f9fb`), which closes every finding of all seven
-rounds and of the follow-up E-14 to E-16. The second round (S-18 and on, C-8 and
-on) comes from the observations the first one left without a test; its line
-numbers refer to `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side,
-which the first two did not test at all; its line numbers refer to `d2d608d2`. The
-fourth (D-, M- and N-) tests what the relay owes beyond delivery: the reports to
-the sender (DSN), MTA-STS and DANE; its line numbers refer to `306f2d59`. The fifth
-(V- and P-) tests what Hermod's SMTP gained between `bbbf88b6` and `4b8be28a` - SPF,
-DKIM and DMARC on inbound mail, DNS blocklists, recipient checks, the AUTH
+First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod
+`887a8795`** (Styx `a6b9f9fb`), which closes every finding of the first seven rounds and
+of the follow-up E-14 to E-16; the eighth round's are open. The second round (S-18 and
+on, C-8 and on) comes from the observations the first one left without a test; its line
+numbers refer to `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`,
+the relay side, which the first two did not test at all; its line numbers refer to
+`d2d608d2`. The fourth (D-, M- and N-) tests what the relay owes beyond delivery: the
+reports to the sender (DSN), MTA-STS and DANE; its line numbers refer to `306f2d59`. The
+fifth (V- and P-) tests what Hermod's SMTP gained between `bbbf88b6` and `4b8be28a` -
+SPF, DKIM and DMARC on inbound mail, DNS blocklists, recipient checks, the AUTH
 configuration, submission to the application, outbound mail to public addresses only,
 smart host credentials, DKIM signing, the file queue after a crash and the certificate
-chain; its line numbers refer to `4b8be28a`. The sixth (A-, R-, T-, Q-, L-, V-3 and
-V-4) tests the parts of Hermod's SMTP no round had tested: ARC (RFC 8617), the DMARC
-reports (RFC 7489 §7), TLS reporting (RFC 8460), MT-PRIORITY (RFC 6710) and the
-connection and recipient limits; its line numbers refer to `287d1c43`, under
+chain; its line numbers refer to `4b8be28a`. The sixth (A-, R-, T-, Q-, L-, V-3 and V-4)
+tests the parts of Hermod's SMTP no round had tested: ARC (RFC 8617), the DMARC reports
+(RFC 7489 §7), TLS reporting (RFC 8460), MT-PRIORITY (RFC 6710) and the connection and
+recipient limits; its line numbers refer to `287d1c43`, under
 `libs/Hermod/Hermod/SMTP/`. The seventh (E-, I-, K- and G-) tests what of Hermod's mail
-code no round had tested, none of it changed since: MIME and the message format as Hermod
-builds and reads mail (RFC 2045 to 2047, 2231, 5322), the reports that arrive (DSN, DMARC,
-TLS-RPT), message disposition notifications (RFC 8098), PGP/MIME (RFC 3156) and the Public
-Suffix List under DMARC; its line numbers refer to `72c2366d`. E-14 to E-16 follow it up:
-what the older `EMail.Parse` makes of a Content-Type that is not written in lower case, as
-the MIME reader would read it, seen while fixing the MDN findings; their line numbers refer to
-`0504586f`.
+code no round had tested, none of it changed since: MIME and the message format as
+Hermod builds and reads mail (RFC 2045 to 2047, 2231, 5322), the reports that arrive
+(DSN, DMARC, TLS-RPT), message disposition notifications (RFC 8098), PGP/MIME (RFC 3156)
+and the Public Suffix List under DMARC; its line numbers refer to `72c2366d`. E-14 to
+E-16 follow it up: what the older `EMail.Parse` makes of a Content-Type that is not
+written in lower case, as the MIME reader would read it, seen while fixing the MDN
+findings; their line numbers refer to `0504586f`. The eighth (V-5 and on, O-9 and on,
+P-2 and P-3) tests what of SPF, DKIM and the way to the next hop the earlier rounds took
+for granted: how check_host() comes to its result (RFC 7208 §4 to §6), what a DKIM
+verifier checks of a signature and its key record before it hashes anything (RFC 6376
+§6.1, RFC 8301), how the relay finds its MX hosts (RFC 5321 §5.1), and the DKIM keys
+Hermod makes; its line numbers refer to `887a8795`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -39,7 +44,27 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [V-5](#v-5) | medium | SPF | A DNS error - SERVFAIL, a timeout - is taken for no record or no match: `none`, or `fail` under `-all`, never `temperror` | 6 |
+| [V-13](#v-13) | medium | DKIM verifier | A signature that does not sign From verifies, and DMARC passes on it whatever From is put in | 2 |
+| [V-14](#v-14) | medium | DKIM verifier | Signatures with RSA keys of fewer than 1024 bits verify | 1 |
+| [O-9](#o-9) | medium | outbound routing | A temporary error of the MX lookup sends the message to the domain's own address | 2 |
+| [V-6](#v-6) | low | SPF | `v=spf10` is taken for an SPF record, and of two SPF records the first | 3 |
+| [V-7](#v-7) | low | SPF | The record is evaluated up to the term that matches; syntax errors after it, or a bad address before it, go unnoticed | 3 |
+| [V-8](#v-8) | low | SPF | redirect= or exp= twice is no `permerror` | 2 |
+| [V-9](#v-9) | low | SPF | `ptr` never matches | 2 |
+| [V-10](#v-10) | low | SPF | `mx` with more than ten MX names takes the first ten | 1 |
+| [V-11](#v-11) | low | SPF | No limit on void lookups | 1 |
+| [V-12](#v-12) | low | SPF | A client on an IPv4-mapped address matches no `ip4` or `a` | 2 |
+| [V-15](#v-15) | low | DKIM verifier | A signature without v= or a=, or with v=2, verifies | 3 |
+| [V-16](#v-16) | low | DKIM verifier | A signature whose i= is outside its d= verifies | 1 |
+| [V-17](#v-17) | low | DKIM verifier | The key record's h=, s=, t=s and k= are not applied | 4 |
+| [O-10](#o-10) | low | outbound routing | A domain that does not exist, or whose MX hosts do not, is retried instead of reported | 2 |
+| [O-11](#o-11) | low | outbound routing | MX hosts of the same preference are always tried in the order of the answer | 1 |
+| [O-12](#o-12) | low | outbound routing | The relay sends to itself, and to MX hosts behind itself, when it is an MX host of the domain | 3 |
+| [P-2](#p-2) | low | DKIM signing | `DkimSigner` signs with, and the key generators make, RSA keys of fewer than 1024 bits | 2 |
+| [P-3](#p-3) | low | DKIM signing | `DkimKeyGenerator` writes the key record as one character-string of 410 characters | 1 |
 
 ### Closed
 
@@ -682,6 +707,54 @@ Test: `A_421_to_EHLO_is_not_answered_with_HELO`.
 
 Fixed: HELO after 500, 501, 502, 504 and 550 only.
 
+The eighth round's routing tests (`OutboundClientTests.Routing.cs`) deliver through MX records of the test's DNS. The client connects to MX hosts on port 25, which no test can listen on; what it does is seen in its DNS queries - it asks for the addresses of a host when it is about to connect to it, and only then. Covered without a finding: a domain without MX records is its own MX.
+
+### O-9
+**Open.** **A temporary error of the MX lookup sends the message to the domain's own
+address** (`SMTPOutboundClient.cs:162`, `:793` to `:813`, `:175` to `:179`):
+`ResolveMxAsync` catches every error and returns no MX records, which the caller takes for
+a domain without MX: the implicit MX, the domain's own address. RFC 5321 §5.1: "If a
+temporary error is returned, the message MUST be queued and retried later"; the implicit
+MX "applies only if there are no MX records present". A SERVFAIL or a timeout of the MX
+lookup sends the mail to whatever the domain's name points at - a web server, or one that
+takes mail it should not.
+Test: `A_temporary_error_of_the_MX_lookup_queues_the_message`, two cases;
+`A_domain_without_MX_records_is_its_own_MX` is the guard.
+
+### O-10
+**Open.** **A domain that does not exist, or whose MX hosts do not, is retried** (`:175`
+to `:179`, `:253` to `:268`): an NXDOMAIN is "no MX records", the implicit MX has no
+address, and the delivery ends `TempFail`, "All MX hosts unreachable" - as does a domain
+whose only MX host does not exist. RFC 5321 §5.1: "If a non-existent domain error is
+returned, this situation MUST be reported as an error"; "If MX records are present, but
+none of them are usable, or the implicit MX is unusable, this situation MUST be reported
+as an error." The sender of a mistyped address learns of it when the queue gives up, days
+later, not at once - RFC 7505 §4.1 makes the same point for the null MX, which Hermod
+bounces at once.
+Test: `A_domain_that_cannot_be_reached_is_a_permanent_failure`, two cases.
+
+### O-11
+**Open.** **MX hosts of the same preference are always tried in the order of the answer**
+(`:207`, `OrderBy`, a stable sort): RFC 5321 §5.1: "If there are multiple destinations
+with the same preference and there is no clear reason to favor one (e.g., by recognition
+of an easily reached address), then the sender-SMTP MUST randomize them to spread the load
+across multiple mail exchangers for a specific organization."
+Test: `MX_hosts_of_the_same_preference_are_tried_in_random_order` - a.route.test first in
+each of sixteen deliveries.
+
+### O-12
+**Open.** **The relay sends to itself, and to MX hosts behind itself** (`:207`): the MX
+list is not looked at for the relay's own name. RFC 5321 §5.1: the relay "MUST then
+inspect the list for any of the names or addresses by which it might be known in mail
+transactions. If a matching record is found, all records at that preference level and
+higher-numbered ones MUST be discarded from consideration. If there are no records left at
+that point, it is an error condition, and the message MUST be returned as undeliverable."
+A Hermod that is a backup MX of a domain hands the message to itself, or to backups behind
+itself, instead of only to the better MX hosts; one that a domain's MX points at by
+mistake loops.
+Test: `The_relay_does_not_send_to_itself_or_behind_itself`, three cases: its name the only
+MX, the best MX with a backup behind it, a backup behind a better one.
+
 ---
 
 ## DSN reports
@@ -1109,6 +1182,154 @@ come in any order; §3.7: the signature is computed "with the value of the "b=" 
 Fixed: the b= value is removed from the field's value, wherever the tag stands (RFC 6376
 §3.7) - in DKIM, the AMS and the AS.
 
+The eighth round's SPF tests (`SpfEvaluationTests`) call `DNSVerifier.CheckSpfAsync` - the
+evaluation the server applies to the MAIL FROM and HELO identities - against the test's
+DNS; its DKIM tests (`DkimVerifierTests`) call `DNSVerifier.VerifyDkimAsync`, and
+`VerifyAsync` for DMARC, with signatures of the suite's own signer that are valid over what
+they say. Covered without a finding: NXDOMAIN in a mechanism's lookup counts as no records;
+unknown modifiers are ignored; ten MX names and two void lookups are within the limits; a
+reverse name whose addresses are not the client's is not validated; a key of 1024 bits, an
+i= in a subdomain of d=, and key records with h=sha1:sha256, s=email, s=* or t=s for an i= of
+d= itself verify.
+
+### V-5
+**Open.** **A DNS error is taken for no record or no match**
+(`DNSVerifications/DNSVerifier.cs:976` to `:1000`, `:403` to `:427`, `:1057` to `:1078`):
+the lookups of the record, of the addresses for a, mx and exists, and of the MX names for
+mx catch every error and go on as if there were no record, no address or no MX name. A
+SERVFAIL or a timeout of the SPF record gives `none`; of an a:, mx or exists: lookup no
+match - `fail` under `-all`; of an include: target's record `permerror`. RFC 7208 §4.4:
+"If the DNS lookup returns a server failure (RCODE 2) or some other error (RCODE other
+than 0 or 3), or if the lookup times out, then check_host() terminates immediately with
+the result "temperror""; §5: for a mechanism's lookups "the mechanism stops and the
+topmost check_host() returns "temperror"". A moment of trouble at the sender's DNS fails
+its mail: DMARC fails where DKIM does not pass, and a receiver that refuses on `fail`
+refuses it - where `temperror` would have it tried again.
+Tests: `A_DNS_error_is_a_temporary_error`, six cases;
+`A_name_that_does_not_exist_is_no_error` is the guard.
+
+### V-6
+**Open.** **`v=spf10` is an SPF record, and of two SPF records the first counts** (`:990`,
+`txt.Text.StartsWith(prefix)`, the first that does): RFC 7208 §4.5: "discard records that
+do not begin with a version section of exactly "v=spf1". Note that the version section is
+terminated by either an SP character or the end of the record. As an example, a record
+with a version section of "v=spf10" does not match and is discarded"; "If the resultant
+record set includes more than one record, check_host() produces the "permerror" result."
+Test: `Only_one_record_of_exactly_v_spf1_is_evaluated`, three cases and a guard (an SPF
+record among other TXT records).
+
+### V-7
+**Open.** **The record is evaluated up to the term that matches, not checked first**
+(`:212` to `:325`): the terms are read one at a time and the first that matches returns;
+what follows it is never looked at, and an address or prefix length the parser cannot use
+is a term that does not match. So `v=spf1 +all frobnicate:example.test` passes, and so
+does `ip4:192.0.2.1/33` behind the term that matches, or `ip4:192.0.2` before it. RFC 7208
+§4.6: "The syntax of the record is validated first, and if there are any syntax errors
+anywhere in the record, check_host() returns immediately with the result "permerror",
+without further interpretation or evaluation"; §5.6: `ip4-network = qnum "." qnum "." qnum
+"." qnum`, `ip4-cidr-length = "/" ("0" / %x31-39 0*1DIGIT) ; value range 0-32`.
+Test: `A_syntax_error_anywhere_is_a_permanent_error`, three cases;
+`An_unknown_modifier_is_no_syntax_error` is the guard.
+
+### V-8
+**Open.** **redirect= or exp= twice** (`:223`): of two redirect= the last is followed, a
+second exp= is not noticed. RFC 7208 §6: "These two modifiers MUST NOT appear in a record
+more than once each. If they do, then check_host() exits with a result of "permerror"."
+Test: `A_modifier_given_twice_is_a_permanent_error`, two cases.
+
+### V-9
+**Open.** **`ptr` never matches** (`:312` to `:318`): the mechanism counts against the
+limit of ten and is skipped. RFC 7208 §5.5 says it "SHOULD NOT be published", and: "It is,
+however, still in use as part of the SPF protocol, so compliant check_host()
+implementations MUST support it." A domain that still names its servers by their reverse
+names - `v=spf1 ptr -all` - gets `fail` for all its mail.
+Test: `The_ptr_mechanism_matches_a_validated_name`, two cases (ptr, ptr:domain);
+`The_ptr_mechanism_does_not_match_a_name_that_is_not_validated` is the guard.
+
+### V-10
+**Open.** **`mx` with more than ten MX names takes the first ten** (`:397`,
+`mxHosts.Take(10)`): RFC 7208 §4.6.4: "the evaluation of each "MX" record MUST NOT result
+in querying more than 10 address records -- either "A" or "AAAA" resource records. If this
+limit is exceeded, the "mx" mechanism MUST produce a "permerror" result."
+Test: `An_mx_mechanism_with_more_than_ten_names_is_a_permanent_error`; ten names is the
+guard.
+
+### V-11
+**Open.** **No limit on void lookups** (`:376` to `:427`): RFC 7208 §4.6.4: "SPF
+implementations SHOULD limit "void lookups" to two. ... Exceeding the limit produces a
+"permerror" result" - the limit that keeps a record full of names that do not exist from
+turning each check into lookups at someone else's DNS (§11.1).
+Test: `A_third_void_lookup_is_a_permanent_error`; `Two_void_lookups_are_within_the_limit`
+is the guard.
+
+### V-12
+**Open.** **A client on an IPv4-mapped address matches no `ip4` or `a`** (`:244`, `:382`):
+the mechanisms compare address families, and ::ffff:192.0.2.25 is an IPv6 address. RFC
+7208 §5: "SPF implementations on IPv6 servers need to handle both "AAAA" and "A" records,
+for clients on IPv4-mapped IPv6 addresses [RFC4291]." The server's listeners are not
+dual-mode, so its own sessions see IPv4 clients as IPv4; `CheckSpfAsync` and `VerifyAsync`
+take the address they are given - the blocklist check maps it back
+(`DNSVerifications/DNSVerifier.Blocklists.cs:54`), SPF does not.
+Test: `A_client_on_an_IPv4_mapped_address_is_matched_as_IPv4`, two cases;
+`A_client_on_its_IPv4_address_is_matched` is the guard.
+
+### V-13
+**Open.** **A signature that does not sign From verifies** (`:612` to `:656`): the h= list
+is hashed as it stands. RFC 6376 §6.1.1: "If the "h=" tag does not include the From header
+field, the Verifier MUST ignore the DKIM-Signature header field and return PERMFAIL (From
+field not signed)." Such a signature holds whatever the From says - one can be put in
+after signing - and DMARC passes on it when its d= is aligned with the From written there:
+a message signed by a domain, with h= leaving out From, can be sent again as from anyone
+at that domain.
+Tests: `A_signature_that_does_not_sign_From_does_not_verify`,
+`A_signature_that_does_not_sign_From_does_not_pass_DMARC`.
+
+### V-14
+**Open.** **Signatures with RSA keys of fewer than 1024 bits verify** (`:684`): the key is
+imported and used whatever its size. RFC 8301 §3.2: "Verifiers MUST NOT consider
+signatures using RSA keys of less than 1024 bits as valid signatures" - such signatures
+"have permanently failed evaluation". A 512-bit key is factored in hours on rented
+machines; whoever has done so signs as the domain, and DMARC passes.
+Test: `A_signature_with_a_key_of_512_bits_does_not_verify`;
+`A_signature_with_a_key_of_1024_bits_verifies` is the guard.
+
+### V-15
+**Open.** **A signature without v= or a=, or with v=2, verifies** (`:612` to `:623`): of
+the tags RFC 6376 §3.5 requires, d=, s=, b= and bh= are required; a missing a= is taken
+for rsa-sha256, and v= is not read. §6.1.1: "If any tag listed as "required" in Section
+3.5 is omitted from the DKIM-Signature header field, the Verifier MUST ignore the
+DKIM-Signature header field and return PERMFAIL"; "Verifiers MUST return PERMFAIL
+(incompatible version) when presented a DKIM-Signature header field with a "v=" tag that
+is inconsistent with this specification"; §3.5, v=: "It MUST have the value "1" for
+implementations compliant with this version of DKIM."
+Test: `A_signature_without_a_required_tag_or_of_another_version_does_not_verify`, three
+cases.
+
+### V-16
+**Open.** **A signature whose i= is outside its d= verifies** (`:612` to `:684`; i= is
+read only for the failure report): RFC 6376 §6.1.1: "Verifiers MUST confirm that the
+domain specified in the "d=" tag is the same as or a parent domain of the domain part of
+the "i=" tag. If not, the DKIM-Signature header field MUST be ignored". A signature of
+author.test that names news@evil.test as the agent it signed for is taken.
+Test: `A_signature_whose_i_is_outside_its_d_does_not_verify`;
+`A_signature_whose_i_is_a_subdomain_of_its_d_verifies` is the guard.
+
+### V-17
+**Open.** **The key record's h=, s=, t=s and k= are not applied** (`:636` to `:684`): of
+the record, p= is read, and k= only to tell Ed25519 from the rest. A key limited to SHA-1
+(`h=sha1`) verifies rsa-sha256 signatures, a key for another service (`s=other`) mail, a
+key with `t=s` signatures whose i= is a subdomain of d=, and a key of another type
+(`k=dsa`) is used as an RSA key. RFC 6376 §6.1.2: "If the "h=" tag exists in the
+public-key record and the hash algorithm implied by the "a=" tag in the DKIM-Signature
+header field is not included in the contents of the "h=" tag, the Verifier MUST ignore the
+key record"; "If the public-key data is not suitable for use with the algorithm and key
+types defined by the "a=" and "k=" tags in the DKIM-Signature header field, the Verifier
+MUST immediately return PERMFAIL (inappropriate key algorithm)"; §3.6.1, s=: "Verifiers
+for a given service type MUST ignore this record if the appropriate type is not listed";
+t=s: "the "i=" domain MUST NOT be a subdomain of "d="".
+Test: `The_tags_of_the_key_record_are_applied`, four cases, and four guards
+(h=sha1:sha256, s=email, s=*, t=s with an i= of d=).
+
 ## ARC
 
 RFC 8617 as `ArcValidator` checks the chain of every unauthenticated message and the
@@ -1473,6 +1694,33 @@ Tests: `An_MX_host_without_a_public_address_is_not_connected_to`, three cases.
 
 Fixed: 192.0.2.0/24, 198.51.100.0/24 and 203.0.113.0/24 are not public, also mapped into
 IPv6 or inside 6to4; such an MX bounces at once with 5.4.4.
+
+The eighth round's key tests (`OutboundClientTests.DkimKeys.cs`) give `DkimSigner` a key of 512 bits and read what `DkimKeyGenerator` and `DkimKeyMaterial` make. Covered without a finding: both make keys of 2048 bits by default, and the generated record names the generated key.
+
+### P-2
+**Open.** **Hermod signs with, and makes, RSA keys of fewer than 1024 bits**
+(`DNSVerifications/DkimSigner.cs:63` and `:64`, `DNSVerifications/DkimKeyGenerator.cs:35`,
+`DNSVerifications/DkimKeyMaterial.cs:51`): `DkimSigner` imports the RSA key it is given
+whatever its size, and `DkimKeyGenerator.GenerateKeyPair` and `DkimKeyMaterial.NewRsaPem`
+make a key of any size asked for. RFC 8301 §3.2: "Signers MUST use RSA keys of at least
+1024 bits for all keys. Signers SHOULD use RSA keys of at least 2048 bits." The mail of a
+domain that signs with 512 bits counts as unsigned at every verifier that keeps to RFC
+8301, while anyone who factors the key can sign as the domain where one does not (V-14).
+Tests: `The_signer_does_not_sign_with_a_key_of_512_bits`,
+`The_key_generators_do_not_make_a_key_of_512_bits`;
+`The_key_generators_make_keys_of_2048_bits_by_default` is the guard.
+
+### P-3
+**Open.** **The generated key record is one character-string of 410 characters**
+(`DNSVerifications/DkimKeyGenerator.cs:45`): the zone file line is
+`selector._domainkey.domain. IN TXT "v=DKIM1; k=rsa; p=..."`, the p= of a 2048-bit key 392
+base64 characters. RFC 1035 §3.3: "<character-string> is a single length octet followed by
+that number of characters" - 255 at most, so a zone holding the line as it is written
+cannot be loaded. RFC 6376 §3.6.2.2: "Strings in a TXT RR MUST be concatenated together
+before use with no intervening whitespace" - a long record is written in several strings;
+Hermod's own `TXT.PresentationOf` does that.
+Test: `The_generated_key_record_is_written_in_strings_of_at_most_255_characters`;
+`The_generated_key_record_names_the_generated_key` is the guard.
 
 ## MIME and the message format
 

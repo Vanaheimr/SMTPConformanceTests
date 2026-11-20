@@ -13,7 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-20, Hermod `887a8795`):** 878 tests, **all pass**. The older
+**State (2026-11-20, Hermod `887a8795`):** 937 tests, 895 pass; 42 fail on 19 open
+findings of an eighth round, which tests what of SPF, DKIM and the way to the next hop the
+earlier rounds took for granted. The heaviest: a DNS error - a SERVFAIL, a timeout - turns
+an SPF check into `none`, or into `fail` under `-all`, never `temperror`
+([V-5](FINDINGS.md#v-5)); a DKIM signature that does not sign From verifies, and DMARC
+passes on it whatever From is put in ([V-13](FINDINGS.md#v-13)); signatures with RSA keys
+of 512 bits verify ([V-14](FINDINGS.md#v-14)); and a temporary error of the MX lookup sends
+the message to the domain's own address ([O-9](FINDINGS.md#o-9)). The older
 `EMail.Parse` read a Content-Type with case, against RFC 2045 §5.1: a `Multipart/Signed`
 whose signature was valid was reported as unsigned, a `Multipart/Encrypted` was not
 decrypted ([E-14](FINDINGS.md#e-14)); white space and comments in it broke the boundary
@@ -197,16 +204,19 @@ vectors, and the four Linux tools.
 | RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 32 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
 | Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 0 | ~~C-1~~ to ~~C-11~~ fixed |
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
+| RFC 5321 §5.1 the next hop: the MX lookup, the order of the MX hosts, the relay among them | 9 | 8 | O-9 to O-12 |
 | Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
 | MTA-STS (RFC 8461), DANE (RFC 7672) | 41 | 0 | ~~M-1~~ to ~~M-6~~, ~~N-1~~ to ~~N-5~~ fixed |
 | Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 8301, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 17 | 0 | ~~V-1~~ to ~~V-4~~, ~~R-7~~ fixed |
+| RFC 7208 §4 to §6 SPF evaluation: DNS errors, the record set, syntax, modifiers, ptr, limits | 27 | 20 | V-5 to V-12 |
+| RFC 6376 §6.1, RFC 8301 §3.2 DKIM verification: required tags, From, i=, key size, key record | 18 | 11 | V-13 to V-17 |
 | RFC 8617 ARC: validation on inbound mail, the sealer | 17 | 0 | ~~A-1~~ to ~~A-5~~, ~~V-3~~, ~~V-4~~ fixed |
 | RFC 7489 §7 DMARC aggregate and failure reports, RFC 6591 | 16 | 0 | ~~R-1~~ to ~~R-6~~ fixed |
 | RFC 8460 TLS reporting | 12 | 0 | ~~T-1~~ to ~~T-4~~ fixed |
 | RFC 6710 MT-PRIORITY | 18 | 0 | ~~Q-1~~ to ~~Q-4~~ fixed |
 | RFC 5321 §3.1, §3.8, §4.5.3.1.8 connection and recipient limits | 6 | 0 | ~~L-1~~ to ~~L-4~~ fixed |
 | RFC 5321 §3.3, §4.5.1, §6.1 recipient checks and storage failures; RFC 6409 submission to the application | 12 | 0 | — |
-| Outbound: RFC 6890 public addresses only, smart host credentials, DKIM signing (RFC 6376, RFC 8463) | 26 | 0 | ~~P-1~~ fixed |
+| Outbound: RFC 6890 public addresses only, smart host credentials, DKIM signing and keys (RFC 6376, RFC 8463, RFC 8301) | 31 | 3 | P-2, P-3; ~~P-1~~ fixed |
 | RFC 5321 §6.1 the file queue after a crash | 5 | 0 | — |
 | RFC 5322 addresses, RFC 6376 DKIM canonicalization, the suite's DKIM signer/verifier and ARC sealer/validator, RFC 7208 SPF macros | 44 | 0 | — |
 | RFC 2045, 2046, 2047, 2231, 5322, 2919: MIME and the message format, built and read | 141 | 0 | ~~E-1~~ to ~~E-16~~ fixed |
@@ -215,7 +225,7 @@ vectors, and the four Linux tools.
 | RFC 3156 PGP/MIME, RFC 9580 | 64 | 0 | ~~G-1~~ to ~~G-6~~, ~~E-14~~ fixed |
 | Public Suffix List (its 78 test vectors), RFC 7489 §3.2 Organizational Domain | 99 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **878** | **0** | |
+| **Total** | **937** | **42** | |
 
 ## External test partners
 

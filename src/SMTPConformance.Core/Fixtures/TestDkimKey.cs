@@ -13,7 +13,7 @@ namespace SMTPConformance.Core.Fixtures;
 public sealed partial class TestDkimKey : IDisposable
 {
 
-    private readonly RSA rsa = RSA.Create(2048);
+    private readonly RSA rsa;
 
     public String  Domain    { get; }
     public String  Selector  { get; }
@@ -24,10 +24,13 @@ public sealed partial class TestDkimKey : IDisposable
     public String  RecordName
         => $"{Selector}._domainkey.{Domain}";
 
-    public TestDkimKey(String Domain, String Selector = "test")
+    /// <param name="Bits">The size of the RSA key: 2048, or another - 512, which RFC 8301
+    /// §3.2 forbids, for a verifier that is to refuse it.</param>
+    public TestDkimKey(String Domain, String Selector = "test", Int32 Bits = 2048)
     {
         this.Domain    = Domain;
         this.Selector  = Selector;
+        this.rsa       = RSA.Create(Bits);
     }
 
 
@@ -36,9 +39,16 @@ public sealed partial class TestDkimKey : IDisposable
     /// RECOMMENDED) without.
     /// </summary>
     public TXT Record(Boolean WithVersion = true)
+        => Record((WithVersion ? "v=DKIM1; " : "") + "k=rsa; ");
+
+    /// <summary>
+    /// A key record of the given tags, the p= tag with the public key after them - "v=DKIM1;
+    /// k=rsa; h=sha1; " for one that names its hash algorithms (RFC 6376 §3.6.1).
+    /// </summary>
+    public TXT Record(String TagsBeforeKey)
 
         => new (DNSServiceName.Parse(RecordName), DNSQueryClasses.IN, TimeSpan.FromHours(1),
-                (WithVersion ? "v=DKIM1; " : "") + $"k=rsa; p={Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo())}");
+                TagsBeforeKey + $"p={Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo())}");
 
     /// <summary>
     /// The private key as PKCS#8 PEM - for a signer under test that is to sign with this key.
@@ -70,6 +80,17 @@ public sealed partial class TestDkimKey : IDisposable
     /// the tags free.
     /// </summary>
     public String Sign(String Message, String Algorithm, Boolean SignatureFirst, params String[] SignedHeaders)
+        => Sign(Message, Algorithm, SignatureFirst, tags => tags, SignedHeaders);
+
+    /// <summary>
+    /// As above, the tags before b= changed first - "v=1; a=rsa-sha256; c=relaxed/relaxed;
+    /// d=...; s=...; t=...; h=...; bh=..." - and then signed as they are: a signature without
+    /// v=, or with an i= of another domain, that is a valid signature over what it says.
+    /// </summary>
+    public String Sign(String Message, Func<String, String> Tags, params String[] SignedHeaders)
+        => Sign(Message, "rsa-sha256", false, Tags, SignedHeaders);
+
+    private String Sign(String Message, String Algorithm, Boolean SignatureFirst, Func<String, String> Tags, String[] SignedHeaders)
     {
 
         if (SignedHeaders.Length == 0)
@@ -79,8 +100,8 @@ public sealed partial class TestDkimKey : IDisposable
         var sha1     = Algorithm == "rsa-sha1";
 
         var bodyHash = Convert.ToBase64String(Hash(Encoding.UTF8.GetBytes(RelaxedBody(body)), sha1));
-        var rest     = $"v=1; a={Algorithm}; c=relaxed/relaxed; d={Domain}; s={Selector}; " +
-                       $"t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}; h={String.Join(":", SignedHeaders)}; bh={bodyHash}";
+        var rest     = Tags($"v=1; a={Algorithm}; c=relaxed/relaxed; d={Domain}; s={Selector}; " +
+                            $"t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}; h={String.Join(":", SignedHeaders)}; bh={bodyHash}");
         var empty    = SignatureFirst ? "b=; " + rest : rest + "; b=";
 
         // §3.7: the selected header fields, then the DKIM-Signature field itself, b= empty,
