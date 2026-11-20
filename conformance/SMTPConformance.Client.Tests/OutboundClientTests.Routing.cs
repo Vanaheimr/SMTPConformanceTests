@@ -180,7 +180,9 @@ public sealed partial class OutboundClientTests
 
         yield return Case("the only MX",                      [],                  [ OwnName ],                         SendStatus.PermFail,  (10, OwnName));
         yield return Case("the best MX, a backup behind it",  [],                  [ OwnName, "backup.route.test" ],    SendStatus.PermFail,  (10, OwnName), (20, "backup.route.test"));
-        yield return Case("a backup MX behind a better one",  [ "mx.route.test" ], [ OwnName ],                         SendStatus.TempFail,  (10, "mx.route.test"), (20, OwnName));
+        // The better MX host has no address either: the one usable MX host there could be is not
+        // - a permanent failure (O-10).
+        yield return Case("a backup MX behind a better one",  [ "mx.route.test" ], [ OwnName ],                         SendStatus.PermFail,  (10, "mx.route.test"), (20, OwnName));
 
     }
 
