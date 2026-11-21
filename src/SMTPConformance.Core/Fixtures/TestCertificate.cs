@@ -18,6 +18,30 @@ public static class TestCertificate
 
 
     /// <summary>
+    /// A self-signed RSA-2048 client certificate (id-kp-clientAuth) for the given name,
+    /// valid for 7 days, with its private key - for SASL EXTERNAL (RFC 4422 Appendix A).
+    /// </summary>
+    public static X509Certificate2 CreateClientCertificate(String CommonName)
+    {
+
+        using var rsa = RSA.Create(2048);
+
+        var request = new CertificateRequest($"CN={CommonName}", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+        request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, false));
+        request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, false));
+
+        // id-kp-clientAuth
+        request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension([ new Oid("1.3.6.1.5.5.7.3.2") ], false));
+
+        var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(7));
+
+        return X509CertificateLoader.LoadPkcs12(certificate.Export(X509ContentType.Pfx), null, X509KeyStorageFlags.Exportable);
+
+    }
+
+
+    /// <summary>
     /// RSA-2048 server certificate with SANs for the given name, localhost and
     /// 127.0.0.1, valid for 7 days, exportable private key.
     /// </summary>

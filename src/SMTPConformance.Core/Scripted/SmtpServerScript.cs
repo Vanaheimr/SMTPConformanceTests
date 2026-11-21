@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
@@ -27,6 +28,33 @@ public sealed class ScriptedTransaction
     public Boolean          UsedBdat       { get; set; }
 
     public Boolean          Tls            { get; set; }
+
+}
+
+
+/// <summary>
+/// How a scripted SCRAM-SHA-256 exchange ends, once the client's proof holds.
+/// </summary>
+public enum ScramEnding
+{
+
+    /// <summary>
+    /// RFC 4422 §3, RFC 4954 §4: the server-final-message as a 334 challenge, an empty
+    /// response, then 235.
+    /// </summary>
+    ServerFinalAsChallenge,
+
+    /// <summary>
+    /// 235 at once, without the server-final-message: the server never proves it knows the
+    /// password.
+    /// </summary>
+    SuccessWithoutServerFinal,
+
+    /// <summary>
+    /// The server-final-message with a ServerSignature that is not the right one; 235 to a
+    /// client that answers it with anything but "*".
+    /// </summary>
+    WrongServerSignature
 
 }
 
@@ -82,6 +110,17 @@ public sealed class SmtpServerScript
     /// Advertise AUTH before TLS as well.
     /// </summary>
     public Boolean                  AuthBeforeTls      { get; init; } = false;
+
+    /// <summary>
+    /// The password of the SCRAM-SHA-256 mechanism (RFC 5802, RFC 7677), as the server stores
+    /// it: hashed as it is, without normalization. A wrong proof is answered with 535.
+    /// </summary>
+    public String                   ScramPassword      { get; init; } = "secret";
+
+    /// <summary>
+    /// How the SCRAM-SHA-256 exchange ends.
+    /// </summary>
+    public ScramEnding              ScramEnding        { get; init; } = ScramEnding.ServerFinalAsChallenge;
 
     public String                   MailReply          { get; init; } = "250 2.1.0 Ok";
 
@@ -298,11 +337,93 @@ public sealed class SmtpServerScript
                 await s.ReplyAsync("235 2.7.0 Authentication successful");
                 break;
 
+            case "SCRAM-SHA-256":
+                await HandleScramAsync(s, parts.Length > 2 ? parts[2] : null);
+                break;
+
             default:
                 await s.ReplyAsync("504 5.5.4 Mechanism not scripted");
                 break;
 
         }
+
+    }
+
+
+    /// <summary>
+    /// SCRAM-SHA-256 as RFC 5802 §5 and §7 have it, salt and nonce new each time, 4096
+    /// iterations; the end as <see cref="ScramEnding"/> says.
+    /// </summary>
+    private async Task HandleScramAsync(ScriptedSmtpSession s, String? InitialResponse)
+    {
+
+        static String  B64  (String text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
+        static String  Unb64(String text) => Encoding.UTF8.GetString(Convert.FromBase64String(text.Trim()));
+
+        if (InitialResponse is null)
+        {
+            await s.ReplyAsync("334 ");
+            var line = await s.ReadCommandAsync();
+            if (line is null)
+                return;
+            InitialResponse = line.Utf8;
+        }
+
+        Record(InitialResponse, s.IsTls);
+
+        // gs2-header up to its second comma, then client-first-message-bare.
+        var clientFirst  = Unb64(InitialResponse);
+        var gs2End       = clientFirst.IndexOf(',', clientFirst.IndexOf(',') + 1);
+        var bare         = clientFirst[(gs2End + 1)..];
+        var clientNonce  = bare.Split(',').First(attribute => attribute.StartsWith("r="))[2..];
+
+        var salt         = RandomNumberGenerator.GetBytes(16);
+        var serverFirst  = $"r={clientNonce}{Convert.ToBase64String(RandomNumberGenerator.GetBytes(18))},s={Convert.ToBase64String(salt)},i=4096";
+
+        await s.ReplyAsync("334 " + B64(serverFirst));
+
+        var finalLine    = await s.ReadCommandAsync();
+        if (finalLine is null)
+            return;
+
+        Record(finalLine.Utf8, s.IsTls);
+
+        var clientFinal  = Unb64(finalLine.Utf8);
+        var proofAt      = clientFinal.LastIndexOf(",p=", StringComparison.Ordinal);
+        var authMessage  = $"{bare},{serverFirst},{clientFinal[..proofAt]}";
+
+        var salted       = Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes(ScramPassword), salt, 4096, HashAlgorithmName.SHA256, 32);
+        var clientKey    = HMACSHA256.HashData(salted, "Client Key"u8);
+        var signature    = HMACSHA256.HashData(SHA256.HashData(clientKey), Encoding.UTF8.GetBytes(authMessage));
+        var expected     = clientKey.Zip(signature, (a, b) => (Byte) (a ^ b)).ToArray();
+
+        if (!Convert.FromBase64String(clientFinal[(proofAt + 3)..]).SequenceEqual(expected))
+        {
+            await s.ReplyAsync("535 5.7.8 Authentication credentials invalid");
+            return;
+        }
+
+        var serverSignature = ScramEnding == ScramEnding.WrongServerSignature
+                                  ? RandomNumberGenerator.GetBytes(32)
+                                  : HMACSHA256.HashData(HMACSHA256.HashData(salted, "Server Key"u8), Encoding.UTF8.GetBytes(authMessage));
+
+        if (ScramEnding == ScramEnding.SuccessWithoutServerFinal)
+        {
+            await s.ReplyAsync("235 2.7.0 Authentication successful");
+            return;
+        }
+
+        await s.ReplyAsync("334 " + B64("v=" + Convert.ToBase64String(serverSignature)));
+
+        var empty = await s.ReadCommandAsync();
+        if (empty is null)
+            return;
+
+        Record(empty.Utf8, s.IsTls);
+
+        await s.ReplyAsync(empty.Utf8 == "*"
+                               ? "501 5.7.0 Authentication cancelled"
+                               : "235 2.7.0 Authentication successful");
 
     }
 

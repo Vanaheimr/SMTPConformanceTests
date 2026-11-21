@@ -9,33 +9,37 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
 refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod
-`a687f198`** (Styx `a6b9f9fb`), which closes every finding of all eight rounds and of
-the follow-up E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the
-observations the first one left without a test; its line numbers refer to `96a8048d`.
-The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side, which the first
-two did not test at all; its line numbers refer to `d2d608d2`. The fourth (D-, M- and
-N-) tests what the relay owes beyond delivery: the reports to the sender (DSN), MTA-STS
-and DANE; its line numbers refer to `306f2d59`. The fifth (V- and P-) tests what
-Hermod's SMTP gained between `bbbf88b6` and `4b8be28a` - SPF, DKIM and DMARC on inbound
-mail, DNS blocklists, recipient checks, the AUTH configuration, submission to the
-application, outbound mail to public addresses only, smart host credentials, DKIM
-signing, the file queue after a crash and the certificate chain; its line numbers refer
-to `4b8be28a`. The sixth (A-, R-, T-, Q-, L-, V-3 and V-4) tests the parts of Hermod's
-SMTP no round had tested: ARC (RFC 8617), the DMARC reports (RFC 7489 §7), TLS reporting
-(RFC 8460), MT-PRIORITY (RFC 6710) and the connection and recipient limits; its line
-numbers refer to `287d1c43`, under `libs/Hermod/Hermod/SMTP/`. The seventh (E-, I-, K-
-and G-) tests what of Hermod's mail code no round had tested, none of it changed since:
-MIME and the message format as Hermod builds and reads mail (RFC 2045 to 2047, 2231,
-5322), the reports that arrive (DSN, DMARC, TLS-RPT), message disposition notifications
-(RFC 8098), PGP/MIME (RFC 3156) and the Public Suffix List under DMARC; its line numbers
-refer to `72c2366d`. E-14 to E-16 follow it up: what the older `EMail.Parse` makes of a
-Content-Type that is not written in lower case, as the MIME reader would read it, seen
-while fixing the MDN findings; their line numbers refer to `0504586f`. The eighth (V-5
-and on, O-9 and on, P-2 and P-3) tests what of SPF, DKIM and the way to the next hop the
-earlier rounds took for granted: how check_host() comes to its result (RFC 7208 §4 to
-§6), what a DKIM verifier checks of a signature and its key record before it hashes
-anything (RFC 6376 §6.1, RFC 8301), how the relay finds its MX hosts (RFC 5321 §5.1),
-and the DKIM keys Hermod makes; its line numbers refer to `887a8795`.
+`a687f198`** (Styx `a6b9f9fb`), which closes every finding of the first eight rounds and
+of the follow-up E-14 to E-16; the ninth round's are open. The second round (S-18 and
+on, C-8 and on) comes from the observations the first one left without a test; its line
+numbers refer to `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`,
+the relay side, which the first two did not test at all; its line numbers refer to
+`d2d608d2`. The fourth (D-, M- and N-) tests what the relay owes beyond delivery: the
+reports to the sender (DSN), MTA-STS and DANE; its line numbers refer to `306f2d59`. The
+fifth (V- and P-) tests what Hermod's SMTP gained between `bbbf88b6` and `4b8be28a` -
+SPF, DKIM and DMARC on inbound mail, DNS blocklists, recipient checks, the AUTH
+configuration, submission to the application, outbound mail to public addresses only,
+smart host credentials, DKIM signing, the file queue after a crash and the certificate
+chain; its line numbers refer to `4b8be28a`. The sixth (A-, R-, T-, Q-, L-, V-3 and V-4)
+tests the parts of Hermod's SMTP no round had tested: ARC (RFC 8617), the DMARC reports
+(RFC 7489 §7), TLS reporting (RFC 8460), MT-PRIORITY (RFC 6710) and the connection and
+recipient limits; its line numbers refer to `287d1c43`, under
+`libs/Hermod/Hermod/SMTP/`. The seventh (E-, I-, K- and G-) tests what of Hermod's mail
+code no round had tested, none of it changed since: MIME and the message format as
+Hermod builds and reads mail (RFC 2045 to 2047, 2231, 5322), the reports that arrive
+(DSN, DMARC, TLS-RPT), message disposition notifications (RFC 8098), PGP/MIME (RFC 3156)
+and the Public Suffix List under DMARC; its line numbers refer to `72c2366d`. E-14 to
+E-16 follow it up: what the older `EMail.Parse` makes of a Content-Type that is not
+written in lower case, as the MIME reader would read it, seen while fixing the MDN
+findings; their line numbers refer to `0504586f`. The eighth (V-5 and on, O-9 and on,
+P-2 and P-3) tests what of SPF, DKIM and the way to the next hop the earlier rounds took
+for granted: how check_host() comes to its result (RFC 7208 §4 to §6), what a DKIM
+verifier checks of a signature and its key record before it hashes anything (RFC 6376
+§6.1, RFC 8301), how the relay finds its MX hosts (RFC 5321 §5.1), and the DKIM keys
+Hermod makes; its line numbers refer to `887a8795`. The ninth (V-18 and on, S-20 and on,
+C-12 and C-13) tests when a DMARC policy is applied at all (RFC 7489 §6.6.2, §6.6.3) and
+SASL in its details: SCRAM-SHA-256 on both sides (RFC 5802, RFC 7677, RFC 4422 §3) and
+EXTERNAL (RFC 4422 Appendix A); its line numbers refer to `a687f198`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -43,7 +47,23 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [V-18](#v-18) | medium | DMARC | A temporary error of SPF, with no signature passing, fails DMARC and applies p=reject | 1 |
+| [S-20](#s-20) | medium | SCRAM | The server-final-message (v=) travels in the 235 reply, which SMTP has no room for, not as a 334 challenge | 1 |
+| [S-27](#s-27) | medium | EXTERNAL | The TLS handshake never asks for a client certificate: SASL EXTERNAL is never offered and never works | 1 |
+| [C-12](#c-12) | medium | SCRAM client | A 235 without the server-final-message is taken as success: the server never proved it knows the password | 1 |
+| [V-19](#v-19) | low | DMARC | A DNS error at the From domain's record falls back to the Organizational Domain's record | 1 |
+| [V-20](#v-20) | low | DMARC | Of two DMARC records the first is applied | 1 |
+| [V-21](#v-21) | low | DMARC | The version is not matched exactly: `v=dmarc1` and `v=DMARC1x` count, `v = DMARC1` does not | 3 |
+| [V-22](#v-22) | low | DMARC | A record without a valid p=, or with an invalid sp=, and without rua is applied | 3 |
+| [S-21](#s-21) | low | SCRAM | The channel binding flag "y" is refused, though Hermod offers no -PLUS | 1 |
+| [S-22](#s-22) | low | SCRAM | The c= attribute is not compared with the GS2 header | 1 |
+| [S-23](#s-23) | low | SCRAM | A requested authorization identity (a=) is ignored: alice asking to act as bob is alice | 1 |
+| [S-24](#s-24) | low | SCRAM | "=2C" and "=3D" in the user name are not decoded, and a bare "=" is not refused | 3 |
+| [S-25](#s-25) | low | SCRAM | A mandatory extension (m=) does not fail the authentication | 1 |
+| [S-26](#s-26) | low | SCRAM | Passwords are not normalized (SASLprep) before they are hashed | 1 |
+| [C-13](#c-13) | low | SCRAM client | The client does not normalize the password (SASLprep) | 1 |
 
 ### Closed
 
@@ -465,6 +485,96 @@ Fixed: `421 4.4.2 <host> Error: timeout exceeded`, also for a timeout in the mid
 of DATA or a BDAT chunk - which until then reset the transaction and waited a
 second timeout for a command.
 
+The ninth round's SASL tests: `ScramTests` run SCRAM-SHA-256 exchanges against the
+submission port with the suite's own client half (`ScramSha256`), which can send another
+GS2 header, another c=, a mandatory extension, an unescaped user name and a normalized
+password; `ExternalAuthTests` present self-made client certificates in the STARTTLS
+handshake. Covered without a finding: an authorization identity that is the user's own; an
+ASCII password, normalized or not; an unlisted certificate, and none, authenticate nobody
+with EXTERNAL.
+
+### S-20
+**Open.** **The server-final-message travels in the 235 reply** (`SMTPSession.cs:481` to
+`:484`, `ScramSha256AuthHandler.cs:194` to `:202`): the server's "v=" ServerSignature is
+appended, base64, to "235 2.7.0 Authentication successful". RFC 4954 §4: "the SMTP
+protocol doesn't support the SASL feature of returning additional data with a successful
+outcome"; RFC 4422 §3: "Where the mechanism specifies that the server is to return
+additional data to the client with a successful outcome and this field is unavailable or
+unused, the additional data is sent as a challenge whose response is empty. After
+receiving this response, the server then indicates the successful outcome." A client that
+keeps to it waits for a 334 it never gets, and cannot authenticate the server - the half
+of SCRAM that RFC 5802 §5 has the client do (C-12 is Hermod's own client accepting that).
+Test: `The_server_final_message_is_a_challenge`.
+`AuthTests.Scram_sha_256_succeeds_with_mutual_authentication` takes either form and still
+passes.
+
+### S-21
+**Open.** **The channel binding flag "y" is refused** (`ScramSha256AuthHandler.cs:85`,
+`parts[0] != "n"`): RFC 5802 §6: a client that supports channel binding and does not see
+the -PLUS mechanism "MUST NOT use an "n" gs2-cbind-flag" - it sends "y" - and "If the flag
+is set to "y" and the server supports channel binding, the server MUST fail
+authentication". Hermod offers no SCRAM-SHA-256-PLUS; such a client is turned away with
+535.
+Test: `A_client_that_supports_channel_binding_is_authenticated_with_the_y_flag`.
+
+### S-22
+**Open.** **The c= attribute is not compared with the GS2 header**
+(`ScramSha256AuthHandler.cs:166`: c= is taken into the AuthMessage as it came): RFC 5802
+§6: "The server MUST always validate the client's "c=" field. The server does this by
+constructing the value of the "c=" attribute and then checking that it matches the
+client's c= attribute value." A client-first-message with "n,," and a c= of "y,," is
+accepted - the check that tells a downgraded channel binding apart.
+Test: `A_c_attribute_that_is_not_the_GS2_header_is_refused`.
+
+### S-23
+**Open.** **A requested authorization identity is ignored**
+(`ScramSha256AuthHandler.cs:85` to `:92`: the GS2 header is skipped): RFC 5802 §5.1, a:
+"Upon the receipt of this value the server verifies its correctness according to the used
+SASL protocol profile. Failed verification results in failed authentication exchange."
+alice asking to act as bob ("n,a=bob,") is authenticated - as alice. PLAIN refuses the
+same request (`AuthConfigurationTests.Acting_as_somebody_else_is_refused`).
+Test: `Asking_to_act_as_another_user_is_refused`;
+`Naming_oneself_as_the_authorization_identity_is_authenticated` is the guard.
+
+### S-24
+**Open.** **"=2C" and "=3D" in the user name are not decoded**
+(`ScramSha256AuthHandler.cs:97`, `:206`): the user is looked up as "a=3Db", not "a=b"; and
+"n=a=b" finds the user "a=b". RFC 5802 §5.1, n: "The characters ',' or '=' in usernames
+are sent as '=2C' and '=3D' respectively. If the server receives a username that contains
+'=' not followed by either '2C' or '3D', then the server MUST fail the authentication."
+Tests: `A_user_name_with_an_escaped_comma_or_equals_sign_is_authenticated` (two cases),
+`A_user_name_with_an_unescaped_equals_sign_is_refused`.
+
+### S-25
+**Open.** **A mandatory extension does not fail the authentication**
+(`ScramSha256AuthHandler.cs:206`: attributes the handler does not know are passed over):
+RFC 5802 §5.1, m: "its presence in a client or a server message MUST cause authentication
+failure when the attribute is parsed by the other end."
+Test: `A_mandatory_extension_fails_the_authentication`.
+
+### S-26
+**Open.** **Passwords are not normalized before they are hashed**
+(`ScramCredentialGenerator.cs:42`, `Encoding.UTF8.GetBytes(password)`): RFC 5802 §2.2:
+SaltedPassword := Hi(Normalize(password), salt, i), "Normalize(str): Apply the SASLprep
+profile [RFC4013] to the "str" string". A password set as "A" and a combining diaeresis is
+stored as those code points; a client that normalizes, as the RFC has it, proves it knows
+"Ä", and is refused.
+Test: `A_password_is_normalized_as_SASLprep_has_it`;
+`An_ASCII_password_is_authenticated_normalized_or_not` is the guard.
+
+### S-27
+**Open.** **The TLS handshake never asks for a client certificate** (`SMTPSession.cs:592`,
+`ClientCertificateRequired = false`): with it false, .NET's SslStream sends no
+CertificateRequest, and a client sends a certificate only when asked (RFC 8446 §4.3.2,
+§4.4.2; RFC 5246 §7.4.4, §7.4.6). So Hermod never has one: EXTERNAL, which it offers once
+a client presented a certificate (`SmtpAuthManager.cs:71`) and lists among its mechanisms,
+is never offered, and "AUTH EXTERNAL" is always 535. RFC 4422 Appendix A: EXTERNAL
+authenticates by "some external means" - here, the certificate whose thumbprint is listed
+for an account (`FileUserStore`).
+Test: `A_listed_client_certificate_authenticates_with_EXTERNAL`;
+`An_unlisted_client_certificate_is_refused` and
+`EXTERNAL_without_a_client_certificate_is_refused` are the guards.
+
 ---
 
 ## Submission client (`SMTPSubmissionClient`)
@@ -605,6 +715,33 @@ with each recipient's result in `SMTPSendResult.Recipients`. Test:
 
 Fixed: the message goes to every accepted recipient; `MailSentStatus.PartiallySent`
 when some were refused, `IsSuccess` for `ok` alone.
+
+The ninth round's SCRAM tests (`SubmissionClientTests.Scram.cs`) run the client against a
+scripted SCRAM-SHA-256 server (`SmtpServerScript.ScramPassword`, `ScramEnding`). Covered
+without a finding: a server-final-message as a 334 is checked and the message sent; a
+wrong ServerSignature stops the client before MAIL.
+
+### C-12
+**Open.** **A 235 without the server-final-message is taken as success**
+(`SMTPSubmissionClient.cs:639` to `:689`): the ServerSignature is checked when a 334
+brings it, and a 235 that comes at once is success. RFC 5802 §5: "the client authenticates
+the server by computing the ServerSignature and comparing it to the value sent by the
+server. If the two are different, the client MUST consider the authentication exchange to
+be unsuccessful" - and a server that sends none has proved nothing; in SMTP the
+server-final-message is a 334 (RFC 4422 §3, RFC 4954 §4). A server that does not know the
+password - one in the middle - answers the client-final-message with 235, and gets the
+message.
+Test: `Scram_without_the_servers_signature_does_not_authenticate`;
+`Scram_with_the_servers_signature_authenticates` and
+`Scram_with_a_wrong_server_signature_does_not_authenticate` are the guards.
+
+### C-13
+**Open.** **The client does not normalize the password** (`SMTPSubmissionClient.cs:667`,
+`ScramSha256Client.cs:40`; `SaslPrep` at `:694` escapes "=" and "," only): RFC 5802 §2.2:
+SaltedPassword := Hi(Normalize(password), salt, i), Normalize being SASLprep (RFC 4013,
+NFKC among it). A password typed as "A" and a combining diaeresis is not the "Äpfelbaum"
+the server stores, and the client is refused.
+Test: `Scram_normalizes_the_password_as_SASLprep_has_it`.
 
 ---
 
@@ -1386,6 +1523,67 @@ s=email, s=*, t=s with an i= of d=).
 
 Fixed: k= is rsa or ed25519; h=, where given, lists sha256; s=, where given, lists * or
 email; t=s takes an i= of d= itself only.
+
+The ninth round's DMARC tests (`DmarcPolicyTests`) call `DNSVerifier.VerifyAsync` with
+unsigned mail from author.test through a client no SPF record names. Covered without a
+finding: such mail fails under p=reject; an aligned signature passes whatever SPF says; a
+From domain without a record falls back to its Organizational Domain's, and its sp=; a
+record among other TXT records, or without a space after ";", is applied; a record with an
+invalid p= but a valid rua is p=none.
+
+### V-18
+**Open.** **A temporary error of SPF fails DMARC and applies the policy**
+(`DNSVerifications/DNSVerifier.cs:1300`: pass is SPF or DKIM aligned, everything else
+fail): SPF "temperror" - now that SPF has one (V-5) - and no signature that passes give
+`dmarc=fail`, and p=reject rejects. RFC 7489 §6.6.2: "If neither passes and one or both of
+them fail due to a temporary error, the Receiver evaluating the message is unable to
+conclude that the DMARC mechanism had a permanent failure; they therefore cannot apply the
+advertised DMARC policy." A moment of DNS trouble at the sender's domain bounces its mail
+for good.
+Test: `A_temporary_error_of_SPF_does_not_apply_the_policy`;
+`A_temporary_error_of_SPF_beside_an_aligned_signature_passes` is the guard.
+
+### V-19
+**Open.** **A DNS error at the From domain's record falls back to the Organizational
+Domain** (`:1269` to `:1278`, `GetTxtRecordAsync` `:1465` to `:1490`: an error is no
+record): a SERVFAIL for _dmarc.news.author.test, and the record of author.test is applied
+in its place. RFC 7489 §6.6.3 asks the Organizational Domain "If the set is now empty" -
+the From domain said it has no record - and sets "any indication that there is no such
+record" apart from "a transient DNS error", whose handling "is left to the discretion of
+the Mail Receiver": fail open, or 4yx. Another domain's policy, which may be laxer or
+stricter than the one that could not be read, is neither.
+Test: `A_DNS_error_at_the_From_domain_does_not_fall_back_to_the_organizational_domain`;
+`A_From_domain_without_a_record_falls_back_to_the_organizational_domain` is the guard.
+
+### V-20
+**Open.** **Of two DMARC records the first is applied** (`:1479`, the first record that
+starts with "v=DMARC1"): RFC 7489 §6.6.3: "If the remaining set contains multiple records
+or no records, policy discovery terminates and DMARC processing is not applied to this
+message."
+Test: `Only_one_record_of_version_DMARC1_is_applied`, one case, and a guard (one record
+among other TXT records).
+
+### V-21
+**Open.** **The version is not matched exactly** (`:1479`, `StartsWith("v=DMARC1",
+OrdinalIgnoreCase)`): "v=dmarc1" and "v=DMARC1x" are DMARC records, "v = DMARC1" is none.
+RFC 7489 §6.3, v: "It MUST have the value of "DMARC1". The value of this tag MUST match
+precisely; if it does not or it is absent, the entire retrieved record MUST be ignored";
+§6.4: `dmarc-version = "v" *WSP "=" *WSP %x44 %x4d %x41 %x52 %x43 %x31` - white space
+around "=" is allowed, and the value is in upper case.
+Test: `Only_one_record_of_version_DMARC1_is_applied`, three cases, and a guard (no space
+after ";").
+
+### V-22
+**Open.** **A record without a valid p=, or with an invalid sp=, and without rua is
+applied** (`:1439`, `:1440`: a missing p= is "none", any other value taken as it is):
+"v=DMARC1; sp=reject" and "v=DMARC1; p=bogus" give `dmarc=fail`, "v=DMARC1; p=reject;
+sp=bogus" rejects. RFC 7489 §6.6.3: "If a retrieved policy record does not contain a valid
+"p" tag, or contains an "sp" tag that is not valid, then: 1. if a "rua" tag is present and
+contains at least one syntactically valid reporting URI, the Mail Receiver SHOULD act as
+if a record containing a valid "v" tag and "p=none" was retrieved, and continue
+processing; 2. otherwise, the Mail Receiver applies no DMARC processing to this message."
+Test: `A_record_without_a_valid_policy_and_without_rua_is_not_applied`, three cases;
+`A_record_without_a_valid_policy_but_with_rua_is_p_none` is the guard.
 
 ## ARC
 

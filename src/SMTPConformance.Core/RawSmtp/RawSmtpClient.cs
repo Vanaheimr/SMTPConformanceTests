@@ -1,6 +1,7 @@
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 
 namespace SMTPConformance.Core.RawSmtp;
 
@@ -191,13 +192,14 @@ public sealed class RawSmtpClient : SmtpWire
     /// STARTTLS and the TLS handshake. Returns the STARTTLS reply; the stream is TLS
     /// only if that reply was 220.
     /// </summary>
-    public async Task<SmtpReply> StartTlsAsync(String TargetHost = "localhost")
+    /// <param name="ClientCertificate">A certificate to present when the server asks for one - for SASL EXTERNAL.</param>
+    public async Task<SmtpReply> StartTlsAsync(String TargetHost = "localhost", X509Certificate2? ClientCertificate = null)
     {
 
         var reply = await CommandAsync("STARTTLS");
 
         if (reply.Code == 220)
-            await UpgradeToTlsAsClientAsync(TargetHost);
+            await UpgradeToTlsAsClientAsync(TargetHost, ClientCertificate: ClientCertificate);
 
         return reply;
 

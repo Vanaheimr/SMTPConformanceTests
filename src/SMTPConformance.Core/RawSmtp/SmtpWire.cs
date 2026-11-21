@@ -334,7 +334,8 @@ public class SmtpWire : IAsyncDisposable
     /// Switch to TLS as the client. Any certificate is accepted: these tests are
     /// about SMTP, and the fixtures use self-signed ones.
     /// </summary>
-    public async Task UpgradeToTlsAsClientAsync(String TargetHost, CancellationToken CancellationToken = default)
+    /// <param name="ClientCertificate">A certificate to present when the server asks for one - for SASL EXTERNAL.</param>
+    public async Task UpgradeToTlsAsClientAsync(String TargetHost, CancellationToken CancellationToken = default, X509Certificate2? ClientCertificate = null)
     {
 
         if (BufferedBytes > 0)
@@ -353,13 +354,14 @@ public class SmtpWire : IAsyncDisposable
         await tls.AuthenticateAsClientAsync(
                   new SslClientAuthenticationOptions {
                       TargetHost           = TargetHost,
-                      EnabledSslProtocols  = SslProtocols.Tls12 | SslProtocols.Tls13
+                      EnabledSslProtocols  = SslProtocols.Tls12 | SslProtocols.Tls13,
+                      ClientCertificates   = ClientCertificate is null ? null : [ ClientCertificate ]
                   },
                   CancellationToken
               );
 
         stream = tls;
-        Transcript.AppendLine($"-- TLS {tls.SslProtocol} --");
+        Transcript.AppendLine($"-- TLS {tls.SslProtocol}{(tls.LocalCertificate is not null ? ", client certificate sent" : "")} --");
 
     }
 

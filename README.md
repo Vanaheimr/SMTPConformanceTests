@@ -13,7 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-21, Hermod `a687f198`):** 937 tests, **all pass**. An eighth round
+**State (2026-11-21, Hermod `a687f198`):** 970 tests, 949 pass; 21 fail on 15 open
+findings of a ninth round, which tests when a DMARC policy is applied at all and SASL in its
+details. The heaviest: a temporary error of SPF, with no signature passing, fails DMARC and
+applies p=reject ([V-18](FINDINGS.md#v-18)); the SCRAM server-final-message travels in the
+235 reply, which SMTP has no room for ([S-20](FINDINGS.md#s-20)), and Hermod's client takes
+a 235 without it as success - a server that never proved it knows the password gets the
+message ([C-12](FINDINGS.md#c-12)); the TLS handshake never asks for a client certificate,
+so SASL EXTERNAL never works ([S-27](FINDINGS.md#s-27)). An eighth round
 tested what of SPF, DKIM and the way to the next hop the earlier rounds took for granted -
 59 tests, 19 findings. The heaviest: a DNS error - a SERVFAIL, a timeout - turned an SPF
 check into `none`, or into `fail` under `-all`, never `temperror` ([V-5](FINDINGS.md#v-5));
@@ -206,7 +213,8 @@ vectors, and the four Linux tools.
 | RFC 3461 DSN parameters | 5 | 0 | ~~S-6~~ fixed |
 | RFC 3207 STARTTLS, RFC 8314 implicit TLS, RFC 8689 REQUIRETLS, RFC 8446 §4.4.2 certificate chain | 24 | 0 | ~~S-8~~, ~~S-13~~, ~~S-14~~ fixed |
 | RFC 4954 AUTH, RFC 4616 PLAIN, LOGIN, RFC 5802/7677 SCRAM, RFC 6409 submission, RFC 3461 relay | 32 | 0 | ~~S-5~~, ~~S-14~~, ~~S-15~~, ~~S-16~~, ~~S-17~~ fixed |
-| Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152) | 31 | 0 | ~~C-1~~ to ~~C-11~~ fixed |
+| RFC 5802 SCRAM in detail (RFC 4422 §3, the GS2 header, c=, a=, saslname, m=, SASLprep), RFC 4422 Appendix A EXTERNAL | 14 | 10 | S-20 to S-27 |
+| Submission client (RFC 5321, 1870, 2920, 3030, 3207, 4954, 6152, 5802) | 35 | 2 | C-12, C-13; ~~C-1~~ to ~~C-11~~ fixed |
 | Outbound client (RFC 5321, 3461, 6152, 6531, 8689) | 22 | 0 | ~~O-1~~ to ~~O-8~~ fixed |
 | RFC 5321 §5.1 the next hop: the MX lookup, the order of the MX hosts, the relay among them | 9 | 0 | ~~O-9~~ to ~~O-12~~ fixed |
 | Relay reports (RFC 3461, 3464, 6522) | 25 | 0 | ~~D-1~~ to ~~D-12~~ fixed |
@@ -214,6 +222,7 @@ vectors, and the four Linux tools.
 | Inbound RFC 7208 SPF, RFC 6376 DKIM, RFC 8301, RFC 7489 DMARC, RFC 8601 Authentication-Results; RFC 5782 DNS blocklists | 17 | 0 | ~~V-1~~ to ~~V-4~~, ~~R-7~~ fixed |
 | RFC 7208 §4 to §6 SPF evaluation: DNS errors, the record set, syntax, modifiers, ptr, limits | 27 | 0 | ~~V-5~~ to ~~V-12~~ fixed |
 | RFC 6376 §6.1, RFC 8301 §3.2 DKIM verification: required tags, From, i=, key size, key record | 18 | 0 | ~~V-13~~ to ~~V-17~~ fixed |
+| RFC 7489 §6.6.2, §6.6.3 DMARC policy discovery: temporary errors, the record set, the version, p= and sp= | 15 | 9 | V-18 to V-22 |
 | RFC 8617 ARC: validation on inbound mail, the sealer | 17 | 0 | ~~A-1~~ to ~~A-5~~, ~~V-3~~, ~~V-4~~ fixed |
 | RFC 7489 §7 DMARC aggregate and failure reports, RFC 6591 | 16 | 0 | ~~R-1~~ to ~~R-6~~ fixed |
 | RFC 8460 TLS reporting | 12 | 0 | ~~T-1~~ to ~~T-4~~ fixed |
@@ -229,7 +238,7 @@ vectors, and the four Linux tools.
 | RFC 3156 PGP/MIME, RFC 9580 | 64 | 0 | ~~G-1~~ to ~~G-6~~, ~~E-14~~ fixed |
 | Public Suffix List (its 78 test vectors), RFC 7489 §3.2 Organizational Domain | 99 | 0 | — |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **937** | **0** | |
+| **Total** | **970** | **21** | |
 
 ## External test partners
 
