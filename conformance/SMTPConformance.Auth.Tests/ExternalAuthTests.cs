@@ -41,7 +41,7 @@ public sealed class ExternalAuthTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 4422 Appendix A: EXTERNAL authenticates the client \"by some external means\" - here the TLS client certificate, whose thumbprint is listed for carol; RFC 4954 §4: \"AUTH EXTERNAL =\", the empty initial response, asks for the identity the certificate stands for, and is 235. Hermod offers EXTERNAL once a client presented a certificate (SmtpAuthManager.GetAvailableMechanisms); the handshake has to ask for one first: in TLS the server requests the client's certificate (RFC 8446 §4.3.2 CertificateRequest, RFC 5246 §7.4.4), and a client sends one only when asked")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-27")]
+    [Property("Finding", "S-27")]
     public async Task A_listed_client_certificate_authenticates_with_EXTERNAL()
     {
 

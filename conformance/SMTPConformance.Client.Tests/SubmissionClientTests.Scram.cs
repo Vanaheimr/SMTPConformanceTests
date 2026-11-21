@@ -71,7 +71,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 5802 §5: the client authenticates the server by its ServerSignature, which comes in the server-final-message - a 334 in SMTP (RFC 4422 §3, RFC 4954 §4: SMTP has no additional data with success). A 235 without it is a server that never proved it knows the password, and the exchange is not successful")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-12")]
+    [Property("Finding", "C-12")]
     public async Task Scram_without_the_servers_signature_does_not_authenticate()
     {
 
@@ -83,7 +83,7 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 5802 §2.2: SaltedPassword := Hi(Normalize(password), salt, i), \"Normalize(str): Apply the SASLprep profile [RFC4013] to the \"str\" string\" - a password typed as \"A\" with a combining diaeresis is the server's \"Äpfelbaum\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-13")]
+    [Property("Finding", "C-13")]
     public async Task Scram_normalizes_the_password_as_SASLprep_has_it()
     {
 

@@ -101,7 +101,7 @@ public sealed class DmarcPolicyTests
 
 
     [Test(Description = "RFC 7489 §6.6.2: \"If neither passes and one or both of them fail due to a temporary error, the Receiver evaluating the message is unable to conclude that the DMARC mechanism had a permanent failure; they therefore cannot apply the advertised DMARC policy\" - SPF temperror, no signature, p=reject: no reject")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-18")]
+    [Property("Finding", "V-18")]
     public async Task A_temporary_error_of_SPF_does_not_apply_the_policy()
     {
 
@@ -138,7 +138,7 @@ public sealed class DmarcPolicyTests
     #region V-19: a DNS error at the From domain's record
 
     [Test(Description = "RFC 7489 §6.6.3: the Organizational Domain is asked \"If the set is now empty\" - the From domain answered that it has no record; a lookup that failed answered nothing, and \"any indication that there is no such record\" is set apart from \"a transient DNS error\". The Organizational Domain's record is not applied in place of a record that could not be read")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-19")]
+    [Property("Finding", "V-19")]
     public async Task A_DNS_error_at_the_From_domain_does_not_fall_back_to_the_organizational_domain()
     {
 
@@ -173,12 +173,10 @@ public sealed class DmarcPolicyTests
     public static IEnumerable<TestCaseData> RecordSets()
     {
 
-        TestCaseData Case(String Finding, String Name, Boolean Applied, params String[] Records)
-        {
-            var data = new TestCaseData(Records, Applied).SetName($"DMARC record set: {Name}")
-                                                         .SetProperty("Finding", Finding);
-            return Name.StartsWith("guard") ? data : data.SetCategory(TestCategories.KnownIssue);
-        }
+        static TestCaseData Case(String Finding, String Name, Boolean Applied, params String[] Records)
+
+            => new TestCaseData(Records, Applied).SetName($"DMARC record set: {Name}")
+                                                 .SetProperty("Finding", Finding);
 
         yield return Case("V-20", "two records",                               false, "v=DMARC1; p=reject", "v=DMARC1; p=none");
         yield return Case("V-21", "v=dmarc1, not DMARC1",                      false, "v=dmarc1; p=reject");
@@ -212,7 +210,7 @@ public sealed class DmarcPolicyTests
     [TestCase("v=DMARC1; p=bogus",                    Description = "p= of no policy")]
     [TestCase("v=DMARC1; p=reject; sp=bogus",         Description = "sp= of no policy")]
     [Test(Description = "RFC 7489 §6.6.3: \"If a retrieved policy record does not contain a valid \"p\" tag, or contains an \"sp\" tag that is not valid, then: 1. if a \"rua\" tag is present and contains at least one syntactically valid reporting URI, the Mail Receiver SHOULD act as if a record containing a valid \"v\" tag and \"p=none\" was retrieved, and continue processing; 2. otherwise, the Mail Receiver applies no DMARC processing to this message\" - without rua")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-22")]
+    [Property("Finding", "V-22")]
     public async Task A_record_without_a_valid_policy_and_without_rua_is_not_applied(String Record)
     {
 

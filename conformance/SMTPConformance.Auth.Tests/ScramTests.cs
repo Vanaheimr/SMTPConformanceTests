@@ -81,7 +81,7 @@ public sealed class ScramTests : HermodServerTestBase
     #region S-20: the server-final-message
 
     [Test(Description = "RFC 4954 §4: \"the SMTP protocol doesn't support the SASL feature of returning additional data with a successful outcome\"; RFC 4422 §3: \"Where the mechanism specifies that the server is to return additional data to the client with a successful outcome and this field is unavailable or unused, the additional data is sent as a challenge whose response is empty\" - SCRAM's server-final-message (v=) is a 334, the client answers it with an empty line, then 235")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-20")]
+    [Property("Finding", "S-20")]
     public async Task The_server_final_message_is_a_challenge()
     {
 
@@ -103,7 +103,7 @@ public sealed class ScramTests : HermodServerTestBase
     #region S-21, S-22: channel binding
 
     [Test(Description = "RFC 5802 §6: \"If the flag is set to \"y\" and the server supports channel binding, the server MUST fail authentication\" - Hermod offers no SCRAM-SHA-256-PLUS, so a client that supports channel binding but sees no -PLUS sends \"y\" (\"the client MUST NOT use an \"n\" gs2-cbind-flag\"), and is authenticated")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-21")]
+    [Property("Finding", "S-21")]
     public async Task A_client_that_supports_channel_binding_is_authenticated_with_the_y_flag()
     {
 
@@ -117,7 +117,7 @@ public sealed class ScramTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5802 §6: \"The server MUST always validate the client's \"c=\" field. The server does this by constructing the value of the \"c=\" attribute and then checking that it matches the client's c= attribute value\" - a client-first-message with \"n,,\" and a c= of \"y,,\", the proof valid over it, is refused")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-22")]
+    [Property("Finding", "S-22")]
     public async Task A_c_attribute_that_is_not_the_GS2_header_is_refused()
     {
 
@@ -134,7 +134,7 @@ public sealed class ScramTests : HermodServerTestBase
     #region S-23: the authorization identity
 
     [Test(Description = "RFC 5802 §5.1, a: \"Upon the receipt of this value the server verifies its correctness according to the used SASL protocol profile. Failed verification results in failed authentication exchange\" - alice asking to act as bob is refused, as Hermod's PLAIN refuses it (AuthConfigurationTests.Acting_as_somebody_else_is_refused)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-23")]
+    [Property("Finding", "S-23")]
     public async Task Asking_to_act_as_another_user_is_refused()
     {
 
@@ -167,7 +167,7 @@ public sealed class ScramTests : HermodServerTestBase
     [TestCase("a=b", Description = "\"=\" sent as \"=3D\"")]
     [TestCase("a,b", Description = "\",\" sent as \"=2C\"")]
     [Test(Description = "RFC 5802 §5.1, n: \"The characters ',' or '=' in usernames are sent as '=2C' and '=3D' respectively\" - the server reads them back, and the user is authenticated")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-24")]
+    [Property("Finding", "S-24")]
     public async Task A_user_name_with_an_escaped_comma_or_equals_sign_is_authenticated(String User)
     {
 
@@ -181,7 +181,7 @@ public sealed class ScramTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5802 §5.1, n: \"If the server receives a username that contains '=' not followed by either '2C' or '3D', then the server MUST fail the authentication\" - \"n=a=b\", for the user a=b with the right password")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-24")]
+    [Property("Finding", "S-24")]
     public async Task A_user_name_with_an_unescaped_equals_sign_is_refused()
     {
 
@@ -198,7 +198,7 @@ public sealed class ScramTests : HermodServerTestBase
     #region S-25: mandatory extensions
 
     [Test(Description = "RFC 5802 §5.1, m: \"its presence in a client or a server message MUST cause authentication failure when the attribute is parsed by the other end\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-25")]
+    [Property("Finding", "S-25")]
     public async Task A_mandatory_extension_fails_the_authentication()
     {
 
@@ -215,7 +215,7 @@ public sealed class ScramTests : HermodServerTestBase
     #region S-26: SASLprep
 
     [Test(Description = "RFC 5802 §2.2: SaltedPassword := Hi(Normalize(password), salt, i), and \"Normalize(str): Apply the SASLprep profile [RFC4013] to the \"str\" string\" - a password set as \"A\" with a combining diaeresis is the password a client normalizing to \"Ä\" proves it knows")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-26")]
+    [Property("Finding", "S-26")]
     public async Task A_password_is_normalized_as_SASLprep_has_it()
     {
 
