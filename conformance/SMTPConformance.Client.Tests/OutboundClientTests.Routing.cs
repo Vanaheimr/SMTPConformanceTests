@@ -54,7 +54,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Name, Action<StubDnsClient> Error)
             => new TestCaseData(Error).SetName($"Queued, not sent to the domain's address: {Name}")
-                                      .SetCategory(TestCategories.KnownIssue)
                                       .SetProperty("Finding", "O-9");
 
         yield return Case("the MX lookup fails with SERVFAIL",  dns => dns.Fail ("route.test", DNSResourceRecordTypes.MX));
@@ -103,7 +102,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Name, Action<StubDnsClient> Zone)
             => new TestCaseData(Zone).SetName($"Reported, not retried: {Name}")
-                                     .SetCategory(TestCategories.KnownIssue)
                                      .SetProperty("Finding", "O-10");
 
         yield return Case("the domain does not exist (NXDOMAIN)", dns => {
@@ -140,7 +138,7 @@ public sealed partial class OutboundClientTests
     #region O-11: MX hosts of the same preference
 
     [Test(Description = "RFC 5321 §5.1: \"If there are multiple destinations with the same preference and there is no clear reason to favor one ... then the sender-SMTP MUST randomize them to spread the load across multiple mail exchangers\" - of two MX hosts of preference 10, each is tried first in some of 16 deliveries (both always behind the other: a chance of 1 in 32768)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-11")]
+    [Property("Finding", "O-11")]
     public async Task MX_hosts_of_the_same_preference_are_tried_in_random_order()
     {
 
@@ -175,7 +173,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Name, String[] Tried, String[] NotTried, SendStatus Status, params (UInt16 Preference, String Host)[] Mx)
             => new TestCaseData(Mx, Tried, NotTried, Status).SetName($"The relay's own MX level: {Name}")
-                                                            .SetCategory(TestCategories.KnownIssue)
                                                             .SetProperty("Finding", "O-12");
 
         yield return Case("the only MX",                      [],                  [ OwnName ],                         SendStatus.PermFail,  (10, OwnName));

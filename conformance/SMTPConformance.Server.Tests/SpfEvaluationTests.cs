@@ -72,7 +72,6 @@ public sealed class SpfEvaluationTests
 
         TestCaseData Case(String Name, String Record, Action<StubDnsClient> Error)
             => new TestCaseData(Record, Error).SetName($"temperror: {Name}")
-                                              .SetCategory(TestCategories.KnownIssue)
                                               .SetProperty("Finding", "V-5");
 
         yield return Case("the SPF record lookup fails with SERVFAIL",  "",                                          dns => dns.Fail ("dnserror.test", DNSResourceRecordTypes.TXT));
@@ -126,9 +125,9 @@ public sealed class SpfEvaluationTests
             => new TestCaseData(Records, Expected).SetName($"Record set: {Name}")
                                                   .SetProperty("Finding", "V-6");
 
-        yield return Case("two SPF records",                         SPFResult.PermError,  $"v=spf1 ip4:{ClientAddress} -all", "v=spf1 -all").SetCategory(TestCategories.KnownIssue);
-        yield return Case("only v=spf10, which is no SPF record",    SPFResult.None,       $"v=spf10 ip4:{ClientAddress} -all").SetCategory(TestCategories.KnownIssue);
-        yield return Case("v=spf10 before the SPF record",           SPFResult.Pass,       "v=spf10 -all", $"v=spf1 ip4:{ClientAddress} -all").SetCategory(TestCategories.KnownIssue);
+        yield return Case("two SPF records",                         SPFResult.PermError,  $"v=spf1 ip4:{ClientAddress} -all", "v=spf1 -all");
+        yield return Case("only v=spf10, which is no SPF record",    SPFResult.None,       $"v=spf10 ip4:{ClientAddress} -all");
+        yield return Case("v=spf10 before the SPF record",           SPFResult.Pass,       "v=spf10 -all", $"v=spf1 ip4:{ClientAddress} -all");
         yield return Case("an SPF record among other TXT records",   SPFResult.Pass,       "site-verification=4711", $"v=spf1 ip4:{ClientAddress} -all");
 
     }
@@ -153,7 +152,7 @@ public sealed class SpfEvaluationTests
     [TestCase("v=spf1 ip4:192.0.2.25 ip4:192.0.2.1/33",              Description = "an IPv4 prefix longer than 32 after the one that matches")]
     [TestCase("v=spf1 ip4:192.0.2 ip4:192.0.2.25 -all",              Description = "an IPv4 address of three octets before the one that matches")]
     [Test(Description = "RFC 7208 §4.6: \"The syntax of the record is validated first, and if there are any syntax errors anywhere in the record, check_host() returns immediately with the result \"permerror\", without further interpretation or evaluation\" - not only up to the term that matches")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-7")]
+    [Property("Finding", "V-7")]
     public async Task A_syntax_error_anywhere_is_a_permanent_error(String Record)
     {
 
@@ -182,7 +181,7 @@ public sealed class SpfEvaluationTests
     [TestCase("v=spf1 redirect=a.modifiers.test redirect=b.modifiers.test",  Description = "redirect= twice")]
     [TestCase("v=spf1 ip4:192.0.2.25 exp=a.modifiers.test exp=b.modifiers.test -all", Description = "exp= twice")]
     [Test(Description = "RFC 7208 §6: \"These two modifiers MUST NOT appear in a record more than once each. If they do, then check_host() exits with a result of \"permerror\"\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-8")]
+    [Property("Finding", "V-8")]
     public async Task A_modifier_given_twice_is_a_permanent_error(String Record)
     {
 
@@ -219,7 +218,7 @@ public sealed class SpfEvaluationTests
     [TestCase("ptr.test",   "v=spf1 ptr -all",           Description = "ptr: the validated name is within the domain")]
     [TestCase("other.test", "v=spf1 ptr:ptr.test -all",  Description = "ptr:domain")]
     [Test(Description = "RFC 7208 §5.5: \"It is, however, still in use as part of the SPF protocol, so compliant check_host() implementations MUST support it\" - the client's validated reverse name mail.ptr.test is within ptr.test, and the mechanism matches")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-9")]
+    [Property("Finding", "V-9")]
     public async Task The_ptr_mechanism_matches_a_validated_name(String Domain, String Record)
     {
 
@@ -261,7 +260,7 @@ public sealed class SpfEvaluationTests
 
 
     [Test(Description = "RFC 7208 §4.6.4: \"the evaluation of each \"MX\" record MUST NOT result in querying more than 10 address records ... If this limit is exceeded, the \"mx\" mechanism MUST produce a \"permerror\" result\" - eleven MX names, the client the address of the first")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-10")]
+    [Property("Finding", "V-10")]
     public async Task An_mx_mechanism_with_more_than_ten_names_is_a_permanent_error()
     {
 
@@ -288,7 +287,7 @@ public sealed class SpfEvaluationTests
     #region V-11: void lookups
 
     [Test(Description = "RFC 7208 §4.6.4: \"SPF implementations SHOULD limit \"void lookups\" to two ... Exceeding the limit produces a \"permerror\" result\" - three a: terms for names without an address")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-11")]
+    [Property("Finding", "V-11")]
     public async Task A_third_void_lookup_is_a_permanent_error()
     {
 
@@ -317,7 +316,7 @@ public sealed class SpfEvaluationTests
     [TestCase("v=spf1 ip4:192.0.2.25 -all",   Description = "ip4")]
     [TestCase("v=spf1 a -all",                Description = "a, the domain's A record the client's address")]
     [Test(Description = "RFC 7208 §5: \"SPF implementations on IPv6 servers need to handle both \"AAAA\" and \"A\" records, for clients on IPv4-mapped IPv6 addresses [RFC4291]\" - ::ffff:192.0.2.25 is 192.0.2.25")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-12")]
+    [Property("Finding", "V-12")]
     public async Task A_client_on_an_IPv4_mapped_address_is_matched_as_IPv4(String Record)
     {
 

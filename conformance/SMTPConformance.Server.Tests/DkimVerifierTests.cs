@@ -74,7 +74,7 @@ public sealed class DkimVerifierTests
     #region V-13: From signed
 
     [Test(Description = "RFC 6376 §6.1.1: \"If the \"h=\" tag does not include the From header field, the Verifier MUST ignore the DKIM-Signature header field and return PERMFAIL (From field not signed)\" - h=to:subject:date:message-id")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-13")]
+    [Property("Finding", "V-13")]
     public async Task A_signature_that_does_not_sign_From_does_not_verify()
     {
 
@@ -88,7 +88,7 @@ public sealed class DkimVerifierTests
 
 
     [Test(Description = "RFC 6376 §6.1.1, RFC 7489 §3.1.1: a signature that does not sign From - here the From was put in after signing - gives DMARC no aligned identifier, and DMARC does not pass on it")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-13")]
+    [Property("Finding", "V-13")]
     public async Task A_signature_that_does_not_sign_From_does_not_pass_DMARC()
     {
 
@@ -116,7 +116,7 @@ public sealed class DkimVerifierTests
     #region V-14: key size
 
     [Test(Description = "RFC 8301 §3.2: \"Verifiers MUST NOT consider signatures using RSA keys of less than 1024 bits as valid signatures\" - a 512-bit key")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-14")]
+    [Property("Finding", "V-14")]
     public async Task A_signature_with_a_key_of_512_bits_does_not_verify()
     {
 
@@ -151,7 +151,6 @@ public sealed class DkimVerifierTests
 
         TestCaseData Case(String Name, Func<String, String> Tags)
             => new TestCaseData(Tags).SetName($"Not verified: {Name}")
-                                     .SetCategory(TestCategories.KnownIssue)
                                      .SetProperty("Finding", "V-15");
 
         yield return Case("no v= tag",    tags => tags.Replace("v=1; ", ""));
@@ -180,7 +179,7 @@ public sealed class DkimVerifierTests
     #region V-16: i= within d=
 
     [Test(Description = "RFC 6376 §6.1.1: \"Verifiers MUST confirm that the domain specified in the \"d=\" tag is the same as or a parent domain of the domain part of the \"i=\" tag. If not, the DKIM-Signature header field MUST be ignored\" - i=@evil.test under d=author.test")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-16")]
+    [Property("Finding", "V-16")]
     public async Task A_signature_whose_i_is_outside_its_d_does_not_verify()
     {
 
@@ -214,14 +213,8 @@ public sealed class DkimVerifierTests
     {
 
         TestCaseData Case(String Name, String Record, String? Identity, Boolean Verifies)
-        {
-
-            var data = new TestCaseData(Record, Identity, Verifies).SetName($"Key record {(Verifies ? "taken" : "not taken")}: {Name}")
-                                                                   .SetProperty("Finding", "V-17");
-
-            return Verifies ? data : data.SetCategory(TestCategories.KnownIssue);
-
-        }
+            => new TestCaseData(Record, Identity, Verifies).SetName($"Key record {(Verifies ? "taken" : "not taken")}: {Name}")
+                                                           .SetProperty("Finding", "V-17");
 
         yield return Case("h=sha1, the signature rsa-sha256",          "v=DKIM1; k=rsa; h=sha1; ",     null,                      false);
         yield return Case("s=other, a service that is not email",      "v=DKIM1; k=rsa; s=other; ",    null,                      false);

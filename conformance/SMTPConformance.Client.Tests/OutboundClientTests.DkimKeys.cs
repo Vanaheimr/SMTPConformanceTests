@@ -26,7 +26,7 @@ public sealed partial class OutboundClientTests
     #region P-2: RSA keys of fewer than 1024 bits
 
     [Test(Description = "RFC 8301 §3.2: \"Signers MUST use RSA keys of at least 1024 bits for all keys\" - a signer given a 512-bit key refuses it, or signs nothing with it")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "P-2")]
+    [Property("Finding", "P-2")]
     public void The_signer_does_not_sign_with_a_key_of_512_bits()
     {
 
@@ -50,7 +50,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 8301 §3.2: \"Signers MUST use RSA keys of at least 1024 bits for all keys. Signers SHOULD use RSA keys of at least 2048 bits\" - the key generators do not make a 512-bit key")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "P-2")]
+    [Property("Finding", "P-2")]
     public void The_key_generators_do_not_make_a_key_of_512_bits()
     {
 
@@ -92,7 +92,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 1035 §3.3: \"<character-string> is a single length octet followed by that number of characters\" - at most 255; RFC 6376 §3.6.2.2: \"Strings in a TXT RR MUST be concatenated together before use with no intervening whitespace\" - the record of a 2048-bit key, 410 characters, is written as several strings, each of at most 255")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "P-3")]
+    [Property("Finding", "P-3")]
     public void The_generated_key_record_is_written_in_strings_of_at_most_255_characters()
     {
 
