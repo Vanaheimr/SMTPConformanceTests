@@ -39,7 +39,7 @@ public sealed partial class OutboundClientTests
                           LocalHostname        = "relay.hermod.test",
                           PublicAddressesOnly  = true,
                           SmartHost            = SmartHost,
-                          SmartHostPort        = SmartHostPort,
+                          SmartHostPort        = org.GraphDefined.Vanaheimr.Hermod.IPPort.Parse(SmartHostPort),
                           ConnectTimeoutMs     = 3_000,
                           ReadTimeoutMs        = 10_000,
                           WriteTimeoutMs       = 3_000,
@@ -148,7 +148,7 @@ public sealed partial class OutboundClientTests
         var config  = new SmtpOutboundConfig {
                           LocalHostname            = "relay.hermod.test",
                           SmartHost                = SmartHost,
-                          SmartHostPort            = Server.Port,
+                          SmartHostPort            = org.GraphDefined.Vanaheimr.Hermod.IPPort.Parse(Server.Port),
                           SmartHostUsername        = "relay-user",
                           SmartHostPassword        = "relay-secret",
                           SmartHostAuthWithoutTls  = SmartHostAuthWithoutTls,

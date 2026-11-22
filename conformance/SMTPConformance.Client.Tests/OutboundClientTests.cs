@@ -30,7 +30,7 @@ public sealed partial class OutboundClientTests
         => new () {
                LocalHostname     = "relay.hermod.test",
                SmartHost         = "127.0.0.1",
-               SmartHostPort     = Server.Port,
+               SmartHostPort     = org.GraphDefined.Vanaheimr.Hermod.IPPort.Parse(Server.Port),
                ConnectTimeoutMs  = 3_000,
                ReadTimeoutMs     = ReadTimeoutMs,
                WriteTimeoutMs    = 3_000,

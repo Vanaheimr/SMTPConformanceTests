@@ -39,7 +39,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Address, String Why)
             => new TestCaseData(Address).SetName($"The ORCPT the relay writes for {Address} is xtext - {Why}")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "O-14");
 
         yield return Case("user+tag@outbound.test", "a \"+\" is \"+2B\"");
@@ -68,7 +67,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 3461 §4.2: the ORCPT of a message of Hermod's own, sent with a DSN request to a recipient whose address has a \"+\" - xtext as well")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-14")]
+    [Property("Finding", "O-14")]
     public async Task The_ORCPT_of_an_own_message_is_xtext()
     {
 

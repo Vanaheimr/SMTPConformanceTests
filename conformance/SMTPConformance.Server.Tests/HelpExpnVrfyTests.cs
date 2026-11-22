@@ -14,7 +14,7 @@ public sealed class HelpExpnVrfyTests : HermodServerTestBase
 {
 
     [Test(Description = "RFC 5321 §4.1.1.8: \"SMTP servers SHOULD support HELP without arguments\"; §4.2.2: 214 \"Help message\" (or 211 \"System status, or system help reply\")")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-33")]
+    [Property("Finding", "S-33")]
     public async Task HELP_without_an_argument_is_answered_with_help()
     {
 
@@ -28,7 +28,7 @@ public sealed class HelpExpnVrfyTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.1.7: EXPN is a command of SMTP; §7.3: \"If a site disables these commands for security reasons, the SMTP server MUST return a 252 response\"; §4.2.4: \"502 SHOULD be used when the command is actually recognized by the SMTP server, but not implemented. If the command is not recognized, code 500 SHOULD be returned\" - not 500, and not 250 (§3.5.3)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-33")]
+    [Property("Finding", "S-33")]
     public async Task EXPN_is_answered_as_a_command_that_is_known()
     {
 
@@ -42,7 +42,7 @@ public sealed class HelpExpnVrfyTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.1.6: vrfy = \"VRFY\" SP String CRLF - a VRFY without its string is a syntax error, 501 (§4.2.2: \"Syntax error in parameters or arguments\"), not a 252 for nobody")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-33")]
+    [Property("Finding", "S-33")]
     public async Task VRFY_without_an_argument_is_a_syntax_error()
     {
 

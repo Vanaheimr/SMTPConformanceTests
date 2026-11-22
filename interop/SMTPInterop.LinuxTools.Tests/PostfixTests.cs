@@ -93,7 +93,7 @@ public sealed class PostfixTests : LinuxToolTestBase
         var client  = new SMTPOutboundClient(new SmtpOutboundConfig {
                                                  LocalHostname     = "relay.hermod.test",
                                                  SmartHost         = Postfix.Host,
-                                                 SmartHostPort     = Postfix.Port,
+                                                 SmartHostPort     = org.GraphDefined.Vanaheimr.Hermod.IPPort.Parse(Postfix.Port),
                                                  ConnectTimeoutMs  = 5_000,
                                                  ReadTimeoutMs     = 10_000,
                                                  WriteTimeoutMs    = 10_000
@@ -255,7 +255,7 @@ public sealed class PostfixTests : LinuxToolTestBase
 
 
     [Test(Description = "RFC 3461 §4.2: ORCPT = addr-type \";\" xtext - the ORCPT Hermod writes for a recipient with a \"+\" in its address is xtext, which Postfix checks: written as it is, Postfix refuses the recipient")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-14")]
+    [Property("Finding", "O-14")]
     public async Task A_recipient_with_a_plus_reaches_the_next_hop_through_Postfix_with_DSN()
     {
 

@@ -75,7 +75,7 @@ public sealed partial class OutboundClientTests
             => new (new SmtpOutboundConfig {
                         LocalHostname       = "relay.hermod.test",
                         SmartHost           = "localhost",
-                        SmartHostPort       = Server.Port,
+                        SmartHostPort       = org.GraphDefined.Vanaheimr.Hermod.IPPort.Parse(Server.Port),
                         ConnectTimeoutMs    = 3_000,
                         ReadTimeoutMs       = 30_000,
                         WriteTimeoutMs      = 3_000,

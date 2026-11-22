@@ -18,7 +18,7 @@ public sealed partial class OutboundClientTests
     #region O-13: the timeouts of the relay
 
     [Test(Description = "RFC 5321 §4.5.3.2: \"the minimum per-command timeout values SHOULD be as follows\" - §4.5.3.2.6, DATA Termination: 10 minutes, \"A spurious timeout at this point would be very wasteful and would typically result in delivery of multiple copies of the message, since it has been successfully sent and the server has accepted responsibility for delivery\" - with the default configuration, a next hop that takes 61 seconds to deliver gets the message once, and the relay counts it delivered")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-13")]
+    [Property("Finding", "O-13")]
     public async Task A_next_hop_that_takes_a_minute_for_the_end_of_data_is_waited_for()
     {
 
@@ -29,7 +29,7 @@ public sealed partial class OutboundClientTests
         var config = new SmtpOutboundConfig {
                          LocalHostname               = "relay.hermod.test",
                          SmartHost                   = "127.0.0.1",
-                         SmartHostPort               = server.Port,
+                         SmartHostPort               = org.GraphDefined.Vanaheimr.Hermod.IPPort.Parse(server.Port),
                          RemoteCertificateValidator  = (_, _, _, _) => true
                      };
 

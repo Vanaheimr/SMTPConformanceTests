@@ -209,9 +209,10 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
         var config  = new SMTPServerConfig {
                           Hostname                 = Options.Hostname,
                           ListenAddresses          = Options.ListenAddresses,
-                          Port                     = 0,
-                          SubmissionPort           = 0,
-                          ImplicitTlsPort          = 0,
+                          // default: port 0 - a number before Hermod 86b8b083, an IPPort since.
+                          Port                     = default,
+                          SubmissionPort           = default,
+                          ImplicitTlsPort          = default,
                           EnableImplicitTls        = Options.EnableTls || ownCertificate,
                           MailStoragePath          = directory,
                           CertificatePath          = Options.PemCertificate?.CertificatePath ?? certificatePath,

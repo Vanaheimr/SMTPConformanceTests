@@ -21,7 +21,7 @@ public sealed partial class SubmissionClientTests
     #region C-14: the timeouts of the submission client
 
     [Test(Description = "RFC 5321 §4.5.3.2: \"the minimum per-command timeout values SHOULD be as follows\" - §4.5.3.2.6, DATA Termination: 10 minutes, \"A spurious timeout at this point would ... typically result in delivery of multiple copies of the message\" - with the default command timeout, a server that takes 31 seconds to deliver gets the message once, and the client counts it sent")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-14")]
+    [Property("Finding", "C-14")]
     public async Task A_server_that_takes_half_a_minute_for_the_end_of_data_is_waited_for()
     {
 

@@ -49,7 +49,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 3464 §2.1, message/delivery-status: \"\"7bit\" encoding is sufficient and MUST be used\"; RFC 6533 §4: \"the second part is a 7-bit-only message/delivery-status\" and \"the present standard DSN format does not permit the return of undeliverable SMTPUTF8 messages\" - fields with UTF-8 in them go in a message/global-delivery-status (§4.1)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-13")]
+    [Property("Finding", "D-13")]
     public async Task The_status_of_a_UTF_8_recipient_is_a_message_global_delivery_status()
     {
 
@@ -69,7 +69,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 6532 §3.7: a message with \"8-bit UTF-8 header values\" is a \"message/global message\", and \"The content of a message/global part is otherwise identical to that of a message/rfc822 part\"; RFC 6533 §4 - the returned SMTPUTF8 message is message/global (or message/global-headers), not message/rfc822 (or text/rfc822-headers)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "D-13")]
+    [Property("Finding", "D-13")]
     public async Task A_returned_message_with_UTF_8_header_values_is_message_global()
     {
 

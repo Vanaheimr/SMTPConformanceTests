@@ -52,7 +52,6 @@ public sealed class PathSyntaxTests : HermodServerTestBase
 
         TestCaseData Case(String Path)
             => new TestCaseData(Path).SetName($"RCPT TO:{Path} is delivered to alice@hermod.test")
-                                     .SetCategory(TestCategories.KnownIssue)
                                      .SetProperty("Finding", "S-31");
 
         yield return Case("<@relay.example:alice@hermod.test>");
@@ -78,7 +77,7 @@ public sealed class PathSyntaxTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.2: Reverse-path = Path / \"<>\", Path = \"<\" [ A-d-l \":\" ] Mailbox \">\" - the source route \"SHOULD be ignored\" in the reverse-path too; Appendix C: \"source routes SHOULD NOT appear in the reverse-path\" - what remains is the mailbox bounces go to")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-31")]
+    [Property("Finding", "S-31")]
     public async Task A_source_route_in_the_reverse_path_is_ignored()
     {
 
@@ -95,7 +94,7 @@ public sealed class PathSyntaxTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §3.3: servers \"SHOULD ignore the routes or MAY decline to support the relaying they imply\"; Appendix C: \"The mailbox (here, JOE@THREE) is an absolute address, and the route is information about how to get there\" - a relayed recipient behind a route is refused, or queued for the domain of its mailbox, without the route")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-31")]
+    [Property("Finding", "S-31")]
     public async Task A_source_route_before_a_remote_mailbox_is_ignored_or_refused()
     {
 
@@ -125,7 +124,6 @@ public sealed class PathSyntaxTests : HermodServerTestBase
 
         TestCaseData Case(String Mailbox, String Why)
             => new TestCaseData(Mailbox).SetName($"RCPT TO:<{Mailbox}> is a local recipient - {Why}")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "S-32");
 
         yield return Case("\"alice@home\"@hermod.test", "an @ in the quoted local part");
@@ -151,7 +149,7 @@ public sealed class PathSyntaxTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.2: Reverse-path = Path / \"<>\", with a Quoted-string local part that holds a \">\" - the path ends at the \">\" after the mailbox, and the parameters come after it")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-32")]
+    [Property("Finding", "S-32")]
     public async Task A_quoted_local_part_with_an_angle_bracket_is_a_reverse_path()
     {
 
@@ -168,7 +166,7 @@ public sealed class PathSyntaxTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.1.2: a Quoted-string local part with an \"@\" in a relayed recipient - queued for the domain after the local part")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-32")]
+    [Property("Finding", "S-32")]
     public async Task A_quoted_local_part_with_an_at_sign_is_relayed_to_its_domain()
     {
 
@@ -208,7 +206,7 @@ public sealed class PathSyntaxTests : HermodServerTestBase
     #region S-34: the UTF-8 address type in ORCPT
 
     [Test(Description = "RFC 6533 §3: \"An SMTP server that advertises both the SMTPUTF8 extension [RFC6531] and the DSN extension [RFC3461] MUST accept a UTF-8 address type in the ORCPT parameter including 8-bit UTF-8 characters\" - utf-8-addr-unitext, the address in UTF-8")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-34")]
+    [Property("Finding", "S-34")]
     public async Task An_ORCPT_of_the_UTF_8_address_type_in_UTF_8_is_accepted()
     {
 

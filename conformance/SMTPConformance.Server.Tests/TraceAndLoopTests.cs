@@ -75,7 +75,7 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
     #region S-28: loops
 
     [Test(Description = "RFC 5321 §6.3: \"servers MUST contain provisions for detecting and stopping trivial loops\"; counting Received fields \"has proven to be an effective\" method, with \"a large rejection threshold, normally at least 100\" - a message that has been through 150 hops is refused, with X.4.6 \"Routing loop detected\" (RFC 3463 §3.5)")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-28")]
+    [Property("Finding", "S-28")]
     public async Task A_message_with_150_Received_fields_is_refused()
     {
 
@@ -97,7 +97,7 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §6.3: a relay that does not stop a loop sends the message on and on - the message with 150 Received fields for another domain is not queued for relay")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-28")]
+    [Property("Finding", "S-28")]
     public async Task A_message_with_150_Received_fields_is_not_relayed()
     {
 
@@ -143,7 +143,7 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
     #region S-29: Return-Path
 
     [Test(Description = "RFC 5321 §4.4: \"When the delivery SMTP server makes the \"final delivery\" of a message, it inserts a return-path line at the beginning of the mail data. This use of return-path is required; mail systems MUST support it\" - Return-path-line = \"Return-Path:\" FWS Reverse-path, the first line of the stored message")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-29")]
+    [Property("Finding", "S-29")]
     public async Task A_delivered_message_begins_with_the_Return_Path()
     {
 
@@ -162,7 +162,7 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.4: Return-path-line = \"Return-Path:\" FWS Reverse-path, Reverse-path = Path / \"<>\" - a bounce, sent with the null reverse-path, is delivered with \"Return-Path: <>\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-29")]
+    [Property("Finding", "S-29")]
     public async Task A_delivered_bounce_begins_with_an_empty_Return_Path()
     {
 
@@ -182,7 +182,7 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 5321 §4.4: \"exactly one return path SHOULD be present when the message is delivered\"; \"SMTP servers making final delivery MAY remove Return-path header fields before adding their own\" - a Return-Path the client wrote into the message is not what the mailbox reads as where bounces go")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-29")]
+    [Property("Finding", "S-29")]
     public async Task A_Return_Path_in_the_message_is_not_the_one_delivered()
     {
 
@@ -205,7 +205,7 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8098 §2.3: the delivering MTA inserts Original-Recipient \"at the beginning of the message (along with the Return-Path header field)\"; RFC 5321 §4.4: the Return-Path line is the first - also for the copy that carries an Original-Recipient")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-29")]
+    [Property("Finding", "S-29")]
     public async Task A_copy_with_an_Original_Recipient_begins_with_the_Return_Path()
     {
 
@@ -254,7 +254,6 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
 
         TestCaseData Case(String Ehlo, String Name)
             => new TestCaseData(Ehlo).SetName($"Received from a client that says \"EHLO {Name}\"")
-                                     .SetCategory(TestCategories.KnownIssue)
                                      .SetProperty("Finding", "S-30");
 
         yield return Case("client.example (mail.trusted.example [203.0.113.5])", "client.example (mail.trusted.example [203.0.113.5])");
