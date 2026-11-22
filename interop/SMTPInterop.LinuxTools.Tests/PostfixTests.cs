@@ -254,6 +254,28 @@ public sealed class PostfixTests : LinuxToolTestBase
     }
 
 
+    [Test(Description = "RFC 3461 §4.2: ORCPT = addr-type \";\" xtext - the ORCPT Hermod writes for a recipient with a \"+\" in its address is xtext, which Postfix checks: written as it is, Postfix refuses the recipient")]
+    [Category(TestCategories.KnownIssue), Property("Finding", "O-14")]
+    public async Task A_recipient_with_a_plus_reaches_the_next_hop_through_Postfix_with_DSN()
+    {
+
+        Require("postfix", "smtp-sink");
+        using var sink    = await StartSink();
+        using var postfix = await PostfixInstance.StartAsync($"[127.0.0.1]:{sink.Port}");
+
+        var marker = Marker();
+        var result = await RelayThrough(postfix, Envelope(marker, "you+tag@sink.example", Dsn: new DsnParameters(DsnNotify.Failure, null, null)));
+
+        var dump   = await sink.WaitForAsync(marker, TimeSpan.FromSeconds(30)) ?? "";
+
+        Assert.Multiple(() => {
+            Assert.That(result.Status, Is.EqualTo(SendStatus.Success), $"{result.ResponseCode} {result.ResponseText}\nPostfix's log:\n{postfix.Log}");
+            Assert.That(dump,          Does.Contain("you+tag@sink.example"), "Postfix's log:\n" + postfix.Log);
+        });
+
+    }
+
+
     [Test(Description = "RFC 6152 §3: Hermod declares its 8-bit content as BODY=8BITMIME, and Postfix passes the declaration on")]
     [Property("Finding", "O-3")]
     public async Task Eight_bit_content_reaches_Postfix_as_BODY_8BITMIME()

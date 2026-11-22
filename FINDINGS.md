@@ -40,11 +40,11 @@ Hermod makes; its line numbers refer to `887a8795`. The ninth (V-18 and on, S-20
 C-12 and C-13) tests when a DMARC policy is applied at all (RFC 7489 §6.6.2, §6.6.3) and
 SASL in its details: SCRAM-SHA-256 on both sides (RFC 5802, RFC 7677, RFC 4422 §3) and
 EXTERNAL (RFC 4422 Appendix A); its line numbers refer to `a687f198`. The tenth (S-28
-and on, O-13, C-14, D-13) tests what RFC 5321 asks of a server beyond its commands, and
+and on, O-13 and O-14, C-14, D-13) tests what RFC 5321 asks of a server beyond its commands, and
 of a client beyond its dialogue: the trace fields and final delivery (§4.4), loop
 detection (§6.3), the paths of MAIL and RCPT as the grammar of §4.1.2 has them - source
 routes, quoted local parts -, HELP, EXPN and VRFY, the timeouts of the clients
-(§4.5.3.2), and SMTPUTF8 in ORCPT and in bounces (RFC 6533); its line numbers refer to
+(§4.5.3.2), and SMTPUTF8 in ORCPT and in bounces (RFC 6533), and the ORCPT the relay writes (RFC 3461 §4.2); its line numbers refer to
 `1e2e04d9`.
 
 ```powershell
@@ -59,6 +59,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-29](#s-29) | medium | trace | No Return-Path at final delivery; one the client wrote into the message is the only one the mailbox sees | 4 |
 | [S-30](#s-30) | medium | trace | The EHLO argument goes into Received unchecked: a client writes the TCP-info it likes in front of the true one | 3 |
 | [O-13](#o-13) | medium | outbound | The relay waits 60 seconds for the reply to the end of data, not 10 minutes: a slow next hop gets the message again | 1 |
+| [O-14](#o-14) | medium | outbound | The ORCPT the relay writes is no xtext: a recipient with a "+" is refused by a next hop that checks it - Postfix | 4 |
 | [S-31](#s-31) | low | paths | A source route is taken as part of the mailbox: a local recipient behind one is a relay request | 4 |
 | [S-32](#s-32) | low | paths | A quoted local part with "@" or ">" in it is cut at the wrong place | 4 |
 | [S-33](#s-33) | low | commands | HELP and EXPN are unknown commands (500), VRFY without an argument is 252 | 3 |
@@ -1087,6 +1088,20 @@ successfully sent and the server has accepted responsibility for delivery." A ne
 that takes 61 seconds - a content filter, a slow disk - has the message; Hermod counts a
 temporary failure and sends it again at the next retry. Test:
 `A_next_hop_that_takes_a_minute_for_the_end_of_data_is_waited_for`.
+
+### O-14
+**Open.** **The ORCPT the relay writes is no xtext** (`DsnCommands.cs:76` to `:96`, both
+`RcptToParams`): for a relayed recipient that came without ORCPT it writes "ORCPT=rfc822;" and the address
+as it is, to every next hop that offers DSN, NOTIFY or not; for a message of Hermod's own
+with a DSN request likewise. RFC 3461 §4.2: original-recipient-address = addr-type ";"
+xtext; §4: xchar is "!" to "~" except "+" and "=", which are "+2B" and "+3D". So
+"you+tag@sink.example" - an address with a tag, as millions are - goes out as
+"ORCPT=rfc822;you+tag@sink.example", and Postfix answers "501 5.5.4 Error: Bad ORCPT
+parameter syntax": the recipient is refused, the message bounces. Tests:
+`The_ORCPT_the_relay_writes_is_xtext` ("+", "="), `The_ORCPT_of_an_own_message_is_xtext`,
+and through a real Postfix
+`A_recipient_with_a_plus_reaches_the_next_hop_through_Postfix_with_DSN` (interop);
+`A_received_ORCPT_is_relayed_as_it_came` is the guard.
 
 ---
 
