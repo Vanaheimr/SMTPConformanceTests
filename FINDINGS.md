@@ -9,37 +9,43 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
 refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod
-`1e2e04d9`** (Styx `a6b9f9fb`), which closes every finding of all nine rounds and of the
-follow-up E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the
-observations the first one left without a test; its line numbers refer to `96a8048d`.
-The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side, which the first
-two did not test at all; its line numbers refer to `d2d608d2`. The fourth (D-, M- and
-N-) tests what the relay owes beyond delivery: the reports to the sender (DSN), MTA-STS
-and DANE; its line numbers refer to `306f2d59`. The fifth (V- and P-) tests what
-Hermod's SMTP gained between `bbbf88b6` and `4b8be28a` - SPF, DKIM and DMARC on inbound
-mail, DNS blocklists, recipient checks, the AUTH configuration, submission to the
-application, outbound mail to public addresses only, smart host credentials, DKIM
-signing, the file queue after a crash and the certificate chain; its line numbers refer
-to `4b8be28a`. The sixth (A-, R-, T-, Q-, L-, V-3 and V-4) tests the parts of Hermod's
-SMTP no round had tested: ARC (RFC 8617), the DMARC reports (RFC 7489 §7), TLS reporting
-(RFC 8460), MT-PRIORITY (RFC 6710) and the connection and recipient limits; its line
-numbers refer to `287d1c43`, under `libs/Hermod/Hermod/SMTP/`. The seventh (E-, I-, K-
-and G-) tests what of Hermod's mail code no round had tested, none of it changed since:
-MIME and the message format as Hermod builds and reads mail (RFC 2045 to 2047, 2231,
-5322), the reports that arrive (DSN, DMARC, TLS-RPT), message disposition notifications
-(RFC 8098), PGP/MIME (RFC 3156) and the Public Suffix List under DMARC; its line numbers
-refer to `72c2366d`. E-14 to E-16 follow it up: what the older `EMail.Parse` makes of a
-Content-Type that is not written in lower case, as the MIME reader would read it, seen
-while fixing the MDN findings; their line numbers refer to `0504586f`. The eighth (V-5
-and on, O-9 and on, P-2 and P-3) tests what of SPF, DKIM and the way to the next hop the
-earlier rounds took for granted: how check_host() comes to its result (RFC 7208 §4 to
-§6), what a DKIM verifier checks of a signature and its key record before it hashes
-anything (RFC 6376 §6.1, RFC 8301), how the relay finds its MX hosts (RFC 5321 §5.1),
-and the DKIM keys Hermod makes; its line numbers refer to `887a8795`. The ninth (V-18
-and on, S-20 and on, C-12 and C-13) tests when a DMARC policy is applied at all (RFC
-7489 §6.6.2, §6.6.3) and SASL in its details: SCRAM-SHA-256 on both sides (RFC 5802, RFC
-7677, RFC 4422 §3) and EXTERNAL (RFC 4422 Appendix A); its line numbers refer to
-`a687f198`.
+`1e2e04d9`** (Styx `a6b9f9fb`), which closes every finding of the first nine rounds and
+of the follow-up E-14 to E-16; the tenth round's are open. The second round (S-18 and
+on, C-8 and on) comes from the observations the first one left without a test; its line
+numbers refer to `96a8048d`. The third (O-1 and on, C-11) tests `SMTPOutboundClient`,
+the relay side, which the first two did not test at all; its line numbers refer to
+`d2d608d2`. The fourth (D-, M- and N-) tests what the relay owes beyond delivery: the
+reports to the sender (DSN), MTA-STS and DANE; its line numbers refer to `306f2d59`. The
+fifth (V- and P-) tests what Hermod's SMTP gained between `bbbf88b6` and `4b8be28a` -
+SPF, DKIM and DMARC on inbound mail, DNS blocklists, recipient checks, the AUTH
+configuration, submission to the application, outbound mail to public addresses only,
+smart host credentials, DKIM signing, the file queue after a crash and the certificate
+chain; its line numbers refer to `4b8be28a`. The sixth (A-, R-, T-, Q-, L-, V-3 and V-4)
+tests the parts of Hermod's SMTP no round had tested: ARC (RFC 8617), the DMARC reports
+(RFC 7489 §7), TLS reporting (RFC 8460), MT-PRIORITY (RFC 6710) and the connection and
+recipient limits; its line numbers refer to `287d1c43`, under
+`libs/Hermod/Hermod/SMTP/`. The seventh (E-, I-, K- and G-) tests what of Hermod's mail
+code no round had tested, none of it changed since: MIME and the message format as
+Hermod builds and reads mail (RFC 2045 to 2047, 2231, 5322), the reports that arrive
+(DSN, DMARC, TLS-RPT), message disposition notifications (RFC 8098), PGP/MIME (RFC 3156)
+and the Public Suffix List under DMARC; its line numbers refer to `72c2366d`. E-14 to
+E-16 follow it up: what the older `EMail.Parse` makes of a Content-Type that is not
+written in lower case, as the MIME reader would read it, seen while fixing the MDN
+findings; their line numbers refer to `0504586f`. The eighth (V-5 and on, O-9 and on,
+P-2 and P-3) tests what of SPF, DKIM and the way to the next hop the earlier rounds took
+for granted: how check_host() comes to its result (RFC 7208 §4 to §6), what a DKIM
+verifier checks of a signature and its key record before it hashes anything (RFC 6376
+§6.1, RFC 8301), how the relay finds its MX hosts (RFC 5321 §5.1), and the DKIM keys
+Hermod makes; its line numbers refer to `887a8795`. The ninth (V-18 and on, S-20 and on,
+C-12 and C-13) tests when a DMARC policy is applied at all (RFC 7489 §6.6.2, §6.6.3) and
+SASL in its details: SCRAM-SHA-256 on both sides (RFC 5802, RFC 7677, RFC 4422 §3) and
+EXTERNAL (RFC 4422 Appendix A); its line numbers refer to `a687f198`. The tenth (S-28
+and on, O-13, C-14, D-13) tests what RFC 5321 asks of a server beyond its commands, and
+of a client beyond its dialogue: the trace fields and final delivery (§4.4), loop
+detection (§6.3), the paths of MAIL and RCPT as the grammar of §4.1.2 has them - source
+routes, quoted local parts -, HELP, EXPN and VRFY, the timeouts of the clients
+(§4.5.3.2), and SMTPUTF8 in ORCPT and in bounces (RFC 6533); its line numbers refer to
+`1e2e04d9`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -47,7 +53,18 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [S-28](#s-28) | medium | trace | No loop detection: a message with 150 Received fields is delivered, and relayed on | 2 |
+| [S-29](#s-29) | medium | trace | No Return-Path at final delivery; one the client wrote into the message is the only one the mailbox sees | 4 |
+| [S-30](#s-30) | medium | trace | The EHLO argument goes into Received unchecked: a client writes the TCP-info it likes in front of the true one | 3 |
+| [O-13](#o-13) | medium | outbound | The relay waits 60 seconds for the reply to the end of data, not 10 minutes: a slow next hop gets the message again | 1 |
+| [S-31](#s-31) | low | paths | A source route is taken as part of the mailbox: a local recipient behind one is a relay request | 4 |
+| [S-32](#s-32) | low | paths | A quoted local part with "@" or ">" in it is cut at the wrong place | 4 |
+| [S-33](#s-33) | low | commands | HELP and EXPN are unknown commands (500), VRFY without an argument is 252 | 3 |
+| [S-34](#s-34) | low | SMTPUTF8 | An ORCPT of the UTF-8 address type, in UTF-8, is refused | 1 |
+| [C-14](#c-14) | low | client | The submission client waits 30 seconds for the reply to the end of data: a slow server gets the message twice | 1 |
+| [D-13](#d-13) | low | reports | The bounce of an SMTPUTF8 message has UTF-8 in message/delivery-status and in message/rfc822 | 2 |
 
 ### Closed
 
@@ -604,6 +621,111 @@ thumbprint is listed for an account (`FileUserStore`). Test:
 Fixed: the handshake asks for a client certificate, and does not require one: a client
 without it goes on without EXTERNAL.
 
+### S-28
+**Open.** **No loop detection** (`SMTPSession.cs:1195`, `ProcessReceivedMessageAsync`):
+nothing counts the Received fields of a message, or looks at them at all; a message that
+has been through 150 hops is delivered, and relayed on. RFC 5321 §6.3: "Simple counting of
+the number of "Received:" header fields in a message has proven to be an effective,
+although rarely optimal, method of detecting loops in mail systems. SMTP servers using
+this technique SHOULD use a large rejection threshold, normally at least 100 Received
+entries. Whatever mechanisms are used, servers MUST contain provisions for detecting and
+stopping trivial loops." Two servers that forward to each other - an alias, a smart host
+or an MX pointing back - pass the message back and forth until it outgrows the size limit,
+a copy queued at every turn. RFC 3463 §3.5 has X.4.6, "Routing loop detected", for the
+refusal. Tests: `A_message_with_150_Received_fields_is_refused`,
+`A_message_with_150_Received_fields_is_not_relayed`;
+`A_message_with_50_Received_fields_is_delivered_and_relayed` is the guard.
+
+### S-29
+**Open.** **No Return-Path at final delivery** (`SMTPSession.cs:1435`): the message goes
+to the storage with this hop's trace fields on top and nothing above them; the envelope
+sender reaches the storage as an argument only, and `FileMailStorage` writes it as
+`X-Envelope-From` (`MailStorage/FileMailStorage.cs:47`). RFC 5321 §4.4: "When the delivery
+SMTP server makes the "final delivery" of a message, it inserts a return-path line at the
+beginning of the mail data. This use of return-path is required; mail systems MUST support
+it." A Return-Path the client wrote into the message stays, and is the only one the
+mailbox has: what reads it - a mail program answering with an MDN (RFC 8098 §2.1:
+"Confirmation from the user MUST be obtained (or no MDN sent) if there is no Return-Path
+header field"), a filter, a forwarder - takes the sender's word for where errors go. §4.4:
+"exactly one return path SHOULD be present when the message is delivered", and "SMTP
+servers making final delivery MAY remove Return-path header fields before adding their
+own". Tests: `A_delivered_message_begins_with_the_Return_Path`,
+`A_delivered_bounce_begins_with_an_empty_Return_Path`,
+`A_Return_Path_in_the_message_is_not_the_one_delivered`,
+`A_copy_with_an_Original_Recipient_begins_with_the_Return_Path`;
+`A_relayed_message_gets_no_Return_Path` is the guard.
+
+### S-30
+**Open.** **The EHLO argument goes into Received unchecked** (`SMTPSession.cs:343`,
+`:1690`): `HandleEhloAsync` takes any text for the client's name, and the Received field
+writes it as the From-domain, in front of the TCP-info in parentheses. "EHLO
+client.example (mail.trusted.example [203.0.113.5])" gives "Received: from client.example
+(mail.trusted.example [203.0.113.5]) (unknown [127.0.0.1])": a reader of the trace, or a
+filter, takes the first TCP-info for the connection's - an address the client chose. RFC
+5321 §4.4: Extended-Domain = Domain / ( Domain FWS "(" TCP-info ")" ) / ( address-literal
+FWS "(" TCP-info ")" ), and TCP-info is "Information derived by server from TCP connection
+not client EHLO". §4.1.1.1: ehlo = "EHLO" SP ( Domain / address-literal ) CRLF; §4.1.4:
+"If the EHLO command is not acceptable to the SMTP server, 501, 500, 502, or 550 failure
+replies MUST be returned as appropriate." A "by" in the argument starts a By-domain of the
+client's, a ";" ends the clauses, and the date after it is the client's too. Test:
+`The_Received_line_names_the_address_of_the_connection` (three claims);
+`The_Received_line_takes_an_address_literal_from_EHLO` is the guard.
+
+### S-31
+**Open.** **A source route is taken as part of the mailbox** (`SMTPSession.cs:686`,
+`:800`, `ExtractDomain` at `:1731`): the path is whatever stands between "<" and ">", and
+its domain whatever follows the first "@". "RCPT TO:<@relay.example:alice@hermod.test>" is
+a recipient at the domain "relay.example:alice@hermod.test" - not local, so a relay
+request: refused without AUTH, queued for that domain with it. RFC 5321 §4.1.2: A-d-l,
+"the so-called "source route", MUST BE accepted, SHOULD NOT be generated, and SHOULD be
+ignored"; §4.1.1.3: "Receiving systems MUST recognize source route syntax but SHOULD strip
+off the source route specification and utilize the domain name associated with the mailbox
+as if the source route had not been provided". In MAIL the route stays in the envelope
+sender, where bounces go and where SPF looks for the domain. Tests:
+`A_source_route_before_a_local_mailbox_is_ignored` (one hop, two hops),
+`A_source_route_in_the_reverse_path_is_ignored`,
+`A_source_route_before_a_remote_mailbox_is_ignored_or_refused` - refusing it is allowed
+(§3.3: "MAY decline to support the relaying they imply").
+
+### S-32
+**Open.** **A quoted local part is cut at the wrong place** (`SMTPSession.cs:686`, `:800`,
+`:1731`): the path ends at the first ">", the domain begins after the first "@". RFC 5321
+§4.1.2: Local-part = Dot-string / Quoted-string, and qtextSMTP: "within a quoted string,
+any ASCII graphic or space is permitted without blackslash-quoting except double-quote and
+the backslash itself" - "@" and ">" among them. `RCPT TO:<"alice@home"@hermod.test>` is a
+recipient at `home"@hermod.test`, a relay request; in `RCPT TO:<"a>b"@hermod.test>` the
+path is `"a`, and the rest is taken for a parameter: "501 5.5.4 Invalid parameter". A MAIL
+with such a reverse-path likewise. Tests: `A_quoted_local_part_is_one_local_part` (an "@",
+a ">"), `A_quoted_local_part_with_an_angle_bracket_is_a_reverse_path`,
+`A_quoted_local_part_with_an_at_sign_is_relayed_to_its_domain`;
+`A_quoted_local_part_with_a_space_is_a_local_recipient` is the guard.
+
+### S-33
+**Open.** **HELP and EXPN are unknown commands, VRFY without an argument is 252**
+(`SMTPSession.cs:320` to `:328`): HELP and EXPN fall to the default, "500 5.5.1
+Unrecognized command", and count as invalid commands; VRFY is 252 whatever follows it,
+nothing included. RFC 5321 §4.1.1.8: "SMTP servers SHOULD support HELP without arguments";
+§4.2.4: "502 SHOULD be used when the command is actually recognized by the SMTP server,
+but not implemented. If the command is not recognized, code 500 SHOULD be returned"; §7.3:
+"If a site disables these commands for security reasons, the SMTP server MUST return a 252
+response". §4.1.1.6: vrfy = "VRFY" SP String CRLF. Tests:
+`HELP_without_an_argument_is_answered_with_help`,
+`EXPN_is_answered_as_a_command_that_is_known`,
+`VRFY_without_an_argument_is_a_syntax_error`; `HELP_in_a_transaction_leaves_it_open` is
+the guard.
+
+### S-34
+**Open.** **An ORCPT of the UTF-8 address type, in UTF-8, is refused**
+(`ESMTPParameters.cs:217` to `:220`): ORCPT has to be xtext, ASCII only, also after "MAIL
+FROM:<...> SMTPUTF8". RFC 6533 §3: "An SMTP server that advertises both the SMTPUTF8
+extension [RFC6531] and the DSN extension [RFC3461] MUST accept a UTF-8 address type in
+the ORCPT parameter including 8-bit UTF-8 characters" - utf-8-addr-unitext. Hermod
+advertises both; "RCPT TO:<jörg@hermod.test> ORCPT=utf-8;jörg@hermod.test" is 501, and a
+client that does as RFC 6533 says loses the recipient. Test:
+`An_ORCPT_of_the_UTF_8_address_type_in_UTF_8_is_accepted`;
+`An_ORCPT_of_the_UTF_8_address_type_in_ASCII_is_accepted` - utf-8-addr-xtext, "\x{F6}" -
+is the guard.
+
 ---
 
 ## Submission client (`SMTPSubmissionClient`)
@@ -779,6 +901,19 @@ Test: `Scram_normalizes_the_password_as_SASLprep_has_it`.
 
 Fixed: `ScramSha256Client.SaltedPassword` normalizes with `SaslPrep`.
 
+### C-14
+**Open.** **The client waits 30 seconds for the reply to the end of data**
+(`SMTPSubmissionClient.cs:200`, `CommandTimeout ?? TimeSpan.FromSeconds(30)`): one timeout
+for every reply, the one after the message included. RFC 5321 §4.5.3.2: "the minimum
+per-command timeout values SHOULD be as follows" - 5 minutes for the greeting, MAIL and
+RCPT, 2 for DATA, 3 for each data block, and §4.5.3.2.6, DATA Termination: 10 minutes, "A
+spurious timeout at this point would be very wasteful and would typically result in
+delivery of multiple copies of the message, since it has been successfully sent and the
+server has accepted responsibility for delivery." A server that takes 31 seconds to answer
+has the message; the client reports `Timeout`, sends it again on its next try, and it
+arrives twice. Test:
+`A_server_that_takes_half_a_minute_for_the_end_of_data_is_waited_for`.
+
 ---
 
 ## Outbound client (`SMTPOutboundClient`)
@@ -937,10 +1072,23 @@ A Hermod that is a backup MX of a domain hands the message to itself, or to back
 itself, instead of only to the better MX hosts; one that a domain's MX points at by
 mistake loops. Test: `The_relay_does_not_send_to_itself_or_behind_itself`, three cases:
 its name the only MX, the best MX with a backup behind it, a backup behind a better one.
----
 
 Fixed: MX records naming `LocalHostname` drop their preference level and all higher ones;
 with none left, `PermFail` 550 5.4.6.
+
+### O-13
+**Open.** **The relay waits 60 seconds for the reply to the end of data**
+(`SmtpOutboundConfig.cs:38`, `ReadTimeoutMs = 60_000`, for every reply): RFC 5321
+§4.5.3.2: "the minimum per-command timeout values SHOULD be as follows" - 5 minutes for
+the greeting, MAIL and RCPT, 2 for DATA, 3 for each data block, and §4.5.3.2.6, DATA
+Termination: 10 minutes, "A spurious timeout at this point would be very wasteful and
+would typically result in delivery of multiple copies of the message, since it has been
+successfully sent and the server has accepted responsibility for delivery." A next hop
+that takes 61 seconds - a content filter, a slow disk - has the message; Hermod counts a
+temporary failure and sends it again at the next retry. Test:
+`A_next_hop_that_takes_a_minute_for_the_end_of_data_is_waited_for`.
+
+---
 
 ## DSN reports
 
@@ -1080,6 +1228,20 @@ Tests: `A_relay_adds_no_RET_the_client_did_not_give`,
 
 Fixed: NOTIFY and RET are nullable through the queue (`RecipientDsn.Notify`, `QueuedMail.Ret`,
 `DsnParameters.Ret`) - null for "not given" - and only what was given is passed on.
+
+### D-13
+**Open.** **The bounce of an SMTPUTF8 message has UTF-8 where 7 bits are the rule**
+(`DsnGenerator.cs:225`, `:246`, `:274`): the status part is always
+message/delivery-status, and "Final-Recipient: rfc822; jörg@outbound.test" goes into it as
+it is; the returned message is message/rfc822 with "Content-Transfer-Encoding: 8bit", its
+Received field naming the recipient in UTF-8. RFC 3464 §2.1, message/delivery-status:
+""7bit" encoding is sufficient and MUST be used"; RFC 6533 §4: "As the present standard
+DSN format does not permit the return of undeliverable SMTPUTF8 messages, three new media
+types have been defined" - message/global-delivery-status (§4.1), message/global and
+message/global-headers; RFC 6532 §3.7: a message with "8-bit UTF-8 header values" is a
+message/global message. Tests:
+`The_status_of_a_UTF_8_recipient_is_a_message_global_delivery_status`,
+`A_returned_message_with_UTF_8_header_values_is_message_global`.
 
 ---
 

@@ -13,7 +13,19 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-21, Hermod `1e2e04d9`):** 970 tests, **all pass**. A ninth round tested
+**State (2026-11-22, Hermod `1e2e04d9`):** 1001 tests, 976 pass, 25 fail on 10 open
+findings. A tenth round tested what RFC 5321 asks of a server beyond its commands, and of
+a client beyond its dialogue - the trace fields and final delivery, loop detection, the
+paths of MAIL and RCPT as the grammar has them, HELP, EXPN and VRFY, the timeouts of the
+clients, SMTPUTF8 in ORCPT and in bounces - 31 tests, 10 findings. The heaviest: nothing
+detects a loop, a message that has been through 150 hops is delivered and relayed on
+([S-28](FINDINGS.md#s-28)); a delivered message gets no Return-Path, so one the client
+wrote into it is the only one the mailbox sees ([S-29](FINDINGS.md#s-29)); the EHLO
+argument goes into the Received field unchecked, and a client writes the TCP-info it likes
+in front of the true one ([S-30](FINDINGS.md#s-30)); the relay waits 60 seconds for the
+reply to the end of data, not the 10 minutes of §4.5.3.2.6, and a slow next hop gets the
+message again ([O-13](FINDINGS.md#o-13)).
+A ninth round tested
 when a DMARC policy is applied at all and SASL in its details - 33 tests, 15 findings. The
 heaviest: a temporary error of SPF, with no signature passing, failed DMARC and applied
 p=reject ([V-18](FINDINGS.md#v-18)); the SCRAM server-final-message travelled in the 235
@@ -240,8 +252,13 @@ vectors, and the four Linux tools.
 | RFC 8098 message disposition notifications | 41 | 0 | ~~K-1~~ to ~~K-10~~ fixed |
 | RFC 3156 PGP/MIME, RFC 9580 | 64 | 0 | ~~G-1~~ to ~~G-6~~, ~~E-14~~ fixed |
 | Public Suffix List (its 78 test vectors), RFC 7489 §3.2 Organizational Domain | 99 | 0 | — |
+| RFC 5321 §4.4 trace fields and final delivery: Return-Path, Received; §6.3 loop detection | 12 | 9 | S-28, S-29, S-30 |
+| RFC 5321 §4.1.2 paths: source routes, quoted local parts; RFC 6533 §3 the UTF-8 address type in ORCPT | 11 | 9 | S-31, S-32, S-34 |
+| RFC 5321 §3.5, §4.1.1.6 to §4.1.1.8, §4.2.4, §7.3 HELP, EXPN and VRFY | 4 | 3 | S-33 |
+| RFC 5321 §4.5.3.2 the timeouts of the relay and of the submission client | 2 | 2 | O-13, C-14 |
+| RFC 6533 §4, RFC 6532 §3.7 the bounce of an SMTPUTF8 message | 2 | 2 | D-13 |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 26 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~ fixed |
-| **Total** | **970** | **0** | |
+| **Total** | **1001** | **25** | |
 
 ## External test partners
 

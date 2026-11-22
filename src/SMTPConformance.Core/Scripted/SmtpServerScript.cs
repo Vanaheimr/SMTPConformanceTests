@@ -134,6 +134,12 @@ public sealed class SmtpServerScript
     public String                   EndOfDataReply     { get; init; } = "250 2.0.0 Ok: queued";
 
     /// <summary>
+    /// How long the server takes to answer the end of data - delivering the message, as RFC 5321
+    /// §4.5.3.2.6 has it, "to a user mailbox".
+    /// </summary>
+    public TimeSpan                 EndOfDataDelay     { get; init; } = TimeSpan.Zero;
+
+    /// <summary>
     /// The reply to QUIT. The script closes the connection after it.
     /// </summary>
     public String                   QuitReply          { get; init; } = "221 2.0.0 Bye";
@@ -251,6 +257,8 @@ public sealed class SmtpServerScript
                         transaction?.DataLines.Add(dataLine);
                         previousEndedInCrLf = dataLine.Terminator == LineTerminator.CRLF;
                     }
+                    if (EndOfDataDelay > TimeSpan.Zero)
+                        await Task.Delay(EndOfDataDelay);
                     await s.ReplyAsync(EndOfDataReply);
                     break;
 
