@@ -11,7 +11,7 @@ public sealed partial class SubmissionClientTests
     #region C-16: the client's name in EHLO
 
     [Test(Description = "RFC 6531 §3.7.1: \"the SMTPUTF8-aware SMTP client MUST send only ASCII (LDH label or A-label [RFC5890]) domains in the EHLO command\" - it cannot know before the reply whether the server takes UTF-8 at all")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-16")]
+    [Property("Finding", "C-16")]
     public async Task The_client_says_EHLO_with_its_name_in_A_labels()
     {
 

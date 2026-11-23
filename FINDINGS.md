@@ -9,8 +9,8 @@ it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
 refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod
-`a9d149de`** (Styx `a6b9f9fb`), which closes every finding of all ten rounds and of the
-follow-up E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the
+`21fe948d`** (Styx `a6b9f9fb`), which closes every finding of all eleven rounds and of
+the follow-up E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the
 observations the first one left without a test; its line numbers refer to `96a8048d`.
 The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side, which the first
 two did not test at all; its line numbers refer to `d2d608d2`. The fourth (D-, M- and
@@ -58,19 +58,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [O-15](#o-15) | **high** | outbound | A reply code is read by its exact value: a 2yz to MAIL other than 250 is taken for the delivery, and the message is reported delivered unsent | 2 |
-| [V-23](#v-23) | medium | SPF | A sender domain in U-labels is looked up in U-labels: no record is found, "-all" is "none" | 3 |
-| [V-25](#v-25) | medium | DMARC | The policy of an author domain in U-labels is looked up in U-labels: the domain's own p=reject is never found | 2 |
-| [V-24](#v-24) | medium | DKIM verifier | A signature with d= in U-labels is checked against a key looked up under a mis-decoded name | 1 |
-| [O-17](#o-17) | medium | outbound routing | A recipient domain in U-labels is never delivered to: its MX lookup fails, and is retried for days | 2 |
-| [S-35](#s-35) | medium | IDN | A local domain in the other form - U-labels for A-labels, or the reverse - is a relay request, refused | 2 |
-| [C-15](#c-15) | medium | client | A reply code is read by its exact value: a 252 to MAIL or RCPT, a 350 to DATA, a 251 to the end of data fail the message | 5 |
-| [O-16](#o-16) | low | outbound | 552 to RCPT, "too many recipients", bounces the recipient instead of trying it again | 2 |
-| [S-36](#s-36) | low | IDN | A server named in U-labels writes them into its greeting and its reply to EHLO | 1 |
-| [O-18](#o-18) | low | outbound | A relay named in U-labels says EHLO with them | 1 |
-| [C-16](#c-16) | low | client | A client named in U-labels says EHLO with them | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -109,6 +97,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-28](#s-28) | medium | trace | No loop detection: a message with 150 Received fields was delivered, and relayed on | 2 | [Vanaheimr/Hermod#287](https://github.com/Vanaheimr/Hermod/pull/287) |
 | [S-29](#s-29) | medium | trace | No Return-Path at final delivery; one the client wrote into the message was the only one the mailbox saw | 4 | [Vanaheimr/Hermod#287](https://github.com/Vanaheimr/Hermod/pull/287) |
 | [S-30](#s-30) | medium | trace | The EHLO argument went into Received unchecked: a client wrote the TCP-info it liked in front of the true one | 3 | [Vanaheimr/Hermod#287](https://github.com/Vanaheimr/Hermod/pull/287) |
+| [S-35](#s-35) | medium | IDN | A local domain in the other form - U-labels for A-labels, or the reverse - was a relay request, refused | 2 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
 | [S-21](#s-21) | low | SCRAM | The channel binding flag "y" was refused, though Hermod offers no -PLUS | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [S-22](#s-22) | low | SCRAM | The c= attribute was not compared with the GS2 header | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [S-23](#s-23) | low | SCRAM | A requested authorization identity (a=) was ignored: alice asking to act as bob was alice | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
@@ -119,6 +108,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-32](#s-32) | low | paths | A quoted local part with "@" or ">" in it was cut at the wrong place | 4 | [Vanaheimr/Hermod#288](https://github.com/Vanaheimr/Hermod/pull/288) |
 | [S-33](#s-33) | low | commands | HELP and EXPN were unknown commands (500), VRFY without an argument was 252 | 3 | [Vanaheimr/Hermod#288](https://github.com/Vanaheimr/Hermod/pull/288) |
 | [S-34](#s-34) | low | SMTPUTF8 | An ORCPT of the UTF-8 address type, in UTF-8, was refused | 1 | [Vanaheimr/Hermod#290](https://github.com/Vanaheimr/Hermod/pull/290) |
+| [S-36](#s-36) | low | IDN | A server named in U-labels wrote them into its greeting and its reply to EHLO | 1 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
 | [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
 | [O-1](#o-1) | **high** | outbound | Every reply but EHLO's was read as one line: a multi-line reply shifted all that followed | 5 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [O-2](#o-2) | **high** | outbound | A recipient the next hop refused disappeared: no bounce, no retry | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
@@ -134,10 +124,16 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [O-12](#o-12) | low | outbound routing | The relay sent to itself, and to MX hosts behind itself, when it was an MX host of the domain | 3 | [Vanaheimr/Hermod#280](https://github.com/Vanaheimr/Hermod/pull/280) |
 | [O-13](#o-13) | medium | outbound | The relay waited 60 seconds for the reply to the end of data, not 10 minutes: a slow next hop got the message again | 1 | [Vanaheimr/Hermod#289](https://github.com/Vanaheimr/Hermod/pull/289) |
 | [O-14](#o-14) | medium | outbound | The ORCPT the relay wrote was no xtext: a recipient with a "+" was refused by a next hop that checks it - Postfix | 4 | [Vanaheimr/Hermod#290](https://github.com/Vanaheimr/Hermod/pull/290) |
+| [O-15](#o-15) | **high** | outbound | A reply code was read by its exact value: a 2yz to MAIL other than 250 was taken for the delivery, and the message reported delivered unsent | 2 | [Vanaheimr/Hermod#293](https://github.com/Vanaheimr/Hermod/pull/293) |
+| [O-16](#o-16) | low | outbound | 552 to RCPT, "too many recipients", bounced the recipient instead of trying it again | 2 | [Vanaheimr/Hermod#293](https://github.com/Vanaheimr/Hermod/pull/293) |
+| [O-17](#o-17) | medium | outbound routing | A recipient domain in U-labels was never delivered to: its MX lookup failed, and was retried for days | 2 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
+| [O-18](#o-18) | low | outbound | A relay named in U-labels said EHLO with them | 1 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
 | [C-11](#c-11) | low | client | One refused recipient stopped the message for all | 1 | [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) |
 | [C-12](#c-12) | medium | SCRAM client | A 235 without the server-final-message was taken as success: the server never proved it knows the password | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [C-13](#c-13) | low | SCRAM client | The client did not normalize the password (SASLprep) | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [C-14](#c-14) | low | client | The submission client waited 30 seconds for the reply to the end of data: a slow server got the message twice | 1 | [Vanaheimr/Hermod#289](https://github.com/Vanaheimr/Hermod/pull/289) |
+| [C-15](#c-15) | medium | client | A reply code was read by its exact value: a 252 to MAIL or RCPT, a 350 to DATA, a 251 to the end of data failed the message | 5 | [Vanaheimr/Hermod#293](https://github.com/Vanaheimr/Hermod/pull/293) |
+| [C-16](#c-16) | low | client | A client named in U-labels said EHLO with them | 1 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
 | [D-1](#d-1) | **high** | reports | Bounces had CR CR LF line ends | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-4](#d-4) | **high** | reports | A message that mentions "multipart/report" or quotes a bounce failed without a bounce | 3 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-2](#d-2) | medium | reports | Every bounce had the same Message-ID, `System.Func`1[System.Guid]`, and an invalid boundary | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
@@ -211,6 +207,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [V-20](#v-20) | low | DMARC | Of two DMARC records the first was applied | 1 | [Vanaheimr/Hermod#282](https://github.com/Vanaheimr/Hermod/pull/282) |
 | [V-21](#v-21) | low | DMARC | The version was not matched exactly: `v=dmarc1` and `v=DMARC1x` counted, `v = DMARC1` did not | 3 | [Vanaheimr/Hermod#282](https://github.com/Vanaheimr/Hermod/pull/282) |
 | [V-22](#v-22) | low | DMARC | A record without a valid p=, or with an invalid sp=, and without rua was applied | 3 | [Vanaheimr/Hermod#282](https://github.com/Vanaheimr/Hermod/pull/282) |
+| [V-23](#v-23) | medium | SPF | A sender domain in U-labels was looked up in U-labels: no record was found, "-all" was "none" | 3 | [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295) |
+| [V-24](#v-24) | medium | DKIM verifier | A signature with d= in U-labels was checked against a key looked up under a mis-decoded name | 1 | [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295) |
+| [V-25](#v-25) | medium | DMARC | The policy of an author domain in U-labels was looked up in U-labels: the domain's own p=reject was never found | 2 | [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295) |
 | [E-1](#e-1) | **high** | message format | A comment after the address named the mailbox: `From: mallory@evil.example (<ceo@company.example>)` read as ceo@company.example, and was DKIM-signed for company.example | 7 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
 | [I-1](#i-1) | **high** | TLS-RPT ingest | A gzip bomb was inflated whole, in memory and onto disk, before the reply to DATA | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-2](#i-2) | **high** | DMARC reader | Deeply nested XML overflowed the stack and ended the process | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -251,7 +250,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 373 tests for these are part of the merge gate now; the observations the first
+The 395 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -777,21 +776,28 @@ Fixed: in an SMTPUTF8 transaction an ORCPT of the UTF-8 address type is utf-8-ad
 - UTF-8 and "\x{HEXPOINT}"; in another one utf-8-addr-xtext, as before.
 
 ### S-35
-**Open.** **A local domain in the other form is a relay request** (`SMTPServerConfig.cs:247`
-to `:254`, `IsLocalDomain`): the recipient domain is compared with `LocalDomains` as a
-string, case-insensitively, and nothing else. "bücher.test" and "xn--bcher-kva.test" are
-one domain - its U-labels and its A-labels (RFC 5890 §2.3.2.1) - and RFC 6531 §3.7 has
-the client write either: "When RFC 5321 specifies a domain name, the internationalized
-domain name SHOULD be in U-label form if the SMTPUTF8 extension is supported; otherwise,
-it SHOULD be in A-label form." A server configured with the A-labels, as the domain is in
-the DNS, answers "RCPT TO:<alice@bücher.test>" of an SMTPUTF8 transaction with "550 5.7.1
-Relay access denied"; one configured with the U-labels refuses the A-labels a client
-without SMTPUTF8 has to send. Mail for the server's own domain is refused, by a client
-that does what the RFC says. Test: `A_recipient_of_a_local_domain_in_either_form_is_local`,
-two cases; the third, the same form on both sides, is the guard.
+**Closed** in [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294)
+(`78d89917`). **A local domain in the other form was a relay request**
+(`SMTPServerConfig.cs:247` to `:254`, `IsLocalDomain`): the recipient domain is compared
+with `LocalDomains` as a string, case-insensitively, and nothing else. "bücher.test" and
+"xn--bcher-kva.test" are one domain - its U-labels and its A-labels (RFC 5890 §2.3.2.1) -
+and RFC 6531 §3.7 has the client write either: "When RFC 5321 specifies a domain name,
+the internationalized domain name SHOULD be in U-label form if the SMTPUTF8 extension is
+supported; otherwise, it SHOULD be in A-label form." A server configured with the
+A-labels, as the domain is in the DNS, answers "RCPT TO:<alice@bücher.test>" of an
+SMTPUTF8 transaction with "550 5.7.1 Relay access denied"; one configured with the
+U-labels refuses the A-labels a client without SMTPUTF8 has to send. Mail for the
+server's own domain is refused, by a client that does what the RFC says. Test:
+`A_recipient_of_a_local_domain_in_either_form_is_local`, two cases; the third, the same
+form on both sides, is the guard.
+
+Fixed: a domain is local in either form, however `LocalDomains` writes it:
+`Idna.SameDomain` compares A-labels, and a `LocalDomainCheck` is asked about the domain
+as given, its A-labels and its U-labels.
 
 ### S-36
-**Open.** **A server named in U-labels writes them into its greeting and its reply to
+**Closed** in [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294)
+(`78d89917`). **A server named in U-labels wrote them into its greeting and its reply to
 EHLO** (`SMTPSession.cs:131`, `:366`): `config.Hostname` as it is, "220 mx.bücher.test
 ESMTP" and "250-mx.bücher.test Hello" - octets above 127, written as Latin-1. RFC 6531
 §3.7.1: "If the SMTPUTF8-aware SMTP server provides domain names in the EHLO response,
@@ -799,6 +805,9 @@ they MUST be in the form of LDH labels or A-labels", and the greeting comes befo
 client could have said it takes UTF-8 (RFC 5321 §4.2: Greeting = "220 " ( Domain /
 address-literal ), Domain the LDH grammar of §4.1.2). Test:
 `The_server_names_itself_in_A_labels_in_its_greeting_and_its_reply_to_EHLO`.
+
+Fixed: the server names itself by the A-labels of its `Hostname` - in the greeting, the
+reply to EHLO, the 221, the 421 of a timeout and the "by" of the Received field.
 
 ---
 
@@ -993,28 +1002,35 @@ Fixed: the command timeout is 5 minutes by default, and the reply to "." and to 
 has `DataTerminationTimeout`, 10 minutes.
 
 ### C-15
-**Open.** **A reply code is read by its exact value** (`SMTPSubmissionClient.cs:1436`,
-`:1451`: MAIL; `:1399`, `IsAccepted`: RCPT is 250 or 251; `:1499`: DATA is 354; `:1489`,
-`:1512`: the end of data is 250). RFC 5321 §4.2.1: "a sender-SMTP MUST be prepared to
-handle codes not specified in this document and MUST do so by interpreting the first
-digit only" - 2yz is "Positive Completion", 3yz "Positive Intermediate". A 252 to MAIL
-ends the attempt with `ExceptionOccurred`; a 252 to RCPT is a refusal; a 350 to DATA is an
-error. Worst, a 251 to the end of data is reported as a failure, though the server has
-taken the message (§6.1): the application is told it failed, and if it sends it again, it
-arrives twice. Test:
-`Another_positive_code_is_read_by_its_first_digit`, five cases (one without
-PIPELINING); `A_code_without_text_is_read`, four cases, is the guard (§4.2: "clients that
-do not receive it SHOULD be prepared to process the code alone").
+**Closed** in [Vanaheimr/Hermod#293](https://github.com/Vanaheimr/Hermod/pull/293)
+(`bf31d448`). **A reply code was read by its exact value**
+(`SMTPSubmissionClient.cs:1436`, `:1451`: MAIL; `:1399`, `IsAccepted`: RCPT is 250 or
+251; `:1499`: DATA is 354; `:1489`, `:1512`: the end of data is 250). RFC 5321 §4.2.1: "a
+sender-SMTP MUST be prepared to handle codes not specified in this document and MUST do
+so by interpreting the first digit only" - 2yz is "Positive Completion", 3yz "Positive
+Intermediate". A 252 to MAIL ends the attempt with `ExceptionOccurred`; a 252 to RCPT is
+a refusal; a 350 to DATA is an error. Worst, a 251 to the end of data is reported as a
+failure, though the server has taken the message (§6.1): the application is told it
+failed, and if it sends it again, it arrives twice. Test:
+`Another_positive_code_is_read_by_its_first_digit`, five cases (one without PIPELINING);
+`A_code_without_text_is_read`, four cases, is the guard (§4.2: "clients that do not
+receive it SHOULD be prepared to process the code alone").
+
+Fixed: every reply is read by its first digit - a 2yz for the greeting, EHLO, MAIL, RCPT
+and the end of data, a 3yz for DATA and AUTH; `SMTPRecipientResult.Accepted` is any 2yz.
 
 ### C-16
-**Open.** **A client named in U-labels says EHLO with them** (`SMTPSubmissionClient.cs:1015`,
-`:1115`: "EHLO " + `EhloArgument`, the local domain as it was given): "EHLO
-client.bücher.test", in UTF-8. RFC 6531 §3.7.1: "Since the SMTPUTF8-aware SMTP client
-cannot know whether the SMTP server supports SMTPUTF8 until after it receives the
-response to the EHLO, the SMTPUTF8-aware SMTP client MUST send only ASCII (LDH label or
-A-label [RFC5890]) domains in the EHLO command." A server that checks the argument
-refuses it, and the HELO name SPF checks (RFC 7208 §2.3) is no name in the DNS. Test:
-`The_client_says_EHLO_with_its_name_in_A_labels`.
+**Closed** in [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294)
+(`78d89917`). **A client named in U-labels said EHLO with them**
+(`SMTPSubmissionClient.cs:1015`, `:1115`: "EHLO " + `EhloArgument`, the local domain as
+it was given): "EHLO client.bücher.test", in UTF-8. RFC 6531 §3.7.1: "Since the
+SMTPUTF8-aware SMTP client cannot know whether the SMTP server supports SMTPUTF8 until
+after it receives the response to the EHLO, the SMTPUTF8-aware SMTP client MUST send only
+ASCII (LDH label or A-label [RFC5890]) domains in the EHLO command." A server that checks
+the argument refuses it, and the HELO name SPF checks (RFC 7208 §2.3) is no name in the
+DNS. Test: `The_client_says_EHLO_with_its_name_in_A_labels`.
+
+Fixed: `EhloArgument` is the A-labels of `LocalDomain`, in EHLO and in HELO.
 
 ---
 
@@ -1215,23 +1231,29 @@ the UTF-8 too unless the transaction is SMTPUTF8; a received ORCPT goes on as it
 UTF-8 escaped for a transaction that is not SMTPUTF8.
 
 ### O-15
-**Open.** **A reply code is read by its exact value** (`SMTPOutboundClient.cs:688`: MAIL is
-250, `:729`: DATA is 354, and anything else goes to `ParseResponse`, `:1040`, which reads
-the first digit). RFC 5321 §4.2.1: "a sender-SMTP MUST be prepared to handle codes not
-specified in this document and MUST do so by interpreting the first digit only." So a
-252 to MAIL - a positive completion, "proceed as planned" - leaves the transaction, and
-`ParseResponse` turns it into a `Success`: no RCPT, no DATA, QUIT, and the queue marks the
-message delivered. The message is lost, and nobody learns of it. A 350 to DATA is a
-temporary failure, the message sent again and again until it is given up on. RCPT and the
-end of data are read by the first digit already. Tests:
+**Closed** in [Vanaheimr/Hermod#293](https://github.com/Vanaheimr/Hermod/pull/293)
+(`bf31d448`). **A reply code was read by its exact value** (`SMTPOutboundClient.cs:688`:
+MAIL is 250, `:729`: DATA is 354, and anything else goes to `ParseResponse`, `:1040`,
+which reads the first digit). RFC 5321 §4.2.1: "a sender-SMTP MUST be prepared to handle
+codes not specified in this document and MUST do so by interpreting the first digit
+only." So a 252 to MAIL - a positive completion, "proceed as planned" - leaves the
+transaction, and `ParseResponse` turns it into a `Success`: no RCPT, no DATA, QUIT, and
+the queue marks the message delivered. The message is lost, and nobody learns of it. A
+350 to DATA is a temporary failure, the message sent again and again until it is given up
+on. RCPT and the end of data are read by the first digit already. Tests:
 `MAIL_answered_with_another_2yz_goes_on_to_the_message`,
 `DATA_answered_with_another_3yz_sends_the_message`;
 `RCPT_answered_with_another_2yz_accepts_the_recipient`,
-`The_end_of_data_answered_with_another_2yz_is_a_delivery` and `A_code_without_text_is_read`
-(four cases, §4.2) are the guards.
+`The_end_of_data_answered_with_another_2yz_is_a_delivery` and
+`A_code_without_text_is_read` (four cases, §4.2) are the guards.
+
+Fixed: the greeting, EHLO, STARTTLS, MAIL, DATA and AUTH are read by their first digit; a
+reply of the wrong kind - a 3yz to MAIL, a 2yz to DATA - is a refusal, permanent if it is
+5yz and temporary otherwise, and never a delivery.
 
 ### O-16
-**Open.** **552 to RCPT bounces the recipient** (`SendResult.cs:48` to `:53`,
+**Closed** in [Vanaheimr/Hermod#293](https://github.com/Vanaheimr/Hermod/pull/293)
+(`bf31d448`). **552 to RCPT bounced the recipient** (`SendResult.cs:48` to `:53`,
 `RecipientOutcome.Status`: 5yz is `PermFail`, and `QueueProcessor` bounces it). RFC 5321
 §4.5.3.1.10: "RFC 821 [1] incorrectly listed the error where an SMTP server exhausts its
 implementation limit on the number of RCPT commands ("too many recipients") as having
@@ -1245,26 +1267,40 @@ wrong. Tests: `A_recipient_refused_with_552_too_many_recipients_is_retried_not_b
 `A_recipient_refused_with_a_bare_552_after_others_were_accepted_is_retried`;
 `A_recipient_refused_with_550_is_still_bounced` is the guard.
 
+Fixed: `RecipientOutcome.Status` takes a 552 with X.5.3, or with no enhanced status code,
+for a temporary failure, and the recipient is tried again in a later transaction; a 552
+with another enhanced code - 5.2.2, the mailbox is full - is still bounced.
+
 ### O-17
-**Open.** **A recipient domain in U-labels is never delivered to** (`SMTPOutboundClient.cs:878`,
-`DomainName.Parse(domain)` of the domain as it is; `MtaStsResolver.cs:225`,
-"_mta-sts." and the domain as it is). RFC 6531 §3.2: "Any domain name to be looked up in
-the DNS MUST conform to and be processed as specified for Internationalizing Domain Names
-in Applications (IDNA) [RFC5890]. When doing lookups, the SMTPUTF8-aware SMTP client or
-server MUST either use a Unicode-aware DNS library, or transform the internationalized
-domain name to A-label form". The MX lookup of "bücher.test" fails ("451 4.4.3 The MX
-lookup of bücher.test failed; the message is queued"), the MTA-STS record is asked for as
-"_mta-sts.bücher.test", and the message is retried for five days and then bounced - mail
-to "you@bücher.test", which an SMTPUTF8 client writes so (RFC 6531 §3.7), never arrives.
-Tests: `The_MX_hosts_of_a_domain_in_U_labels_are_those_of_its_A_labels`,
+**Closed** in [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294)
+(`78d89917`). **A recipient domain in U-labels was never delivered to**
+(`SMTPOutboundClient.cs:878`, `DomainName.Parse(domain)` of the domain as it is;
+`MtaStsResolver.cs:225`, "_mta-sts." and the domain as it is). RFC 6531 §3.2: "Any domain
+name to be looked up in the DNS MUST conform to and be processed as specified for
+Internationalizing Domain Names in Applications (IDNA) [RFC5890]. When doing lookups, the
+SMTPUTF8-aware SMTP client or server MUST either use a Unicode-aware DNS library, or
+transform the internationalized domain name to A-label form". The MX lookup of
+"bücher.test" fails ("451 4.4.3 The MX lookup of bücher.test failed; the message is
+queued"), the MTA-STS record is asked for as "_mta-sts.bücher.test", and the message is
+retried for five days and then bounced - mail to "you@bücher.test", which an SMTPUTF8
+client writes so (RFC 6531 §3.7), never arrives. Tests:
+`The_MX_hosts_of_a_domain_in_U_labels_are_those_of_its_A_labels`,
 `Every_DNS_query_for_a_domain_in_U_labels_is_in_A_labels`;
 `The_MX_hosts_of_a_domain_in_A_labels_are_found` is the guard.
 
+Fixed: the relay converts the target domain, and a smart host, to A-labels before
+anything else: the MX, MTA-STS and address lookups use them, and the relay knows itself
+among the MX hosts by its A-labels.
+
 ### O-18
-**Open.** **A relay named in U-labels says EHLO with them** (`SMTPOutboundClient.cs:492`,
-`:603`: "EHLO " and `LocalHostname` as it is): "EHLO relais.bücher.test", in UTF-8. RFC
-6531 §3.7.1: the client "MUST send only ASCII (LDH label or A-label [RFC5890]) domains in
-the EHLO command." Test: `The_relay_says_EHLO_with_its_name_in_A_labels`.
+**Closed** in [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294)
+(`78d89917`). **A relay named in U-labels said EHLO with them**
+(`SMTPOutboundClient.cs:492`, `:603`: "EHLO " and `LocalHostname` as it is): "EHLO
+relais.bücher.test", in UTF-8. RFC 6531 §3.7.1: the client "MUST send only ASCII (LDH
+label or A-label [RFC5890]) domains in the EHLO command." Test:
+`The_relay_says_EHLO_with_its_name_in_A_labels`.
+
+Fixed: EHLO and HELO carry the A-labels of `LocalHostname`.
 
 ---
 
@@ -1988,43 +2024,53 @@ Fixed: such a record is p=none when its rua has a syntactically valid URI, and i
 applied without one.
 
 ### V-23
-**Open.** **A sender domain in U-labels is looked up in U-labels** (`DNSVerifier.cs:191`,
-`LookupSpfRecordAsync`, `:606`, with the domain of MAIL FROM as it is; the macros of §7
-likewise): "MAIL FROM:<news@bücher.test> SMTPUTF8" has its record asked for at
-"bücher.test", where there is none, and SPF is "none". RFC 8616 §4: "An IDN in MAIL FROM
-can be either U-labels or A-labels. All U-labels MUST be converted to A-labels before
-being used for an SPF validation. This includes both the labels in the name used for the
-original DNS lookup, described in Section 3 of [RFC7208], and those used in the macro
-expansion of domain-spec, described in Section 7." A domain that publishes "v=spf1 -all"
-- the record of a domain that sends no mail - has it ignored for every message whose
-envelope writes it in U-labels: the forger only has to. Tests:
+**Closed** in [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295)
+(`d03d2fd3`). **A sender domain in U-labels was looked up in U-labels**
+(`DNSVerifier.cs:191`, `LookupSpfRecordAsync`, `:606`, with the domain of MAIL FROM as it
+is; the macros of §7 likewise): "MAIL FROM:<news@bücher.test> SMTPUTF8" has its record
+asked for at "bücher.test", where there is none, and SPF is "none". RFC 8616 §4: "An IDN
+in MAIL FROM can be either U-labels or A-labels. All U-labels MUST be converted to
+A-labels before being used for an SPF validation. This includes both the labels in the
+name used for the original DNS lookup, described in Section 3 of [RFC7208], and those
+used in the macro expansion of domain-spec, described in Section 7." A domain that
+publishes "v=spf1 -all" - the record of a domain that sends no mail - has it ignored for
+every message whose envelope writes it in U-labels: the forger only has to. Tests:
 `SPF_of_a_sender_domain_in_U_labels_is_the_record_of_its_A_labels`,
 `SPF_fail_of_a_sender_domain_in_U_labels_is_not_lost`,
 `The_macro_of_a_sender_domain_in_U_labels_expands_to_A_labels`;
 `SPF_of_a_sender_domain_in_A_labels_passes` is the guard.
 
+Fixed: `VerifySpfAsync` converts the domain, the HELO name and the domain of MAIL FROM to
+A-labels before check_host() begins, so the macros expand to A-labels too.
+
 ### V-24
-**Open.** **A signature with d= in U-labels is checked against a key looked up under a
-mis-decoded name** (`DNSVerifier.cs:1086`, `:1600`): the key of "d=sig.bücher.test;
+**Closed** in [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295)
+(`d03d2fd3`). **A signature with d= in U-labels was checked against a key looked up under
+a mis-decoded name** (`DNSVerifier.cs:1086`, `:1600`): the key of "d=sig.bücher.test;
 s=test" is asked for at "test._domainkey.sig.bã¼cher.test" - the header read as Latin-1,
 the UTF-8 of "ü" as two characters - and the signature fails. RFC 8616 §5: in
 internationalized header fields "IDNs SHOULD be represented as U-labels" in d=, i= and
 s=; §3: "When a domain name found in a mail header field includes U-labels, those labels
 are translated to A-labels before being looked up in the DNS". The signature of an EAI
-message, signed as RFC 8616 recommends, never passes - and under the author's p=reject the
-message is refused. Test:
+message, signed as RFC 8616 recommends, never passes - and under the author's p=reject
+the message is refused. Test:
 `A_signature_with_d_in_U_labels_is_verified_with_the_key_of_its_A_labels`;
 `A_signature_with_d_in_A_labels_on_an_internationalized_message_passes` is the guard.
 
+Fixed: the tags of DKIM-Signature are decoded as the UTF-8 they are, the key is looked up
+at the A-labels of selector._domainkey.d, and i= is compared with d= in A-labels,
+whichever form either is written in.
+
 ### V-25
-**Open.** **The policy of an author domain in U-labels is looked up in U-labels**
+**Closed** in [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295)
+(`d03d2fd3`). **The policy of an author domain in U-labels was looked up in U-labels**
 (`DNSVerifier.cs:1272`, "_dmarc." and the From domain as it is): the record at
 "_dmarc.shop.xn--bcher-kva.test" is never found for "From: <ceo@shop.bücher.test>". Only
 the organizational domain is asked for in A-labels (`:1281`, by way of the Public Suffix
 List), so its policy applies instead: a subdomain's "p=reject" under an organizational
-"p=none" lets the forged message through, and a domain's "adkim=s" is never seen. RFC 8616
-§6: RFC 7489 §6.6.1 "is updated to say that all U-labels in the domain are converted to
-A-labels before further processing." Tests:
+"p=none" lets the forged message through, and a domain's "adkim=s" is never seen. RFC
+8616 §6: RFC 7489 §6.6.1 "is updated to say that all U-labels in the domain are converted
+to A-labels before further processing." Tests:
 `The_policy_of_an_author_domain_in_U_labels_is_the_record_of_its_A_labels`,
 `Strict_alignment_compares_an_author_domain_in_U_labels_by_its_A_labels`;
 `The_organizational_policy_applies_to_an_author_domain_in_U_labels` is the guard.
@@ -2039,6 +2085,9 @@ the suite's own ARC implementation (`TestArc`), which `ArcToolingTests` checks. 
 without a finding: one and two sets pass; a changed body, a gap in the instances, an
 instance twice, cv=pass at instance 1 and cv=fail fail; Hermod's first seal and a seal on
 a passing chain validate, with cv=none and cv=pass, no v= in the AMS, no h= in the AS.
+
+Fixed: `VerifyDmarcAsync` takes the From domain in A-labels from the start, and alignment
+compares A-labels on both sides.
 
 ### A-1
 **Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`63fcf3cd`).

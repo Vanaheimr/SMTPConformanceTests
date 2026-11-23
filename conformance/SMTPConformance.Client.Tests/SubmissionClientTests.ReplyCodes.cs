@@ -20,7 +20,6 @@ public sealed partial class SubmissionClientTests
 
         TestCaseData Case(String Name, Func<SmtpServerScript> Script)
             => new TestCaseData(Script).SetName($"Submission, another positive code: {Name}")
-                                       .SetCategory(TestCategories.KnownIssue)
                                        .SetProperty("Finding", "C-15");
 
         yield return Case("252 to MAIL",                  () => new SmtpServerScript { MailReply      = "252 2.1.0 Sender accepted" });

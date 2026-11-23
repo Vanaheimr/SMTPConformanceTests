@@ -17,7 +17,7 @@ public sealed partial class OutboundClientTests
     // Completion", a 3yz "Positive Intermediate": the transaction goes on.
 
     [Test(Description = "RFC 5321 §4.2.1: MAIL answered with a 2yz other than 250 is accepted - the relay goes on with RCPT and DATA, and does not report the message delivered unsent")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-15")]
+    [Property("Finding", "O-15")]
     public async Task MAIL_answered_with_another_2yz_goes_on_to_the_message()
     {
 
@@ -36,7 +36,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 5321 §4.2.1: DATA answered with a 3yz other than 354 is the go-ahead - the relay sends the message")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-15")]
+    [Property("Finding", "O-15")]
     public async Task DATA_answered_with_another_3yz_sends_the_message()
     {
 
@@ -122,7 +122,7 @@ public sealed partial class OutboundClientTests
     #region O-16: 552 to RCPT, too many recipients
 
     [Test(Description = "RFC 5321 §4.5.3.1.10: \"Clients SHOULD treat a 552 code in this case as a temporary, rather than permanent, failure\" - a recipient refused with 552 5.5.3 (too many recipients) is tried again in a later transaction, not bounced")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-16")]
+    [Property("Finding", "O-16")]
     public async Task A_recipient_refused_with_552_too_many_recipients_is_retried_not_bounced()
     {
 
@@ -145,7 +145,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 5321 §4.5.3.1.10 and RFC 3463 §3.6: 552 to RCPT after recipients were accepted is the RFC 821 code of a full recipients buffer - retried, not bounced")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-16")]
+    [Property("Finding", "O-16")]
     public async Task A_recipient_refused_with_a_bare_552_after_others_were_accepted_is_retried()
     {
 

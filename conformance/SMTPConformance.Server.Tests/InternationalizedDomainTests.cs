@@ -85,7 +85,7 @@ public sealed class InternationalizedDomainTests : HermodServerTestBase
     // and those used in the macro expansion of domain-spec, described in Section 7."
 
     [Test(Description = "RFC 8616 §4: MAIL FROM in U-labels - the SPF record is the A-label's, and it passes the client it lists")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-23")]
+    [Property("Finding", "V-23")]
     public async Task SPF_of_a_sender_domain_in_U_labels_is_the_record_of_its_A_labels()
     {
 
@@ -103,7 +103,7 @@ public sealed class InternationalizedDomainTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8616 §4, RFC 7208 §8.4: MAIL FROM in U-labels, from a client its A-label's record does not list (-all) - SPF fails, as it does for the A-labels, and is not \"none\"")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-23")]
+    [Property("Finding", "V-23")]
     public async Task SPF_fail_of_a_sender_domain_in_U_labels_is_not_lost()
     {
 
@@ -118,7 +118,7 @@ public sealed class InternationalizedDomainTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8616 §4: the U-labels of %{d} are A-labels in the macro expansion too - a:%{d} is the A record of the A-labels")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-23")]
+    [Property("Finding", "V-23")]
     public async Task The_macro_of_a_sender_domain_in_U_labels_expands_to_A_labels()
     {
 
@@ -161,7 +161,7 @@ public sealed class InternationalizedDomainTests : HermodServerTestBase
     // in the DNS, as described in [RFC5891]."
 
     [Test(Description = "RFC 8616 §5, §3: a signature with d= in U-labels - its key is the record at selector._domainkey of the A-labels, and the signature passes")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-24")]
+    [Property("Finding", "V-24")]
     public async Task A_signature_with_d_in_U_labels_is_verified_with_the_key_of_its_A_labels()
     {
 
@@ -202,7 +202,7 @@ public sealed class InternationalizedDomainTests : HermodServerTestBase
     // converted to A-labels before further processing."
 
     [Test(Description = "RFC 8616 §6, RFC 7489 §6.6.3: the policy of an author domain in U-labels is the record of its A-labels - its p=reject is applied, not the p=none of the organizational domain")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-25")]
+    [Property("Finding", "V-25")]
     public async Task The_policy_of_an_author_domain_in_U_labels_is_the_record_of_its_A_labels()
     {
 
@@ -218,7 +218,7 @@ public sealed class InternationalizedDomainTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8616 §6, RFC 7489 §3.1.1: strict alignment compares the author domain in A-labels - a signature of the same domain in A-labels is aligned, and DMARC passes")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "V-25")]
+    [Property("Finding", "V-25")]
     public async Task Strict_alignment_compares_an_author_domain_in_U_labels_by_its_A_labels()
     {
 
@@ -265,12 +265,10 @@ public sealed class InternationalizedDomainTests : HermodServerTestBase
         // A-labels without - of the same domain.
         yield return new TestCaseData("xn--bcher-kva.test", "alice@bücher.test",        true)
                          .SetName("The local domain xn--bcher-kva.test, RCPT in U-labels with SMTPUTF8")
-                         .SetCategory(TestCategories.KnownIssue)
                          .SetProperty("Finding", "S-35");
 
         yield return new TestCaseData("bücher.test",        "alice@xn--bcher-kva.test", false)
                          .SetName("The local domain bücher.test, RCPT in A-labels without SMTPUTF8")
-                         .SetCategory(TestCategories.KnownIssue)
                          .SetProperty("Finding", "S-35");
 
         yield return new TestCaseData("xn--bcher-kva.test", "alice@xn--bcher-kva.test", false)
@@ -319,7 +317,7 @@ public sealed class InternationalizedHostnameTests : HermodServerTestBase
     #region S-36: the server's name in the greeting and in the reply to EHLO
 
     [Test(Description = "RFC 6531 §3.7.1: \"If the SMTPUTF8-aware SMTP server provides domain names in the EHLO response, they MUST be in the form of LDH labels or A-labels\"; RFC 5321 §4.2 - the greeting's Domain, which the client reads before it knows of SMTPUTF8, is ASCII too")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "S-36")]
+    [Property("Finding", "S-36")]
     public async Task The_server_names_itself_in_A_labels_in_its_greeting_and_its_reply_to_EHLO()
     {
 

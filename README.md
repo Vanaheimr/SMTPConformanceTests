@@ -13,19 +13,20 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-22, Hermod `a9d149de`):** 1044 tests, 1022 pass, 22 fail on 11 open
-findings. An eleventh round tested how the two clients read a reply code, and
-internationalized domain names wherever Hermod meets one - the DNS lookups of the relay,
-of SPF, DKIM and DMARC, the local domains of the server, the names the server and the
-clients give themselves - 38 tests, 11 findings. The heaviest: a 252 to MAIL - a positive
-reply, to be read by its first digit - leaves the relay's transaction, and the message is
-reported delivered unsent ([O-15](FINDINGS.md#o-15)); an envelope sender in U-labels has
-its SPF record looked up in U-labels, so a domain's "-all" is "none"
-([V-23](FINDINGS.md#v-23)); the DMARC policy of an author domain in U-labels is never
-found, and its organizational domain's applies instead ([V-25](FINDINGS.md#v-25)); mail to
-a domain in U-labels is never delivered, its MX lookup failing for five days
-([O-17](FINDINGS.md#o-17)); and mail for the server's own domain, written in the other
-form, is refused as relaying ([S-35](FINDINGS.md#s-35)).
+**State (2026-11-23, Hermod `21fe948d`):** 1044 tests, **all pass**. An eleventh round
+tested how the two clients read a reply code, and internationalized domain names wherever
+Hermod meets one - the DNS lookups of the relay, of SPF, DKIM and DMARC, the local domains
+of the server, the names the server and the clients give themselves - 38 tests, 11
+findings. The heaviest: a 252 to MAIL - a positive reply, to be read by its first digit -
+left the relay's transaction, and the message was reported delivered unsent
+([O-15](FINDINGS.md#o-15)); an envelope sender in U-labels had its SPF record looked up in
+U-labels, so a domain's "-all" was "none" ([V-23](FINDINGS.md#v-23)); the DMARC policy of
+an author domain in U-labels was never found, and its organizational domain's applied
+instead ([V-25](FINDINGS.md#v-25)); mail to a domain in U-labels was never delivered, its
+MX lookup failing for five days ([O-17](FINDINGS.md#o-17)); and mail for the server's own
+domain, written in the other form, was refused as relaying ([S-35](FINDINGS.md#s-35)). All
+11 fixed in [#293](https://github.com/Vanaheimr/Hermod/pull/293) to
+[#295](https://github.com/Vanaheimr/Hermod/pull/295).
 A tenth round tested
 what RFC 5321 asks of a server beyond its commands, and of a client beyond its dialogue -
 the trace fields and final delivery, loop detection, the paths of MAIL and RCPT as the
@@ -275,11 +276,11 @@ vectors, and the four Linux tools.
 | RFC 5321 §4.5.3.2 the timeouts of the relay and of the submission client | 2 | 0 | ~~O-13~~, ~~C-14~~ fixed |
 | RFC 6533 §4, RFC 6532 §3.7 the bounce of an SMTPUTF8 message | 2 | 0 | ~~D-13~~ fixed |
 | RFC 3461 §4.2, §5.2.1 the ORCPT the relay writes | 4 | 0 | ~~O-14~~ fixed |
-| RFC 5321 §4.2.1 reply codes by their first digit, §4.5.3.1.10 552 to RCPT - relay and submission client | 20 | 9 | O-15, O-16, C-15 |
-| RFC 6531 §3.2, §3.7 internationalized domain names: the relay's lookups, local domains, EHLO and the greeting | 9 | 7 | O-17, O-18, S-35, S-36, C-16 |
-| RFC 8616 SPF, DKIM and DMARC of internationalized domains | 9 | 6 | V-23, V-24, V-25 |
+| RFC 5321 §4.2.1 reply codes by their first digit, §4.5.3.1.10 552 to RCPT - relay and submission client | 20 | 0 | ~~O-15~~, ~~O-16~~, ~~C-15~~ fixed |
+| RFC 6531 §3.2, §3.7 internationalized domain names: the relay's lookups, local domains, EHLO and the greeting | 9 | 0 | ~~O-17~~, ~~O-18~~, ~~S-35~~, ~~S-36~~, ~~C-16~~ fixed |
+| RFC 8616 SPF, DKIM and DMARC of internationalized domains | 9 | 0 | ~~V-23~~ to ~~V-25~~ fixed |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 27 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~, ~~O-14~~ fixed |
-| **Total** | **1044** | **22** | |
+| **Total** | **1044** | **0** | |
 
 ## External test partners
 

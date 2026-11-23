@@ -24,7 +24,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 6531 §3.2, RFC 5321 §5.1: a recipient domain in U-labels - its MX records are those of its A-labels, and the relay goes on to their hosts")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-17")]
+    [Property("Finding", "O-17")]
     public async Task The_MX_hosts_of_a_domain_in_U_labels_are_those_of_its_A_labels()
     {
 
@@ -42,7 +42,7 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 6531 §3.2: every name the relay asks the DNS about for a domain in U-labels - MX, MTA-STS (RFC 8461 §3.1) - is in A-labels")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-17")]
+    [Property("Finding", "O-17")]
     public async Task Every_DNS_query_for_a_domain_in_U_labels_is_in_A_labels()
     {
 
@@ -78,7 +78,7 @@ public sealed partial class OutboundClientTests
     #region O-18: the relay's name in EHLO
 
     [Test(Description = "RFC 6531 §3.7.1: \"the SMTPUTF8-aware SMTP client MUST send only ASCII (LDH label or A-label [RFC5890]) domains in the EHLO command\" - a relay named in U-labels says EHLO with its A-labels")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-18")]
+    [Property("Finding", "O-18")]
     public async Task The_relay_says_EHLO_with_its_name_in_A_labels()
     {
 
