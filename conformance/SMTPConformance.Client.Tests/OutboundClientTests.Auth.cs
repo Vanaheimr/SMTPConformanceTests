@@ -104,7 +104,7 @@ public sealed partial class OutboundClientTests
         Assume.That(auth, Is.Not.Negative, "the relay signed in" + Explain(server));
 
         Assert.Multiple(() => {
-            Assert.That(lines.Select(line => Encoding.UTF8.GetByteCount(line) + 2), Has.All.LessThanOrEqualTo(512), "no command line beyond 512 octets" + Explain(server));
+            Assert.That(Encoding.UTF8.GetByteCount(lines[auth]) + 2, Is.LessThanOrEqualTo(512), "the AUTH command fits a command line - the response after the 334 need not (RFC 4954 §4)" + Explain(server));
             Assert.That(lines[auth],     Is.EqualTo("AUTH PLAIN").IgnoreCase,                                          Explain(server));
             Assert.That(Unb64(lines.ElementAtOrDefault(auth + 1)), Is.EqualTo("\0relay-user\0" + password),            Explain(server));
             Assert.That(result.Status,   Is.EqualTo(SendStatus.Success),                                               result.ResponseText);
