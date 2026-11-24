@@ -59,7 +59,11 @@ the challenges of the two clients; its line numbers refer to `21fe948d`. The thi
 is stopped (RFC 5321 §3.8), a parameter that may be given once given twice (RFC 3461
 §4.5, RFC 1870 §6), and a next hop that refuses the session - at the first of its MX
 hosts, or at one of its addresses (RFC 5321 §3.1, §5.1, RFC 7504 §3); its line numbers
-refer to `63e6df5c`.
+refer to `63e6df5c`. The fourteenth (O-23 and on, D-14 and D-15, C-19) tests REQUIRETLS
+(RFC 8689) beyond the option itself: which MX hosts a message that requires TLS may go to,
+what follows when one cannot take it, a bounce that carries the option and the bounce of a
+message that does, the TLS-Required header field, and the option as the submission client
+gives it; its line numbers refer to `efbaf986`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -67,7 +71,16 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [O-23](#o-23) | medium | REQUIRETLS | A REQUIRETLS message goes to an MX host that neither DNSSEC nor an MTA-STS policy vouches for | 1 |
+| [O-24](#o-24) | medium | REQUIRETLS | An MX host without REQUIRETLS bounces the message: the other MX hosts of the domain are never tried | 1 |
+| [D-14](#d-14) | medium | REQUIRETLS | The bounce of a REQUIRETLS message returns the whole message, body and all, RET=FULL or none | 2 |
+| [C-19](#c-19) | medium | REQUIRETLS | The submission client gives a REQUIRETLS message to a server without REQUIRETLS, and leaves the option out | 1 |
+| [O-25](#o-25) | low | REQUIRETLS | No TLS for a REQUIRETLS message - no STARTTLS, a certificate not trusted - is a failure for now, not 5.7.10 | 2 |
+| [O-26](#o-26) | low | REQUIRETLS | A bounce that carries REQUIRETLS is refused to a next hop without it, 5.7.30, and lost | 1 |
+| [O-27](#o-27) | low | REQUIRETLS | "TLS-Required: No" is not heeded: an MTA-STS policy holds back a report on the domain's broken TLS | 2 |
+| [D-15](#d-15) | low | REQUIRETLS | The bounce of a REQUIRETLS message is queued without REQUIRETLS | 1 |
 
 ### Closed
 
@@ -1191,6 +1204,19 @@ two cases.
 Fixed: the server-first-message of SCRAM-SHA-256 and the CRAM-MD5 challenge go through
 `SaslBase64.Decode`, and what is no base64 is answered "*".
 
+### C-19
+**Open.** **The submission client gives a REQUIRETLS message to a server without
+REQUIRETLS** (`SMTPSubmissionClient.cs:1330`: a REQUIRETLS envelope asks for TLS, and
+nothing else; `:1399`: the REQUIRETLS option goes on MAIL when the server offers it, and is
+left out when it does not). RFC 8689 §4.3: "If TLS is to be required, it MUST do so by
+negotiating STARTTLS and REQUIRETLS and including the REQUIRETLS option on the MAIL FROM
+command, as is done for message relay"; §2: "Following the negotiation of STARTTLS, the
+SMTP server MUST advertise in the subsequent EHLO response that it supports REQUIRETLS".
+A server without REQUIRETLS takes the message inside TLS and relays it as it likes - in
+cleartext, if its next hop offers no STARTTLS -, and the caller is told `ok`. Test:
+`A_REQUIRETLS_message_goes_to_no_server_that_does_not_offer_REQUIRETLS`; guard:
+`A_REQUIRETLS_message_goes_with_REQUIRETLS_on_MAIL`.
+
 ---
 
 ## Outbound client (`SMTPOutboundClient`)
@@ -1538,6 +1564,74 @@ each with a connect timeout of its own, and an address that refuses the session 
 followed by the next. When every address that answered refused it, that is the host's
 answer - for now only, if one refused only for now or could not be reached.
 
+### O-23
+**Open.** **A REQUIRETLS message goes to an MX host that nothing vouches for**
+(`SMTPOutboundClient.cs:177`: the MX records are taken as the resolver gives them, signed
+or not; `:146`: REQUIRETLS asks for TLS, and that is all it asks for). RFC 8689 §2: "If
+the SMTP server to which the message is being transmitted is identified through an MX
+record lookup, its name MUST be validated via a DNSSEC signature on the recipient domain's
+MX record, or the MX hostname MUST be validated by an MTA-STS policy"; §4.2.1: "If the
+server lookup is accomplished via the recipient domain's MX record (the usual case) and is
+not accompanied by a valid DNSSEC signature, the client MUST also validate the SMTP server
+name using MTA-STS ... If there are no more MX hosts, the client MUST NOT transmit the
+message to the domain". Whoever can answer the MX lookup names a host of theirs, with a
+certificate valid for its own name, and the message goes there on TLS, REQUIRETLS and all -
+the attack of §8.2 that REQUIRETLS is there to stop. Test:
+`A_REQUIRETLS_message_goes_to_no_MX_host_that_neither_DNSSEC_nor_MTA_STS_vouches_for`;
+guard: `A_REQUIRETLS_message_goes_to_an_MX_host_its_MTA_STS_policy_names`.
+
+### O-24
+**Open.** **An MX host without REQUIRETLS bounces the message** (`SMTPOutboundClient.cs:746`:
+"550 5.7.30" is a permanent failure of the message; `:292`: a permanent failure that is no
+refused session ends the delivery). RFC 8689 §4.2.1: "If any of the above steps fail, the
+client MUST issue a QUIT to the server and repeat steps 2-5 with each host on the recipient
+domain's list of MX hosts in an attempt to find a mail path that meets the sender's
+requirements. ... If there are no more MX hosts, the client MUST NOT transmit the message to
+the domain." A primary MX host that has not got REQUIRETLS yet, and the message bounces
+though the backup MX host offers it. An MX host without STARTTLS, or one that refuses it, is
+followed by the next one already. Test: `A_REQUIRETLS_message_goes_on_to_the_next_MX_host` -
+an MX host that offers no REQUIRETLS; guards: one that offers no STARTTLS, one that refuses
+it.
+
+### O-25
+**Open.** **No TLS for a REQUIRETLS message is a failure for now** (`SMTPOutboundClient.cs:692`:
+"454 STARTTLS required but not supported"; `:650`: "454 TLS certificate validation failed").
+RFC 8689 §4.2.1: "If there are no more MX hosts, the client MUST NOT transmit the message to
+the domain. Following such a failure, the SMTP client MUST send a non-delivery notification
+to the reverse-path of the failed message ... Unable to establish TLS-protected SMTP
+session: 5.7.10 Encryption needed". The message is tried again until the queue gives up on
+it, days later, and the sender learns of it then, with a status that says "for now". Test:
+`No_TLS_for_a_REQUIRETLS_message_is_a_non_delivery` - a next hop that offers no STARTTLS,
+one whose certificate the relay does not trust.
+
+### O-26
+**Open.** **A bounce that carries REQUIRETLS is lost at a next hop without it**
+(`SMTPOutboundClient.cs:746`: "5.7.30" whatever the reverse-path; `BounceHandler.cs:54`: a
+message with a null reverse-path gets no bounce). RFC 8689 §4.2.1 holds "When sending a
+message tagged as requiring TLS for which the MAIL FROM return-path is not empty (an empty
+MAIL FROM return-path indicating a bounce message)"; §5: "When the MAIL FROM return-path is
+empty, the REQUIRETLS parameter SHOULD NOT cause a bounce message to be discarded even if
+the next-hop relay does not advertise REQUIRETLS". A bounce received with "MAIL FROM:<>
+REQUIRETLS", for a sender whose MX host does not offer REQUIRETLS, is refused for good, and
+nobody hears of it. Test: `A_bounce_with_REQUIRETLS_goes_to_a_next_hop_without_REQUIRETLS`.
+
+### O-27
+**Open.** **"TLS-Required: No" is not heeded** (no reference to the header field anywhere
+in Hermod; `SMTPSession.cs:844`: a received message is tagged with the REQUIRETLS option
+only; `SMTPOutboundClient.cs:146`: an MTA-STS policy in enforce mode holds for every
+message). RFC 8689 §3: "No - The SMTP client SHOULD attempt to send the message regardless
+of its ability to negotiate STARTTLS with the SMTP server, ignoring policy-based mechanisms
+(including MTA-STS and DANE), if any, asserted by the recipient domain. Nevertheless, the
+client SHOULD negotiate STARTTLS with the server if available"; §4.1: a server "MUST tag
+that message with the option specified in the TLS-Required header field". The header field
+is there "to report a misconfigured mail server, such as an expired TLS certificate" - the
+very report the policy holds back. Test:
+`A_message_with_TLS_Required_No_sets_the_MTA_STS_policy_aside` - an MX host that offers no
+STARTTLS, one the policy does not name; guards:
+`A_message_without_TLS_Required_keeps_to_the_MTA_STS_policy`, and
+`With_REQUIRETLS_the_TLS_Required_field_is_ignored` (§4.1: "If the REQUIRETLS MAIL FROM
+parameter is specified, the TLS-Required header field MUST be ignored").
+
 ---
 
 ## DSN reports
@@ -1698,6 +1792,26 @@ Fixed: a status with UTF-8 in it is message/global-delivery-status, with
 report-type=global-delivery-status and its UTF-8 addresses of the UTF-8 address type; a
 returned message with UTF-8 header values is message/global, its header alone
 message/global-headers.
+
+### D-14
+**Open.** **The bounce of a REQUIRETLS message returns the whole message**
+(`BounceHandler.cs:221`: the RET the message was received with; `DsnGenerator.cs:247`: the
+whole message for a failure unless RET=HDRS). RFC 8689 §5: "If a REQUIRETLS message is
+bounced, the server MUST behave as if RET=HDRS was present, as described in [RFC3461]. If
+both RET=FULL and REQUIRETLS are present, the RET=FULL MUST be disregarded." The body of a
+message that was to travel on TLS only goes back in a bounce that does not have to (D-15).
+Test: `The_bounce_of_a_REQUIRETLS_message_returns_its_header_only` - with RET=FULL, without
+RET.
+
+### D-15
+**Open.** **The bounce of a REQUIRETLS message is queued without REQUIRETLS**
+(`BounceHandler.cs:224`, `:239`: the report is queued with its envelope, and RequireTls
+left false). RFC 8689 §5: non-delivery messages "MUST be protected in the same manner as
+the original message. All non-delivery messages resulting from messages with the REQUIRETLS
+SMTP option, whether resulting from a REQUIRETLS error or some other issue, MUST also specify
+the REQUIRETLS SMTP option unless redacted as described below" - the header of the message,
+which the bounce returns, goes to the sender in cleartext, if the sender's MX host offers no
+STARTTLS. Test: `The_bounce_of_a_REQUIRETLS_message_requires_TLS`.
 
 ---
 

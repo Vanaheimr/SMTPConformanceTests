@@ -27,12 +27,13 @@ public sealed partial class OutboundClientTests
 
     /// <summary>
     /// A relay that delivers to the MX hosts on the given port. The port of the MX hosts is
-    /// internal to Hermod - 25, which no test can listen on - and set here by reflection.
+    /// internal to Hermod - 25, which no test can listen on - and set here by reflection, on the
+    /// given configuration or on one of the relay's own.
     /// </summary>
-    private static SMTPOutboundClient MxClient(StubDnsClient Dns, UInt16 Port)
+    private static SMTPOutboundClient MxClient(StubDnsClient Dns, UInt16 Port, SmtpOutboundConfig? Config = null)
     {
 
-        var config = new SmtpOutboundConfig {
+        var config = Config ?? new SmtpOutboundConfig {
                          LocalHostname     = "relay.hermod.test",
                          ConnectTimeoutMs  = 3_000,
                          ReadTimeoutMs     = 10_000,

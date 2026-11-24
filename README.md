@@ -13,7 +13,18 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-24, Hermod `efbaf986`):** 1079 tests, **all pass**. A thirteenth round
+**State (2026-11-24, Hermod `efbaf986`):** 1097 tests, 1086 pass, 11 fail on 8 open
+findings. A fourteenth round tested REQUIRETLS (RFC 8689) beyond the option itself - which
+MX hosts a message that requires TLS may go to, what follows when one cannot take it, the
+bounces of such a message, "TLS-Required: No", and the option as the submission client
+gives it - 18 tests, 8 findings. The heaviest: a REQUIRETLS message goes to an MX host
+that neither DNSSEC nor an MTA-STS policy vouches for, so whoever forges the MX record gets
+it ([O-23](FINDINGS.md#o-23)); an MX host without REQUIRETLS bounces the message though
+the next one offers it ([O-24](FINDINGS.md#o-24)); the bounce of a REQUIRETLS message
+returns its body ([D-14](FINDINGS.md#d-14)); and the submission client gives a REQUIRETLS
+message to a server without REQUIRETLS, and leaves the option out
+([C-19](FINDINGS.md#c-19)).
+A thirteenth round
 tested the edges of a session - what a server says when it is stopped, a parameter that
 may be given once given twice, a next hop that refuses the session at the first of its MX
 hosts or at one of its addresses - 15 tests, 4 findings. The heaviest: a 554 or 521
@@ -307,7 +318,8 @@ vectors, and the four Linux tools.
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 27 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~, ~~O-14~~ fixed |
 | RFC 4954 §4 to §6 SMTP AUTH in detail: the length of a response (RFC 4616 §2), base64, the end of an exchange, temporary failures, AUTH=<> to a smart host, the clients' initial response and challenges | 20 | 0 | ~~S-37~~ to ~~S-40~~, ~~O-19~~, ~~O-20~~, ~~C-17~~, ~~C-18~~ fixed |
 | RFC 5321 §3.8 a server that shuts down, §3.1, §5.1, RFC 7504 §3 a next hop that refuses the session; RFC 3461 §4.5, RFC 1870 §6 parameters given twice | 15 | 0 | ~~S-41~~, ~~S-42~~, ~~O-21~~, ~~O-22~~ fixed |
-| **Total** | **1079** | **0** | |
+| RFC 8689 REQUIRETLS: the MX hosts a message that requires TLS goes to, 5.7.30 and 5.7.10, its bounces, "TLS-Required: No", the submission client | 18 | 11 | O-23 to O-27, D-14, D-15, C-19 |
+| **Total** | **1097** | **11** | |
 
 ## External test partners
 
