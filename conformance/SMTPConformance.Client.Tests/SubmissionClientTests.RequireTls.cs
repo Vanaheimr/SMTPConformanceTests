@@ -33,7 +33,6 @@ public sealed partial class SubmissionClientTests
 
 
     [Test(Description = "RFC 8689 §4.3: \"If TLS is to be required, it MUST do so by negotiating STARTTLS and REQUIRETLS and including the REQUIRETLS option on the MAIL FROM command\"; §2: \"Following the negotiation of STARTTLS, the SMTP server MUST advertise in the subsequent EHLO response that it supports REQUIRETLS\" - a server that does not is no path for the message, not one to give it to without the option")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "C-19")]
     public async Task A_REQUIRETLS_message_goes_to_no_server_that_does_not_offer_REQUIRETLS()
     {

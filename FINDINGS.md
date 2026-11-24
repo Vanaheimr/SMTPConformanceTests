@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `efbaf986`**
-(Styx `a6b9f9fb`), which closes every finding of all thirteen rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `5fed035a`**
+(Styx `a6b9f9fb`), which closes every finding of all fourteen rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -71,16 +71,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [O-23](#o-23) | medium | REQUIRETLS | A REQUIRETLS message goes to an MX host that neither DNSSEC nor an MTA-STS policy vouches for | 1 |
-| [O-24](#o-24) | medium | REQUIRETLS | An MX host without REQUIRETLS bounces the message: the other MX hosts of the domain are never tried | 1 |
-| [D-14](#d-14) | medium | REQUIRETLS | The bounce of a REQUIRETLS message returns the whole message, body and all, RET=FULL or none | 2 |
-| [C-19](#c-19) | medium | REQUIRETLS | The submission client gives a REQUIRETLS message to a server without REQUIRETLS, and leaves the option out | 1 |
-| [O-25](#o-25) | low | REQUIRETLS | No TLS for a REQUIRETLS message - no STARTTLS, a certificate not trusted - is a failure for now, not 5.7.10 | 2 |
-| [O-26](#o-26) | low | REQUIRETLS | A bounce that carries REQUIRETLS is refused to a next hop without it, 5.7.30, and lost | 1 |
-| [O-27](#o-27) | low | REQUIRETLS | "TLS-Required: No" is not heeded: an MTA-STS policy holds back a report on the domain's broken TLS | 2 |
-| [D-15](#d-15) | low | REQUIRETLS | The bounce of a REQUIRETLS message is queued without REQUIRETLS | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -160,6 +151,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [O-20](#o-20) | low | outbound | AUTH PLAIN went with its initial response, however long: an AUTH line of more than 512 octets | 1 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
 | [O-21](#o-21) | medium | outbound | A 554 or 521 greeting of the first MX host bounced the message: the other MX hosts of the domain were never tried | 2 | [Vanaheimr/Hermod#301](https://github.com/Vanaheimr/Hermod/pull/301) |
 | [O-22](#o-22) | medium | outbound | A refused session at one address of a multihomed next hop ended the attempt: its other addresses were never tried | 2 | [Vanaheimr/Hermod#301](https://github.com/Vanaheimr/Hermod/pull/301) |
+| [O-23](#o-23) | medium | REQUIRETLS | A REQUIRETLS message went to an MX host that neither DNSSEC nor an MTA-STS policy vouched for | 1 | [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304) |
+| [O-24](#o-24) | medium | REQUIRETLS | An MX host without REQUIRETLS bounced the message: the other MX hosts of the domain were never tried | 1 | [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304) |
+| [O-25](#o-25) | low | REQUIRETLS | No TLS for a REQUIRETLS message - no STARTTLS, a certificate not trusted - was a failure for now, not 5.7.10 | 2 | [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304) |
+| [O-26](#o-26) | low | REQUIRETLS | A bounce that carried REQUIRETLS was refused to a next hop without it, 5.7.30, and lost | 1 | [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304) |
+| [O-27](#o-27) | low | REQUIRETLS | "TLS-Required: No" was not heeded: an MTA-STS policy held back a report on the domain's broken TLS | 2 | [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304) |
 | [C-11](#c-11) | low | client | One refused recipient stopped the message for all | 1 | [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) |
 | [C-12](#c-12) | medium | SCRAM client | A 235 without the server-final-message was taken as success: the server never proved it knows the password | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [C-13](#c-13) | low | SCRAM client | The client did not normalize the password (SASLprep) | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
@@ -168,6 +164,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-16](#c-16) | low | client | A client named in U-labels said EHLO with them | 1 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
 | [C-17](#c-17) | low | client | AUTH PLAIN went with its initial response, however long: an AUTH line of more than 512 octets | 1 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
 | [C-18](#c-18) | low | client | A SCRAM challenge that is no base64 was not cancelled with "*": the client threw, and its QUIT was taken for the response | 2 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
+| [C-19](#c-19) | medium | REQUIRETLS | The submission client gave a REQUIRETLS message to a server without REQUIRETLS, and left the option out | 1 | [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305) |
 | [D-1](#d-1) | **high** | reports | Bounces had CR CR LF line ends | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-4](#d-4) | **high** | reports | A message that mentions "multipart/report" or quotes a bounce failed without a bounce | 3 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-2](#d-2) | medium | reports | Every bounce had the same Message-ID, `System.Func`1[System.Guid]`, and an invalid boundary | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
@@ -181,6 +178,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [D-10](#d-10) | low | reports | Delay notices: not DSNs, NOTIFY ignored, held back 4 h whatever the setting | 2 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-11](#d-11) | low | reports | A "relayed" DSN for every recipient once one asked for SUCCESS | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-13](#d-13) | low | reports | The bounce of an SMTPUTF8 message had UTF-8 in message/delivery-status and in message/rfc822 | 2 | [Vanaheimr/Hermod#290](https://github.com/Vanaheimr/Hermod/pull/290) |
+| [D-14](#d-14) | medium | REQUIRETLS | The bounce of a REQUIRETLS message returned the whole message, body and all, RET=FULL or none | 2 | [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305) |
+| [D-15](#d-15) | low | REQUIRETLS | The bounce of a REQUIRETLS message was queued without REQUIRETLS | 1 | [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305) |
 | [M-1](#m-1) | **high** | MTA-STS | `*.example.com` matched `example.com` and `foo.bar.example.com` | 7 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
 | [M-2](#m-2) | medium | MTA-STS | Any TXT record containing "v=STSv1" announced a policy | 7 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
 | [M-3](#m-3) | medium | MTA-STS | A policy needed only a mode; enforce without mx allowed every MX | 8 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
@@ -284,7 +283,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 423 tests for these are part of the merge gate now; the observations the first
+The 441 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1205,7 +1204,8 @@ Fixed: the server-first-message of SCRAM-SHA-256 and the CRAM-MD5 challenge go t
 `SaslBase64.Decode`, and what is no base64 is answered "*".
 
 ### C-19
-**Open.** **The submission client gives a REQUIRETLS message to a server without
+**Closed** in [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305)
+(`b25dfc4d`). **The submission client gave a REQUIRETLS message to a server without
 REQUIRETLS** (`SMTPSubmissionClient.cs:1330`: a REQUIRETLS envelope asks for TLS, and
 nothing else; `:1399`: the REQUIRETLS option goes on MAIL when the server offers it, and is
 left out when it does not). RFC 8689 §4.3: "If TLS is to be required, it MUST do so by
@@ -1216,6 +1216,9 @@ A server without REQUIRETLS takes the message inside TLS and relays it as it lik
 cleartext, if its next hop offers no STARTTLS -, and the caller is told `ok`. Test:
 `A_REQUIRETLS_message_goes_to_no_server_that_does_not_offer_REQUIRETLS`; guard:
 `A_REQUIRETLS_message_goes_with_REQUIRETLS_on_MAIL`.
+
+Fixed: a message that requires TLS goes to no server that does not offer REQUIRETLS inside
+TLS - `failed`, and no MAIL; to one that does, with REQUIRETLS on MAIL.
 
 ---
 
@@ -1565,7 +1568,8 @@ followed by the next. When every address that answered refused it, that is the h
 answer - for now only, if one refused only for now or could not be reached.
 
 ### O-23
-**Open.** **A REQUIRETLS message goes to an MX host that nothing vouches for**
+**Closed** in [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304)
+(`1583e599`). **A REQUIRETLS message went to an MX host that nothing vouched for**
 (`SMTPOutboundClient.cs:177`: the MX records are taken as the resolver gives them, signed
 or not; `:146`: REQUIRETLS asks for TLS, and that is all it asks for). RFC 8689 §2: "If
 the SMTP server to which the message is being transmitted is identified through an MX
@@ -1580,8 +1584,15 @@ the attack of §8.2 that REQUIRETLS is there to stop. Test:
 `A_REQUIRETLS_message_goes_to_no_MX_host_that_neither_DNSSEC_nor_MTA_STS_vouches_for`;
 guard: `A_REQUIRETLS_message_goes_to_an_MX_host_its_MTA_STS_policy_names`.
 
+Fixed: a message that requires TLS goes only to the MX hosts the domain's MTA-STS policy
+names - in enforce or testing mode - or to those of an MX record that validates, through
+the DNSSEC validator of DANE (`EnableDane`). An MX record that does not validate holds the
+message back for now (4.7.5); none that anything vouches for is "5.7.10", and nothing is
+transmitted.
+
 ### O-24
-**Open.** **An MX host without REQUIRETLS bounces the message** (`SMTPOutboundClient.cs:746`:
+**Closed** in [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304)
+(`1583e599`). **An MX host without REQUIRETLS bounced the message** (`SMTPOutboundClient.cs:746`:
 "550 5.7.30" is a permanent failure of the message; `:292`: a permanent failure that is no
 refused session ends the delivery). RFC 8689 §4.2.1: "If any of the above steps fail, the
 client MUST issue a QUIT to the server and repeat steps 2-5 with each host on the recipient
@@ -1593,8 +1604,12 @@ followed by the next one already. Test: `A_REQUIRETLS_message_goes_on_to_the_nex
 an MX host that offers no REQUIRETLS; guards: one that offers no STARTTLS, one that refuses
 it.
 
+Fixed: 5.7.30, and 5.7.10 for a host without TLS the relay can authenticate (O-25), are
+`SendResult.UnsuitableHost`: the next MX host is tried, as after a refused session (O-21).
+
 ### O-25
-**Open.** **No TLS for a REQUIRETLS message is a failure for now** (`SMTPOutboundClient.cs:692`:
+**Closed** in [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304)
+(`1583e599`). **No TLS for a REQUIRETLS message was a failure for now** (`SMTPOutboundClient.cs:692`:
 "454 STARTTLS required but not supported"; `:650`: "454 TLS certificate validation failed").
 RFC 8689 §4.2.1: "If there are no more MX hosts, the client MUST NOT transmit the message to
 the domain. Following such a failure, the SMTP client MUST send a non-delivery notification
@@ -1604,8 +1619,14 @@ it, days later, and the sender learns of it then, with a status that says "for n
 `No_TLS_for_a_REQUIRETLS_message_is_a_non_delivery` - a next hop that offers no STARTTLS,
 one whose certificate the relay does not trust.
 
+Fixed: no STARTTLS, a STARTTLS refused for good, a certificate that cannot be
+authenticated are "550 5.7.10" for a message that requires TLS; a STARTTLS refused for
+now is a failure for now still. Secure TLSA records none of which is usable no longer
+stand in for authentication.
+
 ### O-26
-**Open.** **A bounce that carries REQUIRETLS is lost at a next hop without it**
+**Closed** in [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304)
+(`1583e599`). **A bounce that carried REQUIRETLS was lost at a next hop without it**
 (`SMTPOutboundClient.cs:746`: "5.7.30" whatever the reverse-path; `BounceHandler.cs:54`: a
 message with a null reverse-path gets no bounce). RFC 8689 §4.2.1 holds "When sending a
 message tagged as requiring TLS for which the MAIL FROM return-path is not empty (an empty
@@ -1615,8 +1636,13 @@ the next-hop relay does not advertise REQUIRETLS". A bounce received with "MAIL 
 REQUIRETLS", for a sender whose MX host does not offer REQUIRETLS, is refused for good, and
 nobody hears of it. Test: `A_bounce_with_REQUIRETLS_goes_to_a_next_hop_without_REQUIRETLS`.
 
+Fixed: §4.2.1 holds for a message with a sender. A bounce with REQUIRETLS goes over
+STARTTLS where offered, with REQUIRETLS where the next hop offers it, and on without
+either.
+
 ### O-27
-**Open.** **"TLS-Required: No" is not heeded** (no reference to the header field anywhere
+**Closed** in [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304)
+(`1583e599`). **"TLS-Required: No" was not heeded** (no reference to the header field anywhere
 in Hermod; `SMTPSession.cs:844`: a received message is tagged with the REQUIRETLS option
 only; `SMTPOutboundClient.cs:146`: an MTA-STS policy in enforce mode holds for every
 message). RFC 8689 §3: "No - The SMTP client SHOULD attempt to send the message regardless
@@ -1631,6 +1657,10 @@ STARTTLS, one the policy does not name; guards:
 `A_message_without_TLS_Required_keeps_to_the_MTA_STS_policy`, and
 `With_REQUIRETLS_the_TLS_Required_field_is_ignored` (§4.1: "If the REQUIRETLS MAIL FROM
 parameter is specified, the TLS-Required header field MUST be ignored").
+
+Fixed: the one TLS-Required field of the header, "No", sets the recipient domain's MTA-STS
+policy and DANE aside; STARTTLS is tried all the same. With REQUIRETLS the field is
+ignored.
 
 ---
 
@@ -1794,7 +1824,8 @@ returned message with UTF-8 header values is message/global, its header alone
 message/global-headers.
 
 ### D-14
-**Open.** **The bounce of a REQUIRETLS message returns the whole message**
+**Closed** in [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305)
+(`b25dfc4d`). **The bounce of a REQUIRETLS message returned the whole message**
 (`BounceHandler.cs:221`: the RET the message was received with; `DsnGenerator.cs:247`: the
 whole message for a failure unless RET=HDRS). RFC 8689 §5: "If a REQUIRETLS message is
 bounced, the server MUST behave as if RET=HDRS was present, as described in [RFC3461]. If
@@ -1803,8 +1834,11 @@ message that was to travel on TLS only goes back in a bounce that does not have 
 Test: `The_bounce_of_a_REQUIRETLS_message_returns_its_header_only` - with RET=FULL, without
 RET.
 
+Fixed: the reports on a queued message that requires TLS are generated with RET=HDRS.
+
 ### D-15
-**Open.** **The bounce of a REQUIRETLS message is queued without REQUIRETLS**
+**Closed** in [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305)
+(`b25dfc4d`). **The bounce of a REQUIRETLS message was queued without REQUIRETLS**
 (`BounceHandler.cs:224`, `:239`: the report is queued with its envelope, and RequireTls
 left false). RFC 8689 §5: non-delivery messages "MUST be protected in the same manner as
 the original message. All non-delivery messages resulting from messages with the REQUIRETLS
@@ -1812,6 +1846,9 @@ SMTP option, whether resulting from a REQUIRETLS error or some other issue, MUST
 the REQUIRETLS SMTP option unless redacted as described below" - the header of the message,
 which the bounce returns, goes to the sender in cleartext, if the sender's MX host offers no
 STARTTLS. Test: `The_bounce_of_a_REQUIRETLS_message_requires_TLS`.
+
+Fixed: every report on such a message - bounce, delay, relayed - is queued with
+RequireTls, and goes with REQUIRETLS where the next hop offers it (O-26).
 
 ---
 

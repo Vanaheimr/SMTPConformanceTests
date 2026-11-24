@@ -92,7 +92,6 @@ public sealed partial class OutboundClientTests
     #region O-23: an MX host that neither DNSSEC nor MTA-STS vouches for
 
     [Test(Description = "RFC 8689 §4.2.1: \"If the server lookup is accomplished via the recipient domain's MX record (the usual case) and is not accompanied by a valid DNSSEC signature, the client MUST also validate the SMTP server name using MTA-STS\"; \"If there are no more MX hosts, the client MUST NOT transmit the message to the domain\" - an MX record that may be forged does not get a message that requires TLS, whatever certificate its host has")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "O-23")]
     public async Task A_REQUIRETLS_message_goes_to_no_MX_host_that_neither_DNSSEC_nor_MTA_STS_vouches_for()
     {
@@ -150,7 +149,7 @@ public sealed partial class OutboundClientTests
             var data = new TestCaseData(First).SetName($"A REQUIRETLS message, the first MX host {Name}: the second gets it");
 
             return Finding
-                       ? data.SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "O-24")
+                       ? data.SetProperty("Finding", "O-24")
                        : data;
 
         }
@@ -208,7 +207,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Name, Func<SmtpServerScript> Script, Boolean TrustCertificate)
             => new TestCaseData(Script, TrustCertificate).SetName($"A REQUIRETLS message, a next hop {Name}: 5.7.10, a non-delivery")
-                                                         .SetCategory(TestCategories.KnownIssue)
                                                          .SetProperty("Finding", "O-25");
 
         yield return Case("that offers no STARTTLS",                  () => new SmtpServerScript(),                                                   TrustCertificate: true);
@@ -244,7 +242,6 @@ public sealed partial class OutboundClientTests
     #region O-26: a bounce that carries REQUIRETLS
 
     [Test(Description = "RFC 8689 §4.2.1 holds for a message \"for which the MAIL FROM return-path is not empty (an empty MAIL FROM return-path indicating a bounce message)\"; §5: \"When the MAIL FROM return-path is empty, the REQUIRETLS parameter SHOULD NOT cause a bounce message to be discarded even if the next-hop relay does not advertise REQUIRETLS\"")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "O-26")]
     public async Task A_bounce_with_REQUIRETLS_goes_to_a_next_hop_without_REQUIRETLS()
     {
@@ -301,7 +298,6 @@ public sealed partial class OutboundClientTests
 
 
     [TestCaseSource(nameof(PolicyFailures), new Object[] { true })]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "O-27")]
     [Description("RFC 8689 §3: \"No - The SMTP client SHOULD attempt to send the message regardless of its ability to negotiate STARTTLS with the SMTP server, ignoring policy-based mechanisms (including MTA-STS and DANE), if any, asserted by the recipient domain\"; §4.1: a server \"MUST tag that message with the option specified in the TLS-Required header field\" - a report on a broken TLS setup reaches the domain whose TLS is broken")]
     public async Task A_message_with_TLS_Required_No_sets_the_MTA_STS_policy_aside(String MxHost, Boolean Tls)
@@ -364,7 +360,6 @@ public sealed partial class OutboundClientTests
 
 
     [TestCaseSource(nameof(RetOfARequireTlsMessage))]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "D-14")]
     [Description("RFC 8689 §5: \"If a REQUIRETLS message is bounced, the server MUST behave as if RET=HDRS was present, as described in [RFC3461]. If both RET=FULL and REQUIRETLS are present, the RET=FULL MUST be disregarded\" - the body of a message that was to travel on TLS only does not go back in a bounce")]
     public async Task The_bounce_of_a_REQUIRETLS_message_returns_its_header_only(String MailFrom)
@@ -388,7 +383,6 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 8689 §5: non-delivery messages \"MUST be protected in the same manner as the original message. All non-delivery messages resulting from messages with the REQUIRETLS SMTP option, whether resulting from a REQUIRETLS error or some other issue, MUST also specify the REQUIRETLS SMTP option\"")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "D-15")]
     public async Task The_bounce_of_a_REQUIRETLS_message_requires_TLS()
     {
