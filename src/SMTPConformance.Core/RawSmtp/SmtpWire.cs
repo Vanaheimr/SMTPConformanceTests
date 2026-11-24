@@ -381,13 +381,24 @@ public class SmtpWire : IAsyncDisposable
 
         var tls = new SslStream(stream, leaveInnerStreamOpen: false);
 
-        await tls.AuthenticateAsServerAsync(
-                  new SslServerAuthenticationOptions {
-                      ServerCertificateContext  = SslStreamCertificateContext.Create(Certificate, [.. Chain ?? []], offline: true),
-                      EnabledSslProtocols       = SslProtocols.Tls12 | SslProtocols.Tls13
-                  },
-                  CancellationToken
-              );
+        try
+        {
+
+            await tls.AuthenticateAsServerAsync(
+                      new SslServerAuthenticationOptions {
+                          ServerCertificateContext  = SslStreamCertificateContext.Create(Certificate, [.. Chain ?? []], offline: true),
+                          EnabledSslProtocols       = SslProtocols.Tls12 | SslProtocols.Tls13
+                      },
+                      CancellationToken
+                  );
+
+        }
+        finally
+        {
+            // On Windows the context has put the issuers into the intermediate CA store
+            // for good; the handshake is over, and the context keeps its own copies.
+            Fixtures.InstalledAuthorities.Remove(Chain ?? []);
+        }
 
         stream = tls;
         Transcript.AppendLine($"-- TLS {tls.SslProtocol} --");

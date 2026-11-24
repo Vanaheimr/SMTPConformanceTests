@@ -23,10 +23,24 @@ public sealed class CertificateChainTests
     /// Write a certificate issued by an intermediate as certbot does: fullchain.pem (the
     /// certificate, then the intermediate) and privkey.pem.
     /// </summary>
-    private static (X509Certificate2 Authority, X509Certificate2 Server) WritePem(String Directory, String ServerName = "mx.hermod.test")
+    /// <summary>
+    /// The intermediates of the certificates written: on Windows the server's TLS puts them
+    /// into the intermediate CA store for good when it builds its context from fullchain.pem.
+    /// </summary>
+    private readonly List<X509Certificate2> authorities = [];
+
+    [TearDown]
+    public void RemoveInstalledAuthorities()
+    {
+        InstalledAuthorities.Remove(authorities);
+        authorities.Clear();
+    }
+
+    private (X509Certificate2 Authority, X509Certificate2 Server) WritePem(String Directory, String ServerName = "mx.hermod.test")
     {
 
         var (authority, server) = TestCertificate.CreateIssuedCertificate(ServerName);
+        authorities.Add(authority);
 
         File.WriteAllText(Path.Combine(Directory, "fullchain.pem"), server.ExportCertificatePem() + "\n" + authority.ExportCertificatePem() + "\n");
         File.WriteAllText(Path.Combine(Directory, "privkey.pem"),   server.GetRSAPrivateKey()!.ExportPkcs8PrivateKeyPem() + "\n");
