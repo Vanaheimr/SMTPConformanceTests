@@ -40,7 +40,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Name, String MailFrom)
             => new TestCaseData(MailFrom).SetName($"Relayed through a smart host signed in to: {Name}")
-                                         .SetCategory(TestCategories.KnownIssue)
                                          .SetProperty("Finding", "O-19");
 
         yield return Case("from a client that did not authenticate",    "MAIL FROM:<app@client.example>");
@@ -87,7 +86,7 @@ public sealed partial class OutboundClientTests
     #region O-20: no initial response beyond the line length
 
     [Test(Description = "RFC 4954 §4: \"Note that the AUTH command is still subject to the line length limitations defined in [SMTP]. If use of the initial response argument would cause the AUTH command to exceed this length, the client MUST NOT use the initial response parameter (and instead proceed as defined in Section 5.1 of [SASL])\" - RFC 5321 §4.5.3.1.4: 512 octets with CR LF; a password of 400 octets goes after the 334")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "O-20")]
+    [Property("Finding", "O-20")]
     public async Task A_long_password_goes_to_the_smart_host_without_an_initial_response()
     {
 

@@ -24,7 +24,7 @@ public sealed partial class SubmissionClientTests
     #region C-17: no initial response beyond the line length
 
     [Test(Description = "RFC 4954 §4: \"If use of the initial response argument would cause the AUTH command to exceed this length, the client MUST NOT use the initial response parameter (and instead proceed as defined in Section 5.1 of [SASL])\" - RFC 5321 §4.5.3.1.4: 512 octets with CR LF; a password of 400 octets goes after the 334")]
-    [Category(TestCategories.KnownIssue), Property("Finding", "C-17")]
+    [Property("Finding", "C-17")]
     public async Task A_long_password_goes_without_an_initial_response()
     {
 
@@ -62,7 +62,6 @@ public sealed partial class SubmissionClientTests
 
         TestCaseData Case(String Name, String Challenge)
             => new TestCaseData(Challenge).SetName($"A SCRAM challenge that is no base64: {Name}")
-                                          .SetCategory(TestCategories.KnownIssue)
                                           .SetProperty("Finding", "C-18");
 
         var serverFirst = Convert.ToBase64String(Encoding.UTF8.GetBytes("r=abc,s=c2FsdA==,i=4096"));

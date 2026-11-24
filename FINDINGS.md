@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `21fe948d`**
-(Styx `a6b9f9fb`), which closes every finding of all eleven rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `63e6df5c`**
+(Styx `a6b9f9fb`), which closes every finding of all twelve rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -62,16 +62,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [O-19](#o-19) | medium | outbound | The relay signs in to its smart host and leaves AUTH=<> out of MAIL FROM: the smart host takes every message, forwarded ones too, for one its account submitted | 2 |
-| [S-40](#s-40) | medium | AUTH | A user store that cannot be asked is 535, "credentials invalid", not 454: every client is told its password is wrong | 2 |
-| [S-37](#s-37) | low | AUTH | The longest PLAIN response - 255 octets of authzid, authcid and passwd each - is "500 Line too long" | 2 |
-| [S-38](#s-38) | low | AUTH | Spaces and tabs in a SASL response are ignored, not refused: what is no base64 signs in | 4 |
-| [S-39](#s-39) | low | AUTH | A line too long in an AUTH exchange leaves the exchange open: the next command is taken for a SASL response | 1 |
-| [O-20](#o-20) | low | outbound | AUTH PLAIN goes with its initial response, however long: an AUTH line of more than 512 octets | 1 |
-| [C-17](#c-17) | low | client | AUTH PLAIN goes with its initial response, however long: an AUTH line of more than 512 octets | 1 |
-| [C-18](#c-18) | low | client | A SCRAM challenge that is no base64 is not cancelled with "*": the client throws, and its QUIT is taken for the response | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -111,6 +102,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-29](#s-29) | medium | trace | No Return-Path at final delivery; one the client wrote into the message was the only one the mailbox saw | 4 | [Vanaheimr/Hermod#287](https://github.com/Vanaheimr/Hermod/pull/287) |
 | [S-30](#s-30) | medium | trace | The EHLO argument went into Received unchecked: a client wrote the TCP-info it liked in front of the true one | 3 | [Vanaheimr/Hermod#287](https://github.com/Vanaheimr/Hermod/pull/287) |
 | [S-35](#s-35) | medium | IDN | A local domain in the other form - U-labels for A-labels, or the reverse - was a relay request, refused | 2 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
+| [S-40](#s-40) | medium | AUTH | A user store that could not be asked was 535, "credentials invalid", not 454: every client was told its password is wrong | 2 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
 | [S-21](#s-21) | low | SCRAM | The channel binding flag "y" was refused, though Hermod offers no -PLUS | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [S-22](#s-22) | low | SCRAM | The c= attribute was not compared with the GS2 header | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [S-23](#s-23) | low | SCRAM | A requested authorization identity (a=) was ignored: alice asking to act as bob was alice | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
@@ -122,6 +114,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-33](#s-33) | low | commands | HELP and EXPN were unknown commands (500), VRFY without an argument was 252 | 3 | [Vanaheimr/Hermod#288](https://github.com/Vanaheimr/Hermod/pull/288) |
 | [S-34](#s-34) | low | SMTPUTF8 | An ORCPT of the UTF-8 address type, in UTF-8, was refused | 1 | [Vanaheimr/Hermod#290](https://github.com/Vanaheimr/Hermod/pull/290) |
 | [S-36](#s-36) | low | IDN | A server named in U-labels wrote them into its greeting and its reply to EHLO | 1 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
+| [S-37](#s-37) | low | AUTH | The longest PLAIN response - 255 octets of authzid, authcid and passwd each - was "500 Line too long" | 2 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
+| [S-38](#s-38) | low | AUTH | Spaces and tabs in a SASL response were ignored, not refused: what is no base64 signed in | 4 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
+| [S-39](#s-39) | low | AUTH | A line too long in an AUTH exchange left the exchange open: the next command was taken for a SASL response | 1 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
 | [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
 | [O-1](#o-1) | **high** | outbound | Every reply but EHLO's was read as one line: a multi-line reply shifted all that followed | 5 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [O-2](#o-2) | **high** | outbound | A recipient the next hop refused disappeared: no bounce, no retry | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
@@ -141,12 +136,16 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [O-16](#o-16) | low | outbound | 552 to RCPT, "too many recipients", bounced the recipient instead of trying it again | 2 | [Vanaheimr/Hermod#293](https://github.com/Vanaheimr/Hermod/pull/293) |
 | [O-17](#o-17) | medium | outbound routing | A recipient domain in U-labels was never delivered to: its MX lookup failed, and was retried for days | 2 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
 | [O-18](#o-18) | low | outbound | A relay named in U-labels said EHLO with them | 1 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
+| [O-19](#o-19) | medium | outbound | The relay signed in to its smart host and left AUTH=<> out of MAIL FROM: the smart host took every message, forwarded ones too, for one its account submitted | 2 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
+| [O-20](#o-20) | low | outbound | AUTH PLAIN went with its initial response, however long: an AUTH line of more than 512 octets | 1 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
 | [C-11](#c-11) | low | client | One refused recipient stopped the message for all | 1 | [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) |
 | [C-12](#c-12) | medium | SCRAM client | A 235 without the server-final-message was taken as success: the server never proved it knows the password | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [C-13](#c-13) | low | SCRAM client | The client did not normalize the password (SASLprep) | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [C-14](#c-14) | low | client | The submission client waited 30 seconds for the reply to the end of data: a slow server got the message twice | 1 | [Vanaheimr/Hermod#289](https://github.com/Vanaheimr/Hermod/pull/289) |
 | [C-15](#c-15) | medium | client | A reply code was read by its exact value: a 252 to MAIL or RCPT, a 350 to DATA, a 251 to the end of data failed the message | 5 | [Vanaheimr/Hermod#293](https://github.com/Vanaheimr/Hermod/pull/293) |
 | [C-16](#c-16) | low | client | A client named in U-labels said EHLO with them | 1 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
+| [C-17](#c-17) | low | client | AUTH PLAIN went with its initial response, however long: an AUTH line of more than 512 octets | 1 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
+| [C-18](#c-18) | low | client | A SCRAM challenge that is no base64 was not cancelled with "*": the client threw, and its QUIT was taken for the response | 2 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
 | [D-1](#d-1) | **high** | reports | Bounces had CR CR LF line ends | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-4](#d-4) | **high** | reports | A message that mentions "multipart/report" or quotes a bounce failed without a bounce | 3 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-2](#d-2) | medium | reports | Every bounce had the same Message-ID, `System.Func`1[System.Guid]`, and an invalid boundary | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
@@ -263,7 +262,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 395 tests for these are part of the merge gate now; the observations the first
+The 410 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -823,26 +822,32 @@ Fixed: the server names itself by the A-labels of its `Hostname` - in the greeti
 reply to EHLO, the 221, the 421 of a timeout and the "by" of the Received field.
 
 ### S-37
-**Open.** **The longest PLAIN response is "500 Line too long"** (`SMTPSession.cs:135`,
-`ReadLineAsync(config.MaxCommandLineLength)` for every line, the lines of an AUTH
-exchange included; `SMTPServerConfig.cs:100`, 1024 octets). RFC 4616 §2: "Servers MUST be
-capable of accepting authzid, authcid, and passwd productions up to and including 255
-octets" - 767 octets of PLAIN message, 1024 of base64; RFC 4954 §4: "Note that these
-[BASE64] strings can be much longer than normal SMTP commands. Clients and servers MUST
-be able to handle the maximum encoded size of challenges and responses generated by their
-supported authentication mechanisms. This requirement is independent of any line length
-limitations the client or server may have in other parts of its protocol implementation.
-(At the time of writing of this document, 12288 octets is considered to be a sufficient
-line length limit for handling of deployed authentication mechanisms.)" "AUTH PLAIN " and
-the 1024 octets are 1037 with CR LF, the response alone after "334 " 1026: both are "500
-5.5.6 Line too long", for credentials that are right. Tests:
-`The_longest_PLAIN_initial_response_signs_in`,
+**Closed** in [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297)
+(`7cf5dac1`). **The longest PLAIN response was "500 Line too long"**
+(`SMTPSession.cs:135`, `ReadLineAsync(config.MaxCommandLineLength)` for every line, the
+lines of an AUTH exchange included; `SMTPServerConfig.cs:100`, 1024 octets). RFC 4616 §2:
+"Servers MUST be capable of accepting authzid, authcid, and passwd productions up to and
+including 255 octets" - 767 octets of PLAIN message, 1024 of base64; RFC 4954 §4: "Note
+that these [BASE64] strings can be much longer than normal SMTP commands. Clients and
+servers MUST be able to handle the maximum encoded size of challenges and responses
+generated by their supported authentication mechanisms. This requirement is independent
+of any line length limitations the client or server may have in other parts of its
+protocol implementation. (At the time of writing of this document, 12288 octets is
+considered to be a sufficient line length limit for handling of deployed authentication
+mechanisms.)" "AUTH PLAIN " and the 1024 octets are 1037 with CR LF, the response alone
+after "334 " 1026: both are "500 5.5.6 Line too long", for credentials that are right.
+Tests: `The_longest_PLAIN_initial_response_signs_in`,
 `The_longest_PLAIN_response_after_the_challenge_signs_in`;
 `A_long_identity_and_password_without_authzid_sign_in` - the same account, 684 octets of
 base64 - is the guard.
 
+Fixed: the session reads every line up to `SMTPServerConfig.MaxAuthLineLength`, 12288
+octets as RFC 4954 §4 suggests, and holds a line that is neither an AUTH command nor a
+line of its exchange to `MaxCommandLineLength`, as before.
+
 ### S-38
-**Open.** **Spaces and tabs in a SASL response are ignored, not refused**
+**Closed** in [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297)
+(`7cf5dac1`). **Spaces and tabs in a SASL response were ignored, not refused**
 (`AuthHandler.cs:60`, `Convert.FromBase64String`, which skips white space;
 `SMTPSession.cs:441`, the initial response is all that follows the mechanism, spaces
 included). RFC 4954 §4: "servers and clients MUST reject (and not ignore) any character
@@ -854,8 +859,12 @@ the end, are 235. Test: `A_response_that_is_no_base64_is_refused`, four cases; a
 character inside the response and a response without its pad characters, which
 `Convert.FromBase64String` refuses already, are the guards.
 
+Fixed: `SaslBase64.Decode` takes the alphabet in groups of four, the pad character at the
+end only, "=" and the empty text as no octets; anything else is 501 5.5.2.
+
 ### S-39
-**Open.** **A line too long in an AUTH exchange leaves the exchange open**
+**Closed** in [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297)
+(`7cf5dac1`). **A line too long in an AUTH exchange left the exchange open**
 (`SMTPSession.cs:142`: "500 5.5.6 Line too long", and `continue` - `_inAuthExchange`,
 `:193`, stays set). RFC 4954 §4: "If, during an authentication exchange, the server
 receives a line that is longer than the server's authentication buffer, the server fails
@@ -865,8 +874,11 @@ is answered "535 5.7.8"; a MAIL is answered 501 and lost, a new AUTH counts as a
 attempt. Test: `A_line_too_long_in_the_exchange_fails_the_AUTH_command`;
 `A_cancelled_exchange_is_over` is the guard.
 
+Fixed: the 500 5.5.6 ends the exchange; the next line is a command.
+
 ### S-40
-**Open.** **A user store that cannot be asked is 535** (`PlainAuthHandler.cs:83`,
+**Closed** in [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297)
+(`7cf5dac1`). **A user store that could not be asked was 535** (`PlainAuthHandler.cs:83`,
 `LoginAuthHandler.cs:99`: any exception is "535 5.7.8 Authentication failed"). RFC 4954
 §6: "454 4.7.0 Temporary authentication failure - This response to the AUTH command
 indicates that the authentication failed due to a temporary server failure. The client
@@ -876,6 +888,10 @@ told its password is wrong: a mail program asks its user for another one, an app
 gives up on credentials that are right, a fail2ban counts the failures - and the
 `ConnectionTracker` does, `MaxAuthAttemptsPerIpPerHour`. Test:
 `A_user_store_that_is_down_is_a_temporary_failure`, PLAIN and LOGIN.
+
+Fixed: an exception of the user store is `AuthResult.TemporaryFailure`, "454 4.7.0
+Temporary authentication failure", for PLAIN, LOGIN, SCRAM-SHA-256 and EXTERNAL - neither
+counted as a failed attempt nor delayed.
 
 ---
 
@@ -1101,15 +1117,20 @@ DNS. Test: `The_client_says_EHLO_with_its_name_in_A_labels`.
 Fixed: `EhloArgument` is the A-labels of `LocalDomain`, in EHLO and in HELO.
 
 ### C-17
-**Open.** **AUTH PLAIN goes with its initial response, however long**
+**Closed** in [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298)
+(`e93c6ef2`). **AUTH PLAIN went with its initial response, however long**
 (`SMTPSubmissionClient.cs:742`, `AuthPlainAsync`). RFC 4954 §4: "If use of the initial
 response argument would cause the AUTH command to exceed this length, the client MUST NOT
 use the initial response parameter (and instead proceed as defined in Section 5.1 of
 [SASL])" - 512 octets with CR LF (RFC 5321 §4.5.3.1.4). A password of 400 octets makes an
 AUTH line of 553. Test: `A_long_password_goes_without_an_initial_response`.
 
+Fixed: when "AUTH PLAIN" and the response would pass 512 octets with CR LF, the response
+follows the empty 334 challenge.
+
 ### C-18
-**Open.** **A SCRAM challenge that is no base64 is not cancelled**
+**Closed** in [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298)
+(`e93c6ef2`). **A SCRAM challenge that is no base64 was not cancelled**
 (`SMTPSubmissionClient.cs:666`, `Convert.FromBase64String` of the server-first-message,
 which throws on what is no base64 and skips white space; CRAM-MD5 at `:768` likewise).
 RFC 4954 §4: "If the client cannot BASE64 decode any of the server's challenges, it MUST
@@ -1119,6 +1140,9 @@ FormatException ends the attempt with `ExceptionOccurred`, and the QUIT the clie
 next is what the server reads as the response to its challenge; a challenge with a space
 in it is decoded as if it had none. Test: `A_challenge_that_is_no_base64_is_cancelled`,
 two cases.
+
+Fixed: the server-first-message of SCRAM-SHA-256 and the CRAM-MD5 challenge go through
+`SaslBase64.Decode`, and what is no base64 is answered "*".
 
 ---
 
@@ -1391,7 +1415,8 @@ label or A-label [RFC5890]) domains in the EHLO command." Test:
 Fixed: EHLO and HELO carry the A-labels of `LocalHostname`.
 
 ### O-19
-**Open.** **The relay signs in to its smart host and leaves AUTH=<> out of MAIL FROM**
+**Closed** in [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298)
+(`e93c6ef2`). **The relay signed in to its smart host and left AUTH=<> out of MAIL FROM**
 (`SMTPOutboundClient.cs:682`, `DsnCommands.MailFrom` at `DsnCommands.cs:176`: no AUTH
 parameter, ever). RFC 4954 §5: "If the server does not sufficiently trust the
 authenticated identity of the client, or if the client is not authenticated, then the
@@ -1407,8 +1432,12 @@ bounce, mail of an unauthenticated client - all of it the account's own. Test:
 a client that did not authenticate, with AUTH=<> from the client;
 `A_next_hop_without_AUTH_gets_no_AUTH_parameter` is the guard.
 
+Fixed: a message through a smart host the relay signed in to goes with "AUTH=<>" - the
+relay vouches for no submitter; one to a next hop it did not sign in to goes without.
+
 ### O-20
-**Open.** **AUTH PLAIN goes with its initial response, however long**
+**Closed** in [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298)
+(`e93c6ef2`). **AUTH PLAIN went with its initial response, however long**
 (`SMTPOutboundClient.cs:815`: "AUTH PLAIN " and the base64 of the credentials, always).
 RFC 4954 §4: "Note that the AUTH command is still subject to the line length limitations
 defined in [SMTP]. If use of the initial response argument would cause the AUTH command
@@ -1417,6 +1446,9 @@ instead proceed as defined in Section 5.1 of [SASL])" - RFC 5321 §4.5.3.1.4: 51
 with CR LF. A password of 400 octets - a token, a generated one - makes an AUTH line of
 565, which a smart host that keeps to 512 refuses or cuts. Test:
 `A_long_password_goes_to_the_smart_host_without_an_initial_response`.
+
+Fixed: when "AUTH PLAIN" and the response would pass 512 octets with CR LF, the response
+follows the empty 334 challenge.
 
 ---
 

@@ -13,18 +13,20 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-24, Hermod `21fe948d`):** 1064 tests, 1049 pass, 15 fail on 8 open
-findings. A twelfth round tested SMTP AUTH beyond its dialogue - how long a SASL response
-may be, the base64 it is written in, how an exchange ends, a user store that cannot be
-asked, the AUTH parameter the relay owes a smart host it signed in to, the initial
-response and the challenges of the two clients - 20 tests, 8 findings. The heaviest: the
-relay signs in to its smart host and leaves AUTH=<> out of MAIL FROM, so the smart host
-takes every relayed message for one its account submitted ([O-19](FINDINGS.md#o-19)); a
-user store that cannot be asked is 535, and every client is told its password is wrong
-([S-40](FINDINGS.md#s-40)); the longest PLAIN response RFC 4616 has the server take is
+**State (2026-11-24, Hermod `63e6df5c`):** 1064 tests, **all pass**. A twelfth round
+tested SMTP AUTH beyond its dialogue - how long a SASL response may be, the base64 it is
+written in, how an exchange ends, a user store that cannot be asked, the AUTH parameter
+the relay owes a smart host it signed in to, the initial response and the challenges of
+the two clients - 20 tests, 8 findings. The heaviest: the relay signed in to its smart
+host and left AUTH=<> out of MAIL FROM, so the smart host took every relayed message for
+one its account submitted ([O-19](FINDINGS.md#o-19)); a user store that could not be
+asked was 535, and every client was told its password is wrong
+([S-40](FINDINGS.md#s-40)); the longest PLAIN response RFC 4616 has the server take was
 "500 Line too long" ([S-37](FINDINGS.md#s-37)); and a line too long in an AUTH exchange
-leaves it open, so the next command is taken for a SASL response
-([S-39](FINDINGS.md#s-39)).
+left it open, so the next command was taken for a SASL response
+([S-39](FINDINGS.md#s-39)). All 8 fixed in
+[#297](https://github.com/Vanaheimr/Hermod/pull/297) and
+[#298](https://github.com/Vanaheimr/Hermod/pull/298).
 An eleventh round
 tested how the two clients read a reply code, and internationalized domain names wherever
 Hermod meets one - the DNS lookups of the relay, of SPF, DKIM and DMARC, the local domains
@@ -292,8 +294,8 @@ vectors, and the four Linux tools.
 | RFC 6531 §3.2, §3.7 internationalized domain names: the relay's lookups, local domains, EHLO and the greeting | 9 | 0 | ~~O-17~~, ~~O-18~~, ~~S-35~~, ~~S-36~~, ~~C-16~~ fixed |
 | RFC 8616 SPF, DKIM and DMARC of internationalized domains | 9 | 0 | ~~V-23~~ to ~~V-25~~ fixed |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 27 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~, ~~O-14~~ fixed |
-| RFC 4954 §4 to §6 SMTP AUTH in detail: the length of a response (RFC 4616 §2), base64, the end of an exchange, temporary failures, AUTH=<> to a smart host, the clients' initial response and challenges | 20 | 15 | S-37 to S-40, O-19, O-20, C-17, C-18 |
-| **Total** | **1064** | **15** | |
+| RFC 4954 §4 to §6 SMTP AUTH in detail: the length of a response (RFC 4616 §2), base64, the end of an exchange, temporary failures, AUTH=<> to a smart host, the clients' initial response and challenges | 20 | 0 | ~~S-37~~ to ~~S-40~~, ~~O-19~~, ~~O-20~~, ~~C-17~~, ~~C-18~~ fixed |
+| **Total** | **1064** | **0** | |
 
 ## External test partners
 
