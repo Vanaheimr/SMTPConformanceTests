@@ -377,4 +377,113 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
 
     }
 
+
+    #region S-43, S-44: Authentication-Results fields the message brought along (RFC 8601 §5)
+
+    /// <summary>
+    /// Every Authentication-Results field of the stored message, unfolded, top down.
+    /// </summary>
+    private static IReadOnlyList<String> AllAuthenticationResults(StoredMessage? Stored)
+
+        => Stored is null
+               ? []
+               : [ .. Regex.Matches(Stored.Raw[..Math.Max(0, Stored.Raw.IndexOf("\r\n\r\n", StringComparison.Ordinal))],
+                                    @"^Authentication-Results:(?<value>[^\r\n]*(?:\r\n[ \t][^\r\n]*)*)", RegexOptions.Multiline | RegexOptions.IgnoreCase).
+                       Select(match => Regex.Replace(match.Groups["value"].Value.Replace("\r\n", ""), @"\s+", " ").Trim()) ];
+
+    /// <summary>
+    /// The authserv-id of an Authentication-Results value, and its version, if any (RFC 8601 §2.2:
+    /// authres-header-field = "Authentication-Results:" [CFWS] authserv-id [ CFWS authres-version ] ...).
+    /// </summary>
+    private static (String Id, String? Version) AuthServId(String Value)
+    {
+        var match = Regex.Match(Value, @"^(?<id>[^\s;()]+)(?:\s*\([^)]*\))?(?:\s+(?<version>\d+))?\s*(;|$)");
+        return (match.Groups["id"].Value, match.Groups["version"].Success ? match.Groups["version"].Value : null);
+    }
+
+    public static IEnumerable<TestCaseData> ForgedAuthServIds()
+    {
+
+        TestCaseData Case(String Name, String Field)
+            => new TestCaseData(Field).SetName($"A forged Authentication-Results field of this server is removed: {Name}")
+                                      .SetCategory(TestCategories.KnownIssue)
+                                      .SetProperty("Finding", "S-43");
+
+        yield return Case("its own authserv-id",                  "Authentication-Results: mx.hermod.test; spf=pass smtp.mailfrom=bank.example; dkim=pass header.d=bank.example; dmarc=pass header.from=bank.example\r\n");
+        yield return Case("its authserv-id in other case",        "Authentication-Results: MX.Hermod.TEST; dkim=pass header.d=bank.example; dmarc=pass header.from=bank.example\r\n");
+        yield return Case("its authserv-id, with version 1",      "Authentication-Results: mx.hermod.test 1; dmarc=pass header.from=bank.example\r\n");
+
+    }
+
+    [TestCaseSource(nameof(ForgedAuthServIds))]
+    [Description("RFC 8601 §5: \"any MTA conforming to this specification MUST delete any discovered instance of this header field that claims, by virtue of its authentication service identifier, to have been added within its trust boundary but that did not come directly from another trusted MTA. For example, an MTA for example.com receiving a message MUST delete or otherwise obscure any instance of this header field bearing an authentication service identifier indicating that the header field was added within example.com prior to adding its own header fields\" - or a sender writes \"dmarc=pass\" for the reader's filters itself")]
+    public async Task A_forged_Authentication_Results_field_of_this_server_is_removed(String Forged)
+    {
+
+        var marker = Marker();
+        var (final, stored, explanation) = await Deliver("client.example", "sender@client.example",
+                                                         Forged + Message("From: <ceo@bank.example>\r\n", marker), marker);
+
+        var fields = AllAuthenticationResults(stored);
+        var ours   = fields.Where(field => AuthServId(field).Id.Equals("mx.hermod.test", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        Assert.Multiple(() => {
+            Assert.That(final?.Code, Is.EqualTo(250),                  explanation);
+            Assert.That(ours,        Has.Count.EqualTo(1),             "one Authentication-Results field of mx.hermod.test - its own: " + String.Join(" | ", fields));
+            Assert.That(fields.FirstOrDefault(), Is.EqualTo(ours.FirstOrDefault()), "its own is the topmost");
+            Assert.That(String.Join(" | ", ours), Does.Not.Contain("bank.example"), "nothing of the forged one");
+        });
+
+    }
+
+
+    [Test(Description = "RFC 8601 §5: \"An MTA SHOULD remove any instance of this header field bearing a version (express or implied) that it does not support. However, an MTA MUST remove such a header field if the SMTP connection [SMTP] relaying the message is not from a trusted internal MTA\" - version 1 is the only one there is")]
+    [Category(TestCategories.KnownIssue)]
+    [Property("Finding", "S-44")]
+    public async Task An_Authentication_Results_field_of_a_version_not_supported_is_removed()
+    {
+
+        var marker = Marker();
+        var (final, stored, explanation) = await Deliver("client.example", "sender@client.example",
+                                                         "Authentication-Results: mx.elsewhere.example 2; dmarc=pass header.from=bank.example\r\n" +
+                                                         Message("From: <ceo@bank.example>\r\n", marker), marker);
+
+        var fields = AllAuthenticationResults(stored);
+
+        Assert.Multiple(() => {
+            Assert.That(final?.Code, Is.EqualTo(250), explanation);
+            Assert.That(fields.Where(field => AuthServId(field).Version is { } version && version != "1"), Is.Empty,
+                        "no field of version 2: " + String.Join(" | ", fields));
+        });
+
+    }
+
+    #endregion
+
+    #region S-45: what SPF authenticated, and what it did not (RFC 8601 §2.7.2)
+
+    [Test(Description = "RFC 8601 §2.7.2: \"If the retrieved sender policies used to evaluate SPF do not contain explicit provisions for authenticating the local-part ... of an address, the \"pvalue\" reported along with results for this mechanism SHOULD NOT include the local-part or the following \"@\" character\"; §4: \"an MTA adding this header field SHOULD NOT include any data that have not been authenticated by the method(s) being applied\" - an SPF pass for client.example says nothing of alice")]
+    [Category(TestCategories.KnownIssue)]
+    [Property("Finding", "S-45")]
+    public async Task The_SPF_result_names_the_domain_SPF_authenticated_not_the_local_part()
+    {
+
+        Publish("spf-domain.test", Spf: "v=spf1 ip4:127.0.0.1 -all");
+
+        var marker = Marker();
+        var (final, stored, explanation) = await Deliver("client.example", "alice@spf-domain.test",
+                                                         Message("From: <alice@spf-domain.test>\r\n", marker), marker);
+        var results = AuthenticationResults(stored);
+
+        Assert.Multiple(() => {
+            Assert.That(final?.Code,                                         Is.EqualTo(250), explanation);
+            Assert.That(Says(results, "spf=pass"),                            Is.True,         results);
+            Assert.That(Says(results, "smtp.mailfrom=spf-domain.test"),       Is.True,         "the domain SPF authenticated: " + results);
+            Assert.That(results,                                              Does.Not.Contain("alice@"), results);
+        });
+
+    }
+
+    #endregion
+
 }

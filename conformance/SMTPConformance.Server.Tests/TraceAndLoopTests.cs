@@ -324,4 +324,55 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
 
     #endregion
 
+
+    #region S-46: the WITH of an SMTPUTF8 transaction (RFC 6531 §3.7.3)
+
+    /// <summary>
+    /// One message to alice with the given MAIL parameters; the topmost Received field, unfolded.
+    /// </summary>
+    private async Task<(String? Received, String Explanation)> ReceivedFor(String MailParameters)
+    {
+
+        await using var client = await Server.ConnectAndEhloAsync();
+        var marker = Marker();
+
+        var mail  = await client.CommandAsync($"MAIL FROM:<sender@client.example>{MailParameters}");
+        var rcpt  = await client.CommandAsync("RCPT TO:<alice@hermod.test>");
+        Assume.That(mail.Code, Is.EqualTo(250), Explain(client));
+        Assume.That(rcpt.Code, Is.EqualTo(250), Explain(client));
+
+        var (_, final) = await client.DataAsync(RawSmtpClientExtensions.Message("sender@client.example", "alice@hermod.test", marker, "hello"));
+        Assume.That(final?.Code, Is.EqualTo(250), Explain(client));
+
+        var stored = await Server.Storage.WaitForMarkerAsync(marker);
+
+        return (stored is null ? null : Unfolded(stored, "Received"), Explain(client));
+
+    }
+
+    [Test(Description = "RFC 6531 §3.7.3: \"The protocol value of the 'WITH' clause when this extension is used is one of the SMTPUTF8 values specified in the \"IANA Considerations\" section of this document\" - UTF8SMTP, UTF8SMTPA, UTF8SMTPS, UTF8SMTPSA (§4.3)")]
+    [Category(TestCategories.KnownIssue)]
+    [Property("Finding", "S-46")]
+    public async Task An_SMTPUTF8_transaction_is_received_with_UTF8SMTP()
+    {
+
+        var (received, explanation) = await ReceivedFor(" SMTPUTF8");
+
+        Assert.That(received, Does.Match(@"\swith\s+UTF8SMTP(\s|;)"), received + explanation);
+
+    }
+
+    [Test(Description = "RFC 3848 §1: a transaction without SMTPUTF8 after EHLO is received \"with ESMTP\" - a guard")]
+    [Property("Finding", "S-46")]
+    public async Task A_transaction_without_SMTPUTF8_is_received_with_ESMTP()
+    {
+
+        var (received, explanation) = await ReceivedFor("");
+
+        Assert.That(received, Does.Match(@"\swith\s+ESMTP(\s|;)"), received + explanation);
+
+    }
+
+    #endregion
+
 }

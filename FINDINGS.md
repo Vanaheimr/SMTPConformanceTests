@@ -63,7 +63,11 @@ refer to `63e6df5c`. The fourteenth (O-23 and on, D-14 and D-15, C-19) tests REQ
 (RFC 8689) beyond the option itself: which MX hosts a message that requires TLS may go to,
 what follows when one cannot take it, a bounce that carries the option and the bounce of a
 message that does, the TLS-Required header field, and the option as the submission client
-gives it; its line numbers refer to `efbaf986`.
+gives it; its line numbers refer to `efbaf986`. The fifteenth (S-43 to S-47) tests the
+header fields the server writes into a message: Authentication-Results - what it keeps of
+those the message brought along (RFC 8601 §5), and what it says SPF authenticated (§2.7.2)
+- and the Received field of an SMTPUTF8 transaction (RFC 6531 §3.7.3); its line numbers
+refer to `5fed035a`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -71,7 +75,13 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [S-43](#s-43) | medium | trace | An Authentication-Results field the message brought along, with this server's authserv-id, is kept: a sender writes "dmarc=pass" for the reader's filters | 3 |
+| [S-44](#s-44) | low | trace | An Authentication-Results field of a version not supported is kept | 1 |
+| [S-45](#s-45) | low | trace | The SPF result names the local-part of the reverse-path, which SPF did not authenticate | 1 |
+| [S-46](#s-46) | low | SMTPUTF8 | An SMTPUTF8 transaction is received "with ESMTP", not "with UTF8SMTP" | 1 |
+| [S-47](#s-47) | low | SMTPUTF8 | A server named in U-labels writes A-labels into the Received field of an SMTPUTF8 transaction | 1 |
 
 ### Closed
 
@@ -951,6 +961,64 @@ Test: `A_parameter_given_twice_is_501` - RET, ENVID, SIZE, NOTIFY, ORCPT; guard:
 Fixed: RET, ENVID, SIZE, NOTIFY, ORCPT and MT-PRIORITY given a second time are "501 5.5.4
 ... given more than once", with the same value too; any other parameter given twice with
 the same value - SMTPUTF8, BODY, which smtplib adds of its own - is still taken.
+
+### S-43
+**Open.** **An Authentication-Results field of this server's, brought along, is kept**
+(`SMTPSession.cs:1430`: the server's own field goes above the message as it came;
+nothing of the message's header is looked at). RFC 8601 §5: "any MTA conforming to this
+specification MUST delete any discovered instance of this header field that claims, by
+virtue of its authentication service identifier, to have been added within its trust
+boundary but that did not come directly from another trusted MTA. For example, an MTA for
+example.com receiving a message MUST delete or otherwise obscure any instance of this
+header field bearing an authentication service identifier indicating that the header field
+was added within example.com prior to adding its own header fields." A sender writes
+"Authentication-Results: mx.hermod.test; dkim=pass header.d=bank.example; dmarc=pass
+header.from=bank.example" into its message, and the mailbox holds two fields of
+mx.hermod.test - the filter or MUA that trusts that authserv-id reads either. Test:
+`A_forged_Authentication_Results_field_of_this_server_is_removed` - the authserv-id as it
+is, in other case, with version 1.
+
+### S-44
+**Open.** **An Authentication-Results field of a version not supported is kept** (as S-43).
+RFC 8601 §5: "An MTA SHOULD remove any instance of this header field bearing a version
+(express or implied) that it does not support. However, an MTA MUST remove such a header
+field if the SMTP connection [SMTP] relaying the message is not from a trusted internal
+MTA" - and Hermod has no notion of one. Version 1 is the only one there is: "Authentication-
+Results: mx.elsewhere.example 2; dmarc=pass header.from=bank.example" is delivered as it
+came. Test: `An_Authentication_Results_field_of_a_version_not_supported_is_removed`.
+
+### S-45
+**Open.** **The SPF result names the local-part of the reverse-path** (`SMTPSession.cs:1740`:
+"smtp.mailfrom=" and the whole reverse-path). RFC 8601 §2.7.2: "If the retrieved sender
+policies used to evaluate SPF do not contain explicit provisions for authenticating the
+local-part (see Section 3.4.1 of [MAIL]) of an address, the "pvalue" reported along with
+results for this mechanism SHOULD NOT include the local-part or the following "@"
+character"; §4: "an MTA adding this header field SHOULD NOT include any data that have not
+been authenticated by the method(s) being applied". An SPF pass for spf-domain.test reads
+"spf=pass smtp.mailfrom=alice@spf-domain.test" - as if alice had been authenticated. Test:
+`The_SPF_result_names_the_domain_SPF_authenticated_not_the_local_part`.
+
+### S-46
+**Open.** **An SMTPUTF8 transaction is received "with ESMTP"** (`SMTPSession.cs:1797`: the
+protocol is ESMTP, with S for TLS and A for AUTH, whatever MAIL said). RFC 6531 §3.7.3:
+"The protocol value of the 'WITH' clause when this extension is used is one of the SMTPUTF8
+values specified in the "IANA Considerations" section of this document" - UTF8SMTP,
+UTF8SMTPA, UTF8SMTPS, UTF8SMTPSA (§4.3); §3.1 item 11: "their use should be reflected in
+the trace field WITH keywords as appropriate [RFC3848]". Test:
+`An_SMTPUTF8_transaction_is_received_with_UTF8SMTP`; guard:
+`A_transaction_without_SMTPUTF8_is_received_with_ESMTP`.
+
+### S-47
+**Open.** **A server named in U-labels writes A-labels into the Received field of an
+SMTPUTF8 transaction** (`SMTPSession.cs:1815`: "by" `ServerName`, `:1971`: the A-labels of
+the host name, always - S-36). RFC 6531 §3.7.3: "When an SMTPUTF8-aware SMTP server adds a
+trace field to a message that was or will be transmitted with the SMTPUTF8 parameter
+included in the MAIL commands, that server SHOULD use the U-label form for
+internationalized domain names in the new trace field"; and only "If the messages that
+include trace fields are sent ... without the SMTPUTF8 parameter included in the MAIL
+commands, trace field values must conform to RFC 5321". Test:
+`In_an_SMTPUTF8_transaction_the_server_names_itself_in_U_labels_in_the_Received_field`;
+guard: `Without_SMTPUTF8_the_server_names_itself_in_A_labels_in_the_Received_field`.
 
 ---
 

@@ -13,7 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-24, Hermod `5fed035a`):** 1097 tests, **all pass**. A fourteenth round
+**State (2026-11-24, Hermod `5fed035a`):** 1106 tests, 1099 pass, 7 fail on 5 open
+findings. A fifteenth round tested the header fields the server writes into a message -
+Authentication-Results, and the Received field of an SMTPUTF8 transaction - 9 tests, 5
+findings. The heaviest: an Authentication-Results field with the server's own authserv-id,
+written into the message by its sender, is kept, so a sender writes "dmarc=pass" for the
+reader's filters itself ([S-43](FINDINGS.md#s-43)); and the SPF result names the
+local-part of the reverse-path, which SPF did not authenticate ([S-45](FINDINGS.md#s-45)).
+A fourteenth round
 tested REQUIRETLS (RFC 8689) beyond the option itself - which MX hosts a message that
 requires TLS may go to, what follows when one cannot take it, the bounces of such a
 message, "TLS-Required: No", and the option as the submission client gives it - 18 tests,
@@ -321,7 +328,8 @@ vectors, and the four Linux tools.
 | RFC 4954 §4 to §6 SMTP AUTH in detail: the length of a response (RFC 4616 §2), base64, the end of an exchange, temporary failures, AUTH=<> to a smart host, the clients' initial response and challenges | 20 | 0 | ~~S-37~~ to ~~S-40~~, ~~O-19~~, ~~O-20~~, ~~C-17~~, ~~C-18~~ fixed |
 | RFC 5321 §3.8 a server that shuts down, §3.1, §5.1, RFC 7504 §3 a next hop that refuses the session; RFC 3461 §4.5, RFC 1870 §6 parameters given twice | 15 | 0 | ~~S-41~~, ~~S-42~~, ~~O-21~~, ~~O-22~~ fixed |
 | RFC 8689 REQUIRETLS: the MX hosts a message that requires TLS goes to, 5.7.30 and 5.7.10, its bounces, "TLS-Required: No", the submission client | 18 | 0 | ~~O-23~~ to ~~O-27~~, ~~D-14~~, ~~D-15~~, ~~C-19~~ fixed |
-| **Total** | **1097** | **0** | |
+| RFC 8601 §2.7.2, §5 Authentication-Results; RFC 6531 §3.7.3 the Received field of an SMTPUTF8 transaction | 9 | 7 | S-43 to S-47 |
+| **Total** | **1106** | **7** | |
 
 ## External test partners
 

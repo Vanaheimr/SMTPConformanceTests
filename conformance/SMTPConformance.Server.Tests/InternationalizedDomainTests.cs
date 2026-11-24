@@ -340,4 +340,61 @@ public sealed class InternationalizedHostnameTests : HermodServerTestBase
 
     #endregion
 
+
+    #region S-47: the server's name in the Received field of an SMTPUTF8 transaction
+
+    private async Task<(String? By, String Explanation)> ReceivedBy(String MailParameters)
+    {
+
+        await using var client = await Server.ConnectAndEhloAsync();
+        var marker = Marker();
+
+        var mail  = await client.CommandAsync($"MAIL FROM:<sender@client.example>{MailParameters}");
+        var rcpt  = await client.CommandAsync("RCPT TO:<alice@hermod.test>");
+        Assume.That(mail.Code, Is.EqualTo(250), Explain(client));
+        Assume.That(rcpt.Code, Is.EqualTo(250), Explain(client));
+
+        var (_, final) = await client.DataAsync(RawSmtpClientExtensions.Message("sender@client.example", "alice@hermod.test", marker, "hello"));
+        Assume.That(final?.Code, Is.EqualTo(250), Explain(client));
+
+        var stored = await Server.Storage.WaitForMarkerAsync(marker);
+
+        if (stored is null)
+            return (null, Explain(client));
+
+        // The topmost Received field - this server's - unfolded; its "by" clause.
+        var end      = stored.Raw.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+        var received = Regex.Split(end >= 0 ? stored.Raw[..end] : stored.Raw, "\r\n(?![ \t])").
+                           FirstOrDefault(field => field.StartsWith("Received:", StringComparison.OrdinalIgnoreCase));
+        var by       = received is null ? null : Regex.Match(Regex.Replace(received, "\r\n[ \t]+", " "), @"\sby\s+(?<by>[^\s;]+)");
+
+        return (by is { Success: true } ? by.Groups["by"].Value : null, Explain(client));
+
+    }
+
+    [Test(Description = "RFC 6531 §3.7.3: \"When an SMTPUTF8-aware SMTP server adds a trace field to a message that was or will be transmitted with the SMTPUTF8 parameter included in the MAIL commands, that server SHOULD use the U-label form for internationalized domain names in the new trace field\"")]
+    [Category(TestCategories.KnownIssue)]
+    [Property("Finding", "S-47")]
+    public async Task In_an_SMTPUTF8_transaction_the_server_names_itself_in_U_labels_in_the_Received_field()
+    {
+
+        var (by, explanation) = await ReceivedBy(" SMTPUTF8");
+
+        Assert.That(by, Is.EqualTo("mx.bücher.test"), explanation);
+
+    }
+
+    [Test(Description = "RFC 6531 §3.7.3: \"If the messages that include trace fields are sent ... without the SMTPUTF8 parameter included in the MAIL commands, trace field values must conform to RFC 5321\" - A-labels (S-36), a guard")]
+    [Property("Finding", "S-47")]
+    public async Task Without_SMTPUTF8_the_server_names_itself_in_A_labels_in_the_Received_field()
+    {
+
+        var (by, explanation) = await ReceivedBy("");
+
+        Assert.That(by, Is.EqualTo("mx.xn--bcher-kva.test"), explanation);
+
+    }
+
+    #endregion
+
 }
