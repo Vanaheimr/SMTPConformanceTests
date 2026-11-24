@@ -54,7 +54,12 @@ server and the clients give themselves (RFC 6531 §3.7.1); its line numbers refe
 beyond its dialogue (RFC 4954 §4 to §6): how long a SASL response may be (RFC 4616 §2),
 the base64 it is written in, how an exchange ends, a user store that cannot be asked, the
 AUTH parameter the relay owes a smart host it signed in to, and the initial response and
-the challenges of the two clients; its line numbers refer to `21fe948d`.
+the challenges of the two clients; its line numbers refer to `21fe948d`. The thirteenth
+(S-41 and S-42, O-21 and O-22) tests the edges of a session: what a server says when it
+is stopped (RFC 5321 §3.8), a parameter that may be given once given twice (RFC 3461
+§4.5, RFC 1870 §6), and a next hop that refuses the session - at the first of its MX
+hosts, or at one of its addresses (RFC 5321 §3.1, §5.1, RFC 7504 §3); its line numbers
+refer to `63e6df5c`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -62,7 +67,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [O-21](#o-21) | medium | outbound | A 554 or 521 greeting of the first MX host bounces the message: the other MX hosts of the domain are never tried | 2 |
+| [O-22](#o-22) | medium | outbound | A refused session at one address of a multihomed next hop ends the attempt: its other addresses are never tried | 2 |
+| [S-41](#s-41) | low | server | A server that is stopped closes every session without a word: no 421 | 4 |
+| [S-42](#s-42) | low | server | RET, ENVID, SIZE, NOTIFY and ORCPT given twice with the same value are taken, not 501 | 5 |
 
 ### Closed
 
@@ -893,6 +903,33 @@ Fixed: an exception of the user store is `AuthResult.TemporaryFailure`, "454 4.7
 Temporary authentication failure", for PLAIN, LOGIN, SCRAM-SHA-256 and EXTERNAL - neither
 counted as a failed attempt nor delayed.
 
+### S-41
+**Open.** **A server that is stopped closes every session without a word**
+(`SMTPSession.cs:1977`: a read cancelled by `SMTPServer.Stop`, `SMTPServer.cs:445`, is
+taken for a lost connection, and the session ends; no reply). RFC 5321 §3.8: "An SMTP
+server MUST NOT intentionally close the connection under normal operational circumstances
+(see Section 7.8) except: ... After detecting the need to shut down the SMTP service and
+returning a 421 response code. This response code can be issued after the server receives
+any command or, if necessary, asynchronously from command receipt"; and "An SMTP server
+that is forcibly shut down via external means SHOULD attempt to send a line containing a
+421 response code to the SMTP client before exiting". A client in the middle of a
+transaction sees the connection drop, and cannot tell a server that went away from a
+network that broke. Test: `A_server_that_shuts_down_says_421_before_it_closes` - after
+the greeting, after EHLO, in a mail transaction, in the middle of DATA.
+
+### S-42
+**Open.** **A parameter that may be given once, given twice with the same value, is
+taken** (`ESMTPParameters.cs:106`: a keyword given twice is refused only with two
+different values, and MT-PRIORITY always). RFC 3461 §4.5: "The RET and ENVID parameters
+MUST NOT appear more than once each in any single MAIL command. If more than one of
+either of these parameters appears in a MAIL command, the ESMTP server SHOULD respond
+with "501 syntax error in parameters or arguments"", and the same for NOTIFY and ORCPT on
+RCPT; RFC 1870 §6: "Only one SIZE parameter may be specified in a single MAIL command".
+"MAIL FROM:<...> RET=HDRS RET=HDRS" is 250. The rule that takes SMTPUTF8 twice -
+CPython's smtplib adds one of its own next to its caller's - holds for every parameter.
+Test: `A_parameter_given_twice_is_501` - RET, ENVID, SIZE, NOTIFY, ORCPT; guard:
+`Each_parameter_once_is_taken`.
+
 ---
 
 ## Submission client (`SMTPSubmissionClient`)
@@ -1449,6 +1486,34 @@ with CR LF. A password of 400 octets - a token, a generated one - makes an AUTH 
 
 Fixed: when "AUTH PLAIN" and the response would pass 512 octets with CR LF, the response
 follows the empty 334 challenge.
+
+### O-21
+**Open.** **A 554 or 521 greeting of the first MX host bounces the message**
+(`SMTPOutboundClient.cs:495`: a greeting that is not 2yz is the result of the attempt;
+`:288`: a permanent failure ends the delivery, "don't try other MX hosts"). RFC 5321
+§5.1: "To provide reliable mail transmission, the SMTP client MUST be able to try (and
+retry) each of the relevant addresses in this list in order, until a delivery attempt
+succeeds"; §3.1: with a 554 greeting a server will "formally reject a mail session" -
+this session, of this client, at this host; RFC 7504 §3: a 521 greeting is "to indicate
+that the host does not accept mail under any circumstances" - the host, not the domain. A
+primary MX host that has the relay on a blocklist, or one taken out of service with a
+521, and the message bounces though the backup MX host would take it. A 421 greeting goes
+on to the next MX host already. Test:
+`A_session_refused_by_the_first_MX_host_goes_to_the_next` - 554, 521; guard: 421.
+
+### O-22
+**Open.** **A refused session at one address of a multihomed next hop ends the attempt**
+(`SMTPOutboundClient.cs:445`: `ConnectAsync` takes the first address that answers, and
+what it says is the answer of the host). RFC 5321 §5.1: "The destination host (perhaps
+taken from the preferred MX record) may be multihomed, in which case the domain name
+resolver will return a list of alternative IP addresses. ... the SMTP sender MUST try
+them in the order presented", and the list is tried "until a delivery attempt succeeds".
+A next hop with two addresses, the first of which greets 421, has every message deferred
+until that address is back - the next attempt asks it first again; one that greets 554
+has it bounced. Seen on the way, without a test: the connect timeout (`:441`) is one for
+all the addresses together, so an address that does not answer at all leaves no time for
+the next. Test:
+`A_session_refused_at_one_address_of_the_next_hop_goes_to_its_next_address` - 421, 554.
 
 ---
 

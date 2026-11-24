@@ -13,7 +13,16 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-24, Hermod `63e6df5c`):** 1064 tests, **all pass**. A twelfth round
+**State (2026-11-24, Hermod `63e6df5c`):** 1079 tests, 1066 pass, 13 fail on 4 open
+findings. A thirteenth round tested the edges of a session - what a server says when it
+is stopped, a parameter that may be given once given twice, a next hop that refuses the
+session at the first of its MX hosts or at one of its addresses - 15 tests, 4 findings.
+The heaviest: a 554 or 521 greeting of the first MX host bounced the message, and the
+other MX hosts of the domain were never tried ([O-21](FINDINGS.md#o-21)); a multihomed
+next hop whose first address refused the session was given up on, its other addresses
+never tried ([O-22](FINDINGS.md#o-22)); and a server that is stopped closed every session
+without the 421 RFC 5321 §3.8 asks for ([S-41](FINDINGS.md#s-41)).
+A twelfth round
 tested SMTP AUTH beyond its dialogue - how long a SASL response may be, the base64 it is
 written in, how an exchange ends, a user store that cannot be asked, the AUTH parameter
 the relay owes a smart host it signed in to, the initial response and the challenges of
@@ -295,7 +304,8 @@ vectors, and the four Linux tools.
 | RFC 8616 SPF, DKIM and DMARC of internationalized domains | 9 | 0 | ~~V-23~~ to ~~V-25~~ fixed |
 | Interop: swaks, smtplib, openssl s_client, smtp-sink, Postfix | 27 | 0 | ~~S-11~~, ~~C-2~~, ~~C-4~~, ~~O-3~~, ~~O-14~~ fixed |
 | RFC 4954 §4 to §6 SMTP AUTH in detail: the length of a response (RFC 4616 §2), base64, the end of an exchange, temporary failures, AUTH=<> to a smart host, the clients' initial response and challenges | 20 | 0 | ~~S-37~~ to ~~S-40~~, ~~O-19~~, ~~O-20~~, ~~C-17~~, ~~C-18~~ fixed |
-| **Total** | **1064** | **0** | |
+| RFC 5321 §3.8 a server that shuts down, §3.1, §5.1, RFC 7504 §3 a next hop that refuses the session; RFC 3461 §4.5, RFC 1870 §6 parameters given twice | 15 | 13 | S-41, S-42, O-21, O-22 |
+| **Total** | **1079** | **13** | |
 
 ## External test partners
 

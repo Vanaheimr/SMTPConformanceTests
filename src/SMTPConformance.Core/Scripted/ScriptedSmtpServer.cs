@@ -109,11 +109,11 @@ public sealed class ScriptedSmtpServer : IAsyncDisposable
         => failures;
 
 
-    private ScriptedSmtpServer(Func<ScriptedSmtpSession, Task> Script)
+    private ScriptedSmtpServer(Func<ScriptedSmtpSession, Task> Script, IPAddress? Address = null, UInt16 Port = 0)
     {
 
         script    = Script;
-        listener  = new TcpListener(IPAddress.Loopback, 0);
+        listener  = new TcpListener(Address ?? IPAddress.Loopback, Port);
         listener.Start();
 
         acceptLoop = Task.Run(AcceptLoopAsync);
@@ -128,6 +128,14 @@ public sealed class ScriptedSmtpServer : IAsyncDisposable
     /// </summary>
     public static ScriptedSmtpServer Start(SmtpServerScript Script)
         => new (Script.RunAsync);
+
+    /// <summary>
+    /// Start a server that runs a <see cref="SmtpServerScript"/> on the given address and port -
+    /// two of them on 127.0.0.1 and 127.0.0.2 with the same port are two hosts a client reaches
+    /// on the one port it knows.
+    /// </summary>
+    public static ScriptedSmtpServer Start(SmtpServerScript Script, IPAddress Address, UInt16 Port = 0)
+        => new (Script.RunAsync, Address, Port);
 
 
     private async Task AcceptLoopAsync()
