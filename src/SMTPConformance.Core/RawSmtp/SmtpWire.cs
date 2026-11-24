@@ -84,6 +84,7 @@ public class SmtpWire : IAsyncDisposable
 {
 
     private Stream         stream;
+    private readonly List<X509Certificate2> issuersSent = [];
     private readonly Byte[] buffer = new Byte[64 * 1024];
     private Int32          start;
     private Int32          end;
@@ -381,24 +382,21 @@ public class SmtpWire : IAsyncDisposable
 
         var tls = new SslStream(stream, leaveInnerStreamOpen: false);
 
-        try
-        {
+        // On Windows the context puts the issuers into the intermediate CA store for good.
+        // They come out again when this wire is disposed - not when the handshake is over
+        // here: with TLS 1.3 the server is done before the client has checked the chain,
+        // and a DANE-TA client that finds the anchor gone fails ("TLSA mismatch").
+        if (Chain is { Count: > 0 })
+            lock (issuersSent)
+                issuersSent.AddRange(Chain);
 
-            await tls.AuthenticateAsServerAsync(
-                      new SslServerAuthenticationOptions {
-                          ServerCertificateContext  = SslStreamCertificateContext.Create(Certificate, [.. Chain ?? []], offline: true),
-                          EnabledSslProtocols       = SslProtocols.Tls12 | SslProtocols.Tls13
-                      },
-                      CancellationToken
-                  );
-
-        }
-        finally
-        {
-            // On Windows the context has put the issuers into the intermediate CA store
-            // for good; the handshake is over, and the context keeps its own copies.
-            Fixtures.InstalledAuthorities.Remove(Chain ?? []);
-        }
+        await tls.AuthenticateAsServerAsync(
+                  new SslServerAuthenticationOptions {
+                      ServerCertificateContext  = SslStreamCertificateContext.Create(Certificate, [.. Chain ?? []], offline: true),
+                      EnabledSslProtocols       = SslProtocols.Tls12 | SslProtocols.Tls13
+                  },
+                  CancellationToken
+              );
 
         stream = tls;
         Transcript.AppendLine($"-- TLS {tls.SslProtocol} --");
@@ -417,6 +415,11 @@ public class SmtpWire : IAsyncDisposable
         catch
         {
             // already gone
+        }
+        lock (issuersSent)
+        {
+            Fixtures.InstalledAuthorities.Remove(issuersSent);
+            issuersSent.Clear();
         }
         GC.SuppressFinalize(this);
     }
