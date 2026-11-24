@@ -122,6 +122,12 @@ public sealed class SmtpServerScript
     /// </summary>
     public ScramEnding              ScramEnding        { get; init; } = ScramEnding.ServerFinalAsChallenge;
 
+    /// <summary>
+    /// The reply to the client-first-message of SCRAM-SHA-256 instead of the server-first-message:
+    /// a challenge that is no base64, say. Its answer is recorded, "*" is 501, anything else 535.
+    /// </summary>
+    public String?                  ScramFirstChallenge { get; init; }
+
     public String                   MailReply          { get; init; } = "250 2.1.0 Ok";
 
     /// <summary>
@@ -378,6 +384,24 @@ public sealed class SmtpServerScript
         }
 
         Record(InitialResponse, s.IsTls);
+
+        if (ScramFirstChallenge is not null)
+        {
+
+            await s.ReplyAsync(ScramFirstChallenge);
+
+            var answer = await s.ReadCommandAsync();
+            if (answer is null)
+                return;
+
+            Record(answer.Utf8, s.IsTls);
+
+            await s.ReplyAsync(answer.Utf8 == "*"
+                                   ? "501 5.7.0 Authentication cancelled"
+                                   : "535 5.7.8 Authentication credentials invalid");
+            return;
+
+        }
 
         // gs2-header up to its second comma, then client-first-message-bare.
         var clientFirst  = Unb64(InitialResponse);

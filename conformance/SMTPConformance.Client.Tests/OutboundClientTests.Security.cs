@@ -138,6 +138,7 @@ public sealed partial class OutboundClientTests
     private static async Task<SendResult> SendWithCredentials(ScriptedSmtpServer Server,
                                                               String             SmartHost                   = "relay.test",
                                                               Boolean            SmartHostAuthWithoutTls     = false,
+                                                              String             Password                    = "relay-secret",
                                                               Func<String, System.Security.Cryptography.X509Certificates.X509Certificate2?, System.Security.Cryptography.X509Certificates.X509Chain?, SslPolicyErrors, Boolean>? Validator = null)
     {
 
@@ -150,7 +151,7 @@ public sealed partial class OutboundClientTests
                           SmartHost                = SmartHost,
                           SmartHostPort            = org.GraphDefined.Vanaheimr.Hermod.IPPort.Parse(Server.Port),
                           SmartHostUsername        = "relay-user",
-                          SmartHostPassword        = "relay-secret",
+                          SmartHostPassword        = Password,
                           SmartHostAuthWithoutTls  = SmartHostAuthWithoutTls,
                           ConnectTimeoutMs         = 3_000,
                           ReadTimeoutMs            = 10_000,

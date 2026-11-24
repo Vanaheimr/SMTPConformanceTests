@@ -53,12 +53,14 @@ public sealed partial class OutboundClientTests
     /// <param name="Body">The body lines of the message.</param>
     /// <param name="BeforeDelivery">A change to the queued message before the first attempt.</param>
     /// <param name="Config">The QueueProcessor's configuration.</param>
+    /// <param name="Client">The relay's client; by default one for the next hop as its smart host, without credentials.</param>
     private static async Task<RelayRun> RelayThroughHermod(ScriptedSmtpServer     NextHop,
                                                            String                 MailFrom,
                                                            String[]               RcptTo,
                                                            String[]?              Body             = null,
                                                            Action<QueuedMail>?    BeforeDelivery   = null,
-                                                           QueueProcessorConfig?  Config           = null)
+                                                           QueueProcessorConfig?  Config           = null,
+                                                           SMTPOutboundClient?    Client           = null)
     {
 
         await using var hermod = await HermodSmtpServerFixture.StartAsync(new() { RequireAuthForRelay = false });
@@ -83,7 +85,7 @@ public sealed partial class OutboundClientTests
         var reports   = new CapturingMailQueue();
         var logger    = new CapturingLogger();
         var bounces   = new BounceHandler(new SMTPServerConfig { Hostname = "relay.hermod.test" }, reports, logger);
-        var processor = new QueueProcessor(hermod.Queue, ClientFor(NextHop), bounces,
+        var processor = new QueueProcessor(hermod.Queue, Client ?? ClientFor(NextHop), bounces,
                                            Config ?? new QueueProcessorConfig { DomainCooldownSeconds = 0 }, logger);
 
         await processor.StartAsync();

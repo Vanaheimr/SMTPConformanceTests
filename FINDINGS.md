@@ -8,49 +8,53 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod
-`21fe948d`** (Styx `a6b9f9fb`), which closes every finding of all eleven rounds and of
-the follow-up E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the
-observations the first one left without a test; its line numbers refer to `96a8048d`.
-The third (O-1 and on, C-11) tests `SMTPOutboundClient`, the relay side, which the first
-two did not test at all; its line numbers refer to `d2d608d2`. The fourth (D-, M- and
-N-) tests what the relay owes beyond delivery: the reports to the sender (DSN), MTA-STS
-and DANE; its line numbers refer to `306f2d59`. The fifth (V- and P-) tests what
-Hermod's SMTP gained between `bbbf88b6` and `4b8be28a` - SPF, DKIM and DMARC on inbound
-mail, DNS blocklists, recipient checks, the AUTH configuration, submission to the
-application, outbound mail to public addresses only, smart host credentials, DKIM
-signing, the file queue after a crash and the certificate chain; its line numbers refer
-to `4b8be28a`. The sixth (A-, R-, T-, Q-, L-, V-3 and V-4) tests the parts of Hermod's
-SMTP no round had tested: ARC (RFC 8617), the DMARC reports (RFC 7489 §7), TLS reporting
-(RFC 8460), MT-PRIORITY (RFC 6710) and the connection and recipient limits; its line
-numbers refer to `287d1c43`, under `libs/Hermod/Hermod/SMTP/`. The seventh (E-, I-, K-
-and G-) tests what of Hermod's mail code no round had tested, none of it changed since:
-MIME and the message format as Hermod builds and reads mail (RFC 2045 to 2047, 2231,
-5322), the reports that arrive (DSN, DMARC, TLS-RPT), message disposition notifications
-(RFC 8098), PGP/MIME (RFC 3156) and the Public Suffix List under DMARC; its line numbers
-refer to `72c2366d`. E-14 to E-16 follow it up: what the older `EMail.Parse` makes of a
-Content-Type that is not written in lower case, as the MIME reader would read it, seen
-while fixing the MDN findings; their line numbers refer to `0504586f`. The eighth (V-5
-and on, O-9 and on, P-2 and P-3) tests what of SPF, DKIM and the way to the next hop the
-earlier rounds took for granted: how check_host() comes to its result (RFC 7208 §4 to
-§6), what a DKIM verifier checks of a signature and its key record before it hashes
-anything (RFC 6376 §6.1, RFC 8301), how the relay finds its MX hosts (RFC 5321 §5.1),
-and the DKIM keys Hermod makes; its line numbers refer to `887a8795`. The ninth (V-18
-and on, S-20 and on, C-12 and C-13) tests when a DMARC policy is applied at all (RFC
-7489 §6.6.2, §6.6.3) and SASL in its details: SCRAM-SHA-256 on both sides (RFC 5802, RFC
-7677, RFC 4422 §3) and EXTERNAL (RFC 4422 Appendix A); its line numbers refer to
-`a687f198`. The tenth (S-28 and on, O-13 and O-14, C-14, D-13) tests what RFC 5321 asks
-of a server beyond its commands, and of a client beyond its dialogue: the trace fields
-and final delivery (§4.4), loop detection (§6.3), the paths of MAIL and RCPT as the
-grammar of §4.1.2 has them - source routes, quoted local parts -, HELP, EXPN and VRFY,
-the timeouts of the clients (§4.5.3.2), and SMTPUTF8 in ORCPT and in bounces (RFC 6533),
-and the ORCPT the relay writes (RFC 3461 §4.2); its line numbers refer to `1e2e04d9`. The
-eleventh (O-15 and on, C-15 and on, S-35 and on, V-23 and on) tests how the two clients
-read a reply code - by its first digit, as RFC 5321 §4.2.1 has it, and 552 to RCPT as
-§4.5.3.1.10 has it - and internationalized domain names wherever Hermod meets one: in the
-DNS lookups of the relay, of SPF, DKIM and DMARC (RFC 6531 §3.2, RFC 8616), in the local
-domains of the server, and in the names the server and the clients give themselves (RFC
-6531 §3.7.1); its line numbers refer to `a9d149de`.
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `21fe948d`**
+(Styx `a6b9f9fb`), which closes every finding of all eleven rounds and of the follow-up
+E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
+first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
+on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
+all; its line numbers refer to `d2d608d2`. The fourth (D-, M- and N-) tests what the
+relay owes beyond delivery: the reports to the sender (DSN), MTA-STS and DANE; its line
+numbers refer to `306f2d59`. The fifth (V- and P-) tests what Hermod's SMTP gained
+between `bbbf88b6` and `4b8be28a` - SPF, DKIM and DMARC on inbound mail, DNS blocklists,
+recipient checks, the AUTH configuration, submission to the application, outbound mail to
+public addresses only, smart host credentials, DKIM signing, the file queue after a crash
+and the certificate chain; its line numbers refer to `4b8be28a`. The sixth (A-, R-, T-,
+Q-, L-, V-3 and V-4) tests the parts of Hermod's SMTP no round had tested: ARC (RFC
+8617), the DMARC reports (RFC 7489 §7), TLS reporting (RFC 8460), MT-PRIORITY (RFC 6710)
+and the connection and recipient limits; its line numbers refer to `287d1c43`, under
+`libs/Hermod/Hermod/SMTP/`. The seventh (E-, I-, K- and G-) tests what of Hermod's mail
+code no round had tested, none of it changed since: MIME and the message format as Hermod
+builds and reads mail (RFC 2045 to 2047, 2231, 5322), the reports that arrive (DSN,
+DMARC, TLS-RPT), message disposition notifications (RFC 8098), PGP/MIME (RFC 3156) and
+the Public Suffix List under DMARC; its line numbers refer to `72c2366d`. E-14 to E-16
+follow it up: what the older `EMail.Parse` makes of a Content-Type that is not written in
+lower case, as the MIME reader would read it, seen while fixing the MDN findings; their
+line numbers refer to `0504586f`. The eighth (V-5 and on, O-9 and on, P-2 and P-3) tests
+what of SPF, DKIM and the way to the next hop the earlier rounds took for granted: how
+check_host() comes to its result (RFC 7208 §4 to §6), what a DKIM verifier checks of a
+signature and its key record before it hashes anything (RFC 6376 §6.1, RFC 8301), how the
+relay finds its MX hosts (RFC 5321 §5.1), and the DKIM keys Hermod makes; its line
+numbers refer to `887a8795`. The ninth (V-18 and on, S-20 and on, C-12 and C-13) tests
+when a DMARC policy is applied at all (RFC 7489 §6.6.2, §6.6.3) and SASL in its details:
+SCRAM-SHA-256 on both sides (RFC 5802, RFC 7677, RFC 4422 §3) and EXTERNAL (RFC 4422
+Appendix A); its line numbers refer to `a687f198`. The tenth (S-28 and on, O-13 and O-14,
+C-14, D-13) tests what RFC 5321 asks of a server beyond its commands, and of a client
+beyond its dialogue: the trace fields and final delivery (§4.4), loop detection (§6.3),
+the paths of MAIL and RCPT as the grammar of §4.1.2 has them - source routes, quoted
+local parts -, HELP, EXPN and VRFY, the timeouts of the clients (§4.5.3.2), and SMTPUTF8
+in ORCPT and in bounces (RFC 6533), and the ORCPT the relay writes (RFC 3461 §4.2); its
+line numbers refer to `1e2e04d9`. The eleventh (O-15 and on, C-15 and on, S-35 and on,
+V-23 and on) tests how the two clients read a reply code - by its first digit, as RFC
+5321 §4.2.1 has it, and 552 to RCPT as §4.5.3.1.10 has it - and internationalized domain
+names wherever Hermod meets one: in the DNS lookups of the relay, of SPF, DKIM and DMARC
+(RFC 6531 §3.2, RFC 8616), in the local domains of the server, and in the names the
+server and the clients give themselves (RFC 6531 §3.7.1); its line numbers refer to
+`a9d149de`. The twelfth (S-37 and on, O-19 and O-20, C-17 and C-18) tests SMTP AUTH
+beyond its dialogue (RFC 4954 §4 to §6): how long a SASL response may be (RFC 4616 §2),
+the base64 it is written in, how an exchange ends, a user store that cannot be asked, the
+AUTH parameter the relay owes a smart host it signed in to, and the initial response and
+the challenges of the two clients; its line numbers refer to `21fe948d`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -58,7 +62,16 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [O-19](#o-19) | medium | outbound | The relay signs in to its smart host and leaves AUTH=<> out of MAIL FROM: the smart host takes every message, forwarded ones too, for one its account submitted | 2 |
+| [S-40](#s-40) | medium | AUTH | A user store that cannot be asked is 535, "credentials invalid", not 454: every client is told its password is wrong | 2 |
+| [S-37](#s-37) | low | AUTH | The longest PLAIN response - 255 octets of authzid, authcid and passwd each - is "500 Line too long" | 2 |
+| [S-38](#s-38) | low | AUTH | Spaces and tabs in a SASL response are ignored, not refused: what is no base64 signs in | 4 |
+| [S-39](#s-39) | low | AUTH | A line too long in an AUTH exchange leaves the exchange open: the next command is taken for a SASL response | 1 |
+| [O-20](#o-20) | low | outbound | AUTH PLAIN goes with its initial response, however long: an AUTH line of more than 512 octets | 1 |
+| [C-17](#c-17) | low | client | AUTH PLAIN goes with its initial response, however long: an AUTH line of more than 512 octets | 1 |
+| [C-18](#c-18) | low | client | A SCRAM challenge that is no base64 is not cancelled with "*": the client throws, and its QUIT is taken for the response | 2 |
 
 ### Closed
 
@@ -809,6 +822,61 @@ address-literal ), Domain the LDH grammar of §4.1.2). Test:
 Fixed: the server names itself by the A-labels of its `Hostname` - in the greeting, the
 reply to EHLO, the 221, the 421 of a timeout and the "by" of the Received field.
 
+### S-37
+**Open.** **The longest PLAIN response is "500 Line too long"** (`SMTPSession.cs:135`,
+`ReadLineAsync(config.MaxCommandLineLength)` for every line, the lines of an AUTH
+exchange included; `SMTPServerConfig.cs:100`, 1024 octets). RFC 4616 §2: "Servers MUST be
+capable of accepting authzid, authcid, and passwd productions up to and including 255
+octets" - 767 octets of PLAIN message, 1024 of base64; RFC 4954 §4: "Note that these
+[BASE64] strings can be much longer than normal SMTP commands. Clients and servers MUST
+be able to handle the maximum encoded size of challenges and responses generated by their
+supported authentication mechanisms. This requirement is independent of any line length
+limitations the client or server may have in other parts of its protocol implementation.
+(At the time of writing of this document, 12288 octets is considered to be a sufficient
+line length limit for handling of deployed authentication mechanisms.)" "AUTH PLAIN " and
+the 1024 octets are 1037 with CR LF, the response alone after "334 " 1026: both are "500
+5.5.6 Line too long", for credentials that are right. Tests:
+`The_longest_PLAIN_initial_response_signs_in`,
+`The_longest_PLAIN_response_after_the_challenge_signs_in`;
+`A_long_identity_and_password_without_authzid_sign_in` - the same account, 684 octets of
+base64 - is the guard.
+
+### S-38
+**Open.** **Spaces and tabs in a SASL response are ignored, not refused**
+(`AuthHandler.cs:60`, `Convert.FromBase64String`, which skips white space;
+`SMTPSession.cs:441`, the initial response is all that follows the mechanism, spaces
+included). RFC 4954 §4: "servers and clients MUST reject (and not ignore) any character
+not explicitly allowed by the BASE64 alphabet, and MUST reject any sequence of BASE64
+characters that contains the pad character ('=') anywhere other than the end of the
+string"; its grammar has initial-response = base64 / "=", and AUTH one SP before it.
+"AUTH PLAIN AGFsaWNl AGNvcnJl...", the same with a tab after the 334, or with a space at
+the end, are 235. Test: `A_response_that_is_no_base64_is_refused`, four cases; a pad
+character inside the response and a response without its pad characters, which
+`Convert.FromBase64String` refuses already, are the guards.
+
+### S-39
+**Open.** **A line too long in an AUTH exchange leaves the exchange open**
+(`SMTPSession.cs:142`: "500 5.5.6 Line too long", and `continue` - `_inAuthExchange`,
+`:193`, stays set). RFC 4954 §4: "If, during an authentication exchange, the server
+receives a line that is longer than the server's authentication buffer, the server fails
+the AUTH command with the 500 reply." The AUTH command failed, the client goes on with a
+command - and the server takes it for the next SASL response: "NOOP" is valid base64, and
+is answered "535 5.7.8"; a MAIL is answered 501 and lost, a new AUTH counts as a failed
+attempt. Test: `A_line_too_long_in_the_exchange_fails_the_AUTH_command`;
+`A_cancelled_exchange_is_over` is the guard.
+
+### S-40
+**Open.** **A user store that cannot be asked is 535** (`PlainAuthHandler.cs:83`,
+`LoginAuthHandler.cs:99`: any exception is "535 5.7.8 Authentication failed"). RFC 4954
+§6: "454 4.7.0 Temporary authentication failure - This response to the AUTH command
+indicates that the authentication failed due to a temporary server failure. The client
+SHOULD NOT prompt the user for another password in this case"; 535 5.7.8 is "invalid or
+insufficient authentication credentials". With the user database down, every client is
+told its password is wrong: a mail program asks its user for another one, an application
+gives up on credentials that are right, a fail2ban counts the failures - and the
+`ConnectionTracker` does, `MaxAuthAttemptsPerIpPerHour`. Test:
+`A_user_store_that_is_down_is_a_temporary_failure`, PLAIN and LOGIN.
+
 ---
 
 ## Submission client (`SMTPSubmissionClient`)
@@ -1031,6 +1099,26 @@ the argument refuses it, and the HELO name SPF checks (RFC 7208 §2.3) is no nam
 DNS. Test: `The_client_says_EHLO_with_its_name_in_A_labels`.
 
 Fixed: `EhloArgument` is the A-labels of `LocalDomain`, in EHLO and in HELO.
+
+### C-17
+**Open.** **AUTH PLAIN goes with its initial response, however long**
+(`SMTPSubmissionClient.cs:742`, `AuthPlainAsync`). RFC 4954 §4: "If use of the initial
+response argument would cause the AUTH command to exceed this length, the client MUST NOT
+use the initial response parameter (and instead proceed as defined in Section 5.1 of
+[SASL])" - 512 octets with CR LF (RFC 5321 §4.5.3.1.4). A password of 400 octets makes an
+AUTH line of 553. Test: `A_long_password_goes_without_an_initial_response`.
+
+### C-18
+**Open.** **A SCRAM challenge that is no base64 is not cancelled**
+(`SMTPSubmissionClient.cs:666`, `Convert.FromBase64String` of the server-first-message,
+which throws on what is no base64 and skips white space; CRAM-MD5 at `:768` likewise).
+RFC 4954 §4: "If the client cannot BASE64 decode any of the server's challenges, it MUST
+cancel the authentication using the "*" response. In particular, servers and clients MUST
+reject (and not ignore) any character not explicitly allowed by the BASE64 alphabet". The
+FormatException ends the attempt with `ExceptionOccurred`, and the QUIT the client sends
+next is what the server reads as the response to its challenge; a challenge with a space
+in it is decoded as if it had none. Test: `A_challenge_that_is_no_base64_is_cancelled`,
+two cases.
 
 ---
 
@@ -1301,6 +1389,34 @@ label or A-label [RFC5890]) domains in the EHLO command." Test:
 `The_relay_says_EHLO_with_its_name_in_A_labels`.
 
 Fixed: EHLO and HELO carry the A-labels of `LocalHostname`.
+
+### O-19
+**Open.** **The relay signs in to its smart host and leaves AUTH=<> out of MAIL FROM**
+(`SMTPOutboundClient.cs:682`, `DsnCommands.MailFrom` at `DsnCommands.cs:176`: no AUTH
+parameter, ever). RFC 4954 §5: "If the server does not sufficiently trust the
+authenticated identity of the client, or if the client is not authenticated, then the
+server MUST behave as if the AUTH=<> parameter was supplied", and "If an AUTH=<>
+parameter was supplied, either explicitly or due to the requirement in the previous
+paragraph, then the server MUST supply the AUTH=<> parameter when relaying the message to
+any server which it has authenticated to using the AUTH extension." Without it the smart
+host takes the message for one submitted by the account the relay signed in with ("The
+server MUST NOT treat the message as having been originally submitted by the
+authenticated identity" is what AUTH=<> asks of it): a message forwarded from anybody, a
+bounce, mail of an unauthenticated client - all of it the account's own. Test:
+`A_message_relayed_through_a_smart_host_signed_in_to_carries_AUTH_empty`, two cases: from
+a client that did not authenticate, with AUTH=<> from the client;
+`A_next_hop_without_AUTH_gets_no_AUTH_parameter` is the guard.
+
+### O-20
+**Open.** **AUTH PLAIN goes with its initial response, however long**
+(`SMTPOutboundClient.cs:815`: "AUTH PLAIN " and the base64 of the credentials, always).
+RFC 4954 §4: "Note that the AUTH command is still subject to the line length limitations
+defined in [SMTP]. If use of the initial response argument would cause the AUTH command
+to exceed this length, the client MUST NOT use the initial response parameter (and
+instead proceed as defined in Section 5.1 of [SASL])" - RFC 5321 §4.5.3.1.4: 512 octets
+with CR LF. A password of 400 octets - a token, a generated one - makes an AUTH line of
+565, which a smart host that keeps to 512 refuses or cuts. Test:
+`A_long_password_goes_to_the_smart_host_without_an_initial_response`.
 
 ---
 

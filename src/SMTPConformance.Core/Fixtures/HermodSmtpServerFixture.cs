@@ -66,6 +66,12 @@ public sealed class HermodSmtpServerFixtureOptions
     public IEnumerable<KeyValuePair<String, String>>  Users                    { get; init; } = [ new("alice", "correct horse battery staple") ];
 
     /// <summary>
+    /// The user store the server asks, instead of the one made of <see cref="Users"/> - one
+    /// that fails, say.
+    /// </summary>
+    public IUserStore?                                UserStore                { get; init; }
+
+    /// <summary>
     /// Rate limits. The default keeps the server's per-session limits but drops the
     /// three-second penalty after a failed AUTH, which would otherwise dominate the
     /// runtime of every negative authentication test.
@@ -243,7 +249,7 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
         var server  = new SMTPServer(config,
                                      Options.Dns,
                                      log,
-                                     users,
+                                     Options.UserStore ?? users,
                                      Options.WithQueue ? queue : null,
                                      Options.RateLimits,
                                      storage,
