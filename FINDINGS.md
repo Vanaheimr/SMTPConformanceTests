@@ -67,7 +67,10 @@ gives it; its line numbers refer to `efbaf986`. The fifteenth (S-43 to S-47) tes
 header fields the server writes into a message: Authentication-Results - what it keeps of
 those the message brought along (RFC 8601 §5), and what it says SPF authenticated (§2.7.2)
 - and the Received field of an SMTPUTF8 transaction (RFC 6531 §3.7.3); its line numbers
-refer to `5fed035a`.
+refer to `5fed035a`. The sixteenth (C-20 and C-21) tests SMTPUTF8 as the submission client
+uses it: an internationalized message to a server without SMTPUTF8 (RFC 6531 §3.2, §3.5),
+and the parameter with a message that does not need it (§3.4); its line numbers refer to
+`44ad353b`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -75,7 +78,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [C-20](#c-20) | medium | SMTPUTF8 | The submission client sends an internationalized message to a server without SMTPUTF8 - UTF-8 addresses in MAIL and RCPT, UTF-8 in the header | 4 |
+| [C-21](#c-21) | low | SMTPUTF8 | The submission client asks for SMTPUTF8 for a message whose only non-ASCII octets are in an 8-bit body | 1 |
 
 ### Closed
 
@@ -1307,6 +1313,32 @@ cleartext, if its next hop offers no STARTTLS -, and the caller is told `ok`. Te
 
 Fixed: a message that requires TLS goes to no server that does not offer REQUIRETLS inside
 TLS - `failed`, and no MAIL; to one that does, with REQUIRETLS on MAIL.
+
+### C-20
+**Open.** **The submission client sends an internationalized message to a server without
+SMTPUTF8** (`SMTPSubmissionClient.cs:1388`: SMTPUTF8 goes on MAIL when the server offers it
+and the message needs it - and when the server does not, the message goes all the same,
+without it). RFC 6531 §3.2: "If the SMTPUTF8 SMTP extension is not offered by the SMTP
+server, the SMTPUTF8-aware SMTP client MUST NOT transmit an internationalized email address
+and MUST NOT transmit a mail message containing internationalized mail headers"; §3.5: "An
+SMTPUTF8-aware SMTP client MUST NOT send an internationalized message to an SMTP server that
+does not support SMTPUTF8". "RCPT TO:<jörg@scripted.test>" goes in UTF-8 to a server that
+never said it reads it - and so do "MAIL FROM:<jörg@client.example>", "RCPT
+TO:<you@bücher.test>" (A-labels are "not considered to be internationalized", U-labels are)
+and "Subject: Grüße aus Köln". Test: `No_server_without_SMTPUTF8_gets_an_internationalized_message`
+- a recipient and a sender with a UTF-8 local-part, a recipient in U-labels, a Subject in
+UTF-8; guard: `An_internationalized_message_goes_with_SMTPUTF8_to_a_server_that_offers_it`.
+
+### C-21
+**Open.** **The submission client asks for SMTPUTF8 for an 8-bit body** (`SMTPSubmissionClient.cs:636`:
+a message needs SMTPUTF8 when any character of it, the body's included, is not ASCII). RFC
+6531 §3.4: "If the SMTPUTF8-aware SMTP client is aware that neither the envelope nor the
+message being sent requires any of the SMTPUTF8 extension capabilities, it SHOULD NOT supply
+the SMTPUTF8 parameter with the MAIL command"; §3.6 - an 8-bit body is BODY=8BITMIME's (RFC
+6152). A message with an ASCII envelope and header and "Grüße aus Köln" in its UTF-8 body
+goes with "BODY=8BITMIME SMTPUTF8"; a fix of C-20 that kept this test would refuse it to
+every server without SMTPUTF8. Test: `An_8bit_body_alone_goes_without_SMTPUTF8`; guard:
+`An_8bit_body_alone_goes_to_a_server_without_SMTPUTF8`.
 
 ---
 
