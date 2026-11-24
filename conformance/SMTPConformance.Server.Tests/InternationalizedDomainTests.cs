@@ -373,7 +373,6 @@ public sealed class InternationalizedHostnameTests : HermodServerTestBase
     }
 
     [Test(Description = "RFC 6531 §3.7.3: \"When an SMTPUTF8-aware SMTP server adds a trace field to a message that was or will be transmitted with the SMTPUTF8 parameter included in the MAIL commands, that server SHOULD use the U-label form for internationalized domain names in the new trace field\"")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "S-47")]
     public async Task In_an_SMTPUTF8_transaction_the_server_names_itself_in_U_labels_in_the_Received_field()
     {

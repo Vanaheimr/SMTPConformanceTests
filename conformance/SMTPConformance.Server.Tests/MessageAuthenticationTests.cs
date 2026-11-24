@@ -406,7 +406,6 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
 
         TestCaseData Case(String Name, String Field)
             => new TestCaseData(Field).SetName($"A forged Authentication-Results field of this server is removed: {Name}")
-                                      .SetCategory(TestCategories.KnownIssue)
                                       .SetProperty("Finding", "S-43");
 
         yield return Case("its own authserv-id",                  "Authentication-Results: mx.hermod.test; spf=pass smtp.mailfrom=bank.example; dkim=pass header.d=bank.example; dmarc=pass header.from=bank.example\r\n");
@@ -440,7 +439,6 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8601 §5: \"An MTA SHOULD remove any instance of this header field bearing a version (express or implied) that it does not support. However, an MTA MUST remove such a header field if the SMTP connection [SMTP] relaying the message is not from a trusted internal MTA\" - version 1 is the only one there is")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "S-44")]
     public async Task An_Authentication_Results_field_of_a_version_not_supported_is_removed()
     {
@@ -465,7 +463,6 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
     #region S-45: what SPF authenticated, and what it did not (RFC 8601 §2.7.2)
 
     [Test(Description = "RFC 8601 §2.7.2: \"If the retrieved sender policies used to evaluate SPF do not contain explicit provisions for authenticating the local-part ... of an address, the \"pvalue\" reported along with results for this mechanism SHOULD NOT include the local-part or the following \"@\" character\"; §4: \"an MTA adding this header field SHOULD NOT include any data that have not been authenticated by the method(s) being applied\" - an SPF pass for client.example says nothing of alice")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "S-45")]
     public async Task The_SPF_result_names_the_domain_SPF_authenticated_not_the_local_part()
     {

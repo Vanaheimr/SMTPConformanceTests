@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `5fed035a`**
-(Styx `a6b9f9fb`), which closes every finding of all fourteen rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `44ad353b`**
+(Styx `a6b9f9fb`), which closes every finding of all fifteen rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -75,13 +75,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [S-43](#s-43) | medium | trace | An Authentication-Results field the message brought along, with this server's authserv-id, is kept: a sender writes "dmarc=pass" for the reader's filters | 3 |
-| [S-44](#s-44) | low | trace | An Authentication-Results field of a version not supported is kept | 1 |
-| [S-45](#s-45) | low | trace | The SPF result names the local-part of the reverse-path, which SPF did not authenticate | 1 |
-| [S-46](#s-46) | low | SMTPUTF8 | An SMTPUTF8 transaction is received "with ESMTP", not "with UTF8SMTP" | 1 |
-| [S-47](#s-47) | low | SMTPUTF8 | A server named in U-labels writes A-labels into the Received field of an SMTPUTF8 transaction | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -122,6 +116,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-30](#s-30) | medium | trace | The EHLO argument went into Received unchecked: a client wrote the TCP-info it liked in front of the true one | 3 | [Vanaheimr/Hermod#287](https://github.com/Vanaheimr/Hermod/pull/287) |
 | [S-35](#s-35) | medium | IDN | A local domain in the other form - U-labels for A-labels, or the reverse - was a relay request, refused | 2 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
 | [S-40](#s-40) | medium | AUTH | A user store that could not be asked was 535, "credentials invalid", not 454: every client was told its password is wrong | 2 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
+| [S-43](#s-43) | medium | trace | An Authentication-Results field the message brought along, with this server's authserv-id, was kept: a sender wrote "dmarc=pass" for the reader's filters | 3 | [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308) |
 | [S-21](#s-21) | low | SCRAM | The channel binding flag "y" was refused, though Hermod offers no -PLUS | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [S-22](#s-22) | low | SCRAM | The c= attribute was not compared with the GS2 header | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [S-23](#s-23) | low | SCRAM | A requested authorization identity (a=) was ignored: alice asking to act as bob was alice | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
@@ -138,6 +133,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-39](#s-39) | low | AUTH | A line too long in an AUTH exchange left the exchange open: the next command was taken for a SASL response | 1 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
 | [S-41](#s-41) | low | server | A server that was stopped closed every session without a word: no 421 | 4 | [Vanaheimr/Hermod#302](https://github.com/Vanaheimr/Hermod/pull/302) |
 | [S-42](#s-42) | low | server | RET, ENVID, SIZE, NOTIFY and ORCPT given twice with the same value were taken, not 501 | 5 | [Vanaheimr/Hermod#302](https://github.com/Vanaheimr/Hermod/pull/302) |
+| [S-44](#s-44) | low | trace | An Authentication-Results field of a version not supported was kept | 1 | [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308) |
+| [S-45](#s-45) | low | trace | The SPF result named the local-part of the reverse-path, which SPF did not authenticate | 1 | [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308) |
+| [S-46](#s-46) | low | SMTPUTF8 | An SMTPUTF8 transaction was received "with ESMTP", not "with UTF8SMTP" | 1 | [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308) |
+| [S-47](#s-47) | low | SMTPUTF8 | A server named in U-labels wrote A-labels into the Received field of an SMTPUTF8 transaction | 1 | [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308) |
 | [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
 | [O-1](#o-1) | **high** | outbound | Every reply but EHLO's was read as one line: a multi-line reply shifted all that followed | 5 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [O-2](#o-2) | **high** | outbound | A recipient the next hop refused disappeared: no bounce, no retry | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
@@ -293,7 +292,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 441 tests for these are part of the merge gate now; the observations the first
+The 448 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -963,7 +962,8 @@ Fixed: RET, ENVID, SIZE, NOTIFY, ORCPT and MT-PRIORITY given a second time are "
 the same value - SMTPUTF8, BODY, which smtplib adds of its own - is still taken.
 
 ### S-43
-**Open.** **An Authentication-Results field of this server's, brought along, is kept**
+**Closed** in [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308)
+(`364c9cb8`). **An Authentication-Results field of this server's, brought along, was kept**
 (`SMTPSession.cs:1430`: the server's own field goes above the message as it came;
 nothing of the message's header is looked at). RFC 8601 §5: "any MTA conforming to this
 specification MUST delete any discovered instance of this header field that claims, by
@@ -978,8 +978,15 @@ mx.hermod.test - the filter or MUA that trusts that authserv-id reads either. Te
 `A_forged_Authentication_Results_field_of_this_server_is_removed` - the authserv-id as it
 is, in other case, with version 1.
 
+Fixed: before the server adds its own field, it takes out of the header every
+Authentication-Results field whose authserv-id is its name - compared as a domain name,
+in any case, A-labels and U-labels alike, after a comment, quoted or not
+(`AuthenticationResultsFields.WithoutForeign`). It trusts no other MTA to add fields in
+its name. Fields of other ADMDs are passed on as they came.
+
 ### S-44
-**Open.** **An Authentication-Results field of a version not supported is kept** (as S-43).
+**Closed** in [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308)
+(`364c9cb8`). **An Authentication-Results field of a version not supported was kept** (as S-43).
 RFC 8601 §5: "An MTA SHOULD remove any instance of this header field bearing a version
 (express or implied) that it does not support. However, an MTA MUST remove such a header
 field if the SMTP connection [SMTP] relaying the message is not from a trusted internal
@@ -987,8 +994,11 @@ MTA" - and Hermod has no notion of one. Version 1 is the only one there is: "Aut
 Results: mx.elsewhere.example 2; dmarc=pass header.from=bank.example" is delivered as it
 came. Test: `An_Authentication_Results_field_of_a_version_not_supported_is_removed`.
 
+Fixed: a field of any version but 1 is taken out with them.
+
 ### S-45
-**Open.** **The SPF result names the local-part of the reverse-path** (`SMTPSession.cs:1740`:
+**Closed** in [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308)
+(`364c9cb8`). **The SPF result named the local-part of the reverse-path** (`SMTPSession.cs:1740`:
 "smtp.mailfrom=" and the whole reverse-path). RFC 8601 §2.7.2: "If the retrieved sender
 policies used to evaluate SPF do not contain explicit provisions for authenticating the
 local-part (see Section 3.4.1 of [MAIL]) of an address, the "pvalue" reported along with
@@ -998,8 +1008,11 @@ been authenticated by the method(s) being applied". An SPF pass for spf-domain.t
 "spf=pass smtp.mailfrom=alice@spf-domain.test" - as if alice had been authenticated. Test:
 `The_SPF_result_names_the_domain_SPF_authenticated_not_the_local_part`.
 
+Fixed: smtp.mailfrom is the domain of the reverse-path.
+
 ### S-46
-**Open.** **An SMTPUTF8 transaction is received "with ESMTP"** (`SMTPSession.cs:1797`: the
+**Closed** in [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308)
+(`364c9cb8`). **An SMTPUTF8 transaction was received "with ESMTP"** (`SMTPSession.cs:1797`: the
 protocol is ESMTP, with S for TLS and A for AUTH, whatever MAIL said). RFC 6531 §3.7.3:
 "The protocol value of the 'WITH' clause when this extension is used is one of the SMTPUTF8
 values specified in the "IANA Considerations" section of this document" - UTF8SMTP,
@@ -1008,8 +1021,11 @@ the trace field WITH keywords as appropriate [RFC3848]". Test:
 `An_SMTPUTF8_transaction_is_received_with_UTF8SMTP`; guard:
 `A_transaction_without_SMTPUTF8_is_received_with_ESMTP`.
 
+Fixed: "with UTF8SMTP", and with S and A as ESMTP has them.
+
 ### S-47
-**Open.** **A server named in U-labels writes A-labels into the Received field of an
+**Closed** in [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308)
+(`364c9cb8`). **A server named in U-labels wrote A-labels into the Received field of an
 SMTPUTF8 transaction** (`SMTPSession.cs:1815`: "by" `ServerName`, `:1971`: the A-labels of
 the host name, always - S-36). RFC 6531 §3.7.3: "When an SMTPUTF8-aware SMTP server adds a
 trace field to a message that was or will be transmitted with the SMTPUTF8 parameter
@@ -1019,6 +1035,10 @@ include trace fields are sent ... without the SMTPUTF8 parameter included in the
 commands, trace field values must conform to RFC 5321". Test:
 `In_an_SMTPUTF8_transaction_the_server_names_itself_in_U_labels_in_the_Received_field`;
 guard: `Without_SMTPUTF8_the_server_names_itself_in_A_labels_in_the_Received_field`.
+
+Fixed: in the Received field and as the authserv-id of Authentication-Results the server
+names itself in its U-labels for an SMTPUTF8 transaction, in its A-labels otherwise - the
+authserv-id was the configured name as it stood, U-labels in every message.
 
 ---
 

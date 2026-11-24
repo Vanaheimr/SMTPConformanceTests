@@ -351,7 +351,6 @@ public sealed partial class TraceAndLoopTests : HermodServerTestBase
     }
 
     [Test(Description = "RFC 6531 §3.7.3: \"The protocol value of the 'WITH' clause when this extension is used is one of the SMTPUTF8 values specified in the \"IANA Considerations\" section of this document\" - UTF8SMTP, UTF8SMTPA, UTF8SMTPS, UTF8SMTPSA (§4.3)")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "S-46")]
     public async Task An_SMTPUTF8_transaction_is_received_with_UTF8SMTP()
     {
