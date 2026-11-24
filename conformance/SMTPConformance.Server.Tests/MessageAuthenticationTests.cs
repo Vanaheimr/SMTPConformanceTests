@@ -431,7 +431,9 @@ public sealed class MessageAuthenticationTests : HermodServerTestBase
             Assert.That(final?.Code, Is.EqualTo(250),                  explanation);
             Assert.That(ours,        Has.Count.EqualTo(1),             "one Authentication-Results field of mx.hermod.test - its own: " + String.Join(" | ", fields));
             Assert.That(fields.FirstOrDefault(), Is.EqualTo(ours.FirstOrDefault()), "its own is the topmost");
-            Assert.That(String.Join(" | ", ours), Does.Not.Contain("bank.example"), "nothing of the forged one");
+            // The server's own field names the From: domain too ("dmarc=none header.from=bank.example");
+            // what it cannot say is what only the forged one said.
+            Assert.That(String.Join(" | ", ours), Does.Not.Contain("dmarc=pass").And.Not.Contain("header.d=bank.example"), "nothing of the forged one");
         });
 
     }
