@@ -89,7 +89,6 @@ public sealed class DsnParameterTests : HermodServerTestBase
 
         TestCaseData Case(String Name, String Mail, String Rcpt)
             => new TestCaseData(Mail, Rcpt).SetName($"Given twice with the same value: {Name}")
-                                           .SetCategory(TestCategories.KnownIssue)
                                            .SetProperty("Finding", "S-42");
 
         yield return Case("RET",     "MAIL FROM:<sender@client.example> RET=HDRS RET=HDRS",         "");

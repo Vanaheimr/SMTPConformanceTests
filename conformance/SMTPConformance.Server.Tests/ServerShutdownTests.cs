@@ -24,7 +24,6 @@ public sealed class ServerShutdownTests
 
         TestCaseData Case(String Name, Func<RawSmtpClient, Task> Before)
             => new TestCaseData(Before).SetName($"Stopped with a client connected: {Name}")
-                                       .SetCategory(TestCategories.KnownIssue)
                                        .SetProperty("Finding", "S-41");
 
         yield return Case("after the greeting",          _      => Task.CompletedTask);

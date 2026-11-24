@@ -66,7 +66,7 @@ public sealed partial class OutboundClientTests
             var data = new TestCaseData(Greeting).SetName($"The first MX host greets \"{Greeting}\": the second gets the message - {Why}");
 
             return Finding
-                       ? data.SetCategory(TestCategories.KnownIssue).SetProperty("Finding", "O-21")
+                       ? data.SetProperty("Finding", "O-21")
                        : data;
 
         }
@@ -121,7 +121,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Greeting, String Why)
             => new TestCaseData(Greeting).SetName($"The first address of the next hop greets \"{Greeting}\": its second gets the message - {Why}")
-                                         .SetCategory(TestCategories.KnownIssue)
                                          .SetProperty("Finding", "O-22");
 
         yield return Case("421 4.3.2 busy, try again later",   "a refusal for now");

@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `63e6df5c`**
-(Styx `a6b9f9fb`), which closes every finding of all twelve rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `efbaf986`**
+(Styx `a6b9f9fb`), which closes every finding of all thirteen rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -67,12 +67,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [O-21](#o-21) | medium | outbound | A 554 or 521 greeting of the first MX host bounces the message: the other MX hosts of the domain are never tried | 2 |
-| [O-22](#o-22) | medium | outbound | A refused session at one address of a multihomed next hop ends the attempt: its other addresses are never tried | 2 |
-| [S-41](#s-41) | low | server | A server that is stopped closes every session without a word: no 421 | 4 |
-| [S-42](#s-42) | low | server | RET, ENVID, SIZE, NOTIFY and ORCPT given twice with the same value are taken, not 501 | 5 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -127,6 +122,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-37](#s-37) | low | AUTH | The longest PLAIN response - 255 octets of authzid, authcid and passwd each - was "500 Line too long" | 2 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
 | [S-38](#s-38) | low | AUTH | Spaces and tabs in a SASL response were ignored, not refused: what is no base64 signed in | 4 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
 | [S-39](#s-39) | low | AUTH | A line too long in an AUTH exchange left the exchange open: the next command was taken for a SASL response | 1 | [Vanaheimr/Hermod#297](https://github.com/Vanaheimr/Hermod/pull/297) |
+| [S-41](#s-41) | low | server | A server that was stopped closed every session without a word: no 421 | 4 | [Vanaheimr/Hermod#302](https://github.com/Vanaheimr/Hermod/pull/302) |
+| [S-42](#s-42) | low | server | RET, ENVID, SIZE, NOTIFY and ORCPT given twice with the same value were taken, not 501 | 5 | [Vanaheimr/Hermod#302](https://github.com/Vanaheimr/Hermod/pull/302) |
 | [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
 | [O-1](#o-1) | **high** | outbound | Every reply but EHLO's was read as one line: a multi-line reply shifted all that followed | 5 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [O-2](#o-2) | **high** | outbound | A recipient the next hop refused disappeared: no bounce, no retry | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
@@ -148,6 +145,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [O-18](#o-18) | low | outbound | A relay named in U-labels said EHLO with them | 1 | [Vanaheimr/Hermod#294](https://github.com/Vanaheimr/Hermod/pull/294) |
 | [O-19](#o-19) | medium | outbound | The relay signed in to its smart host and left AUTH=<> out of MAIL FROM: the smart host took every message, forwarded ones too, for one its account submitted | 2 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
 | [O-20](#o-20) | low | outbound | AUTH PLAIN went with its initial response, however long: an AUTH line of more than 512 octets | 1 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
+| [O-21](#o-21) | medium | outbound | A 554 or 521 greeting of the first MX host bounced the message: the other MX hosts of the domain were never tried | 2 | [Vanaheimr/Hermod#301](https://github.com/Vanaheimr/Hermod/pull/301) |
+| [O-22](#o-22) | medium | outbound | A refused session at one address of a multihomed next hop ended the attempt: its other addresses were never tried | 2 | [Vanaheimr/Hermod#301](https://github.com/Vanaheimr/Hermod/pull/301) |
 | [C-11](#c-11) | low | client | One refused recipient stopped the message for all | 1 | [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) |
 | [C-12](#c-12) | medium | SCRAM client | A 235 without the server-final-message was taken as success: the server never proved it knows the password | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [C-13](#c-13) | low | SCRAM client | The client did not normalize the password (SASLprep) | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
@@ -272,7 +271,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 410 tests for these are part of the merge gate now; the observations the first
+The 423 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -904,7 +903,8 @@ Temporary authentication failure", for PLAIN, LOGIN, SCRAM-SHA-256 and EXTERNAL 
 counted as a failed attempt nor delayed.
 
 ### S-41
-**Open.** **A server that is stopped closes every session without a word**
+**Closed** in [Vanaheimr/Hermod#302](https://github.com/Vanaheimr/Hermod/pull/302)
+(`a55c65eb`). **A server that was stopped closed every session without a word**
 (`SMTPSession.cs:1977`: a read cancelled by `SMTPServer.Stop`, `SMTPServer.cs:445`, is
 taken for a lost connection, and the session ends; no reply). RFC 5321 §3.8: "An SMTP
 server MUST NOT intentionally close the connection under normal operational circumstances
@@ -917,8 +917,14 @@ transaction sees the connection drop, and cannot tell a server that went away fr
 network that broke. Test: `A_server_that_shuts_down_says_421_before_it_closes` - after
 the greeting, after EHLO, in a mail transaction, in the middle of DATA.
 
+Fixed: a session the server stops says "421 4.3.2 ... Service shutting down, closing
+connection" before it closes - in the middle of DATA or of a BDAT chunk too, and what was
+not answered with 250 is not taken; not after QUIT or a timeout, which have had their
+reply. A client that does not read holds the shutdown up for five seconds at most.
+
 ### S-42
-**Open.** **A parameter that may be given once, given twice with the same value, is
+**Closed** in [Vanaheimr/Hermod#302](https://github.com/Vanaheimr/Hermod/pull/302)
+(`a55c65eb`). **A parameter that may be given once, given twice with the same value, was
 taken** (`ESMTPParameters.cs:106`: a keyword given twice is refused only with two
 different values, and MT-PRIORITY always). RFC 3461 §4.5: "The RET and ENVID parameters
 MUST NOT appear more than once each in any single MAIL command. If more than one of
@@ -929,6 +935,10 @@ RCPT; RFC 1870 §6: "Only one SIZE parameter may be specified in a single MAIL c
 CPython's smtplib adds one of its own next to its caller's - holds for every parameter.
 Test: `A_parameter_given_twice_is_501` - RET, ENVID, SIZE, NOTIFY, ORCPT; guard:
 `Each_parameter_once_is_taken`.
+
+Fixed: RET, ENVID, SIZE, NOTIFY, ORCPT and MT-PRIORITY given a second time are "501 5.5.4
+... given more than once", with the same value too; any other parameter given twice with
+the same value - SMTPUTF8, BODY, which smtplib adds of its own - is still taken.
 
 ---
 
@@ -1488,7 +1498,8 @@ Fixed: when "AUTH PLAIN" and the response would pass 512 octets with CR LF, the 
 follows the empty 334 challenge.
 
 ### O-21
-**Open.** **A 554 or 521 greeting of the first MX host bounces the message**
+**Closed** in [Vanaheimr/Hermod#301](https://github.com/Vanaheimr/Hermod/pull/301)
+(`2e477d77`). **A 554 or 521 greeting of the first MX host bounced the message**
 (`SMTPOutboundClient.cs:495`: a greeting that is not 2yz is the result of the attempt;
 `:288`: a permanent failure ends the delivery, "don't try other MX hosts"). RFC 5321
 §5.1: "To provide reliable mail transmission, the SMTP client MUST be able to try (and
@@ -1501,8 +1512,15 @@ primary MX host that has the relay on a blocklist, or one taken out of service w
 on to the next MX host already. Test:
 `A_session_refused_by_the_first_MX_host_goes_to_the_next` - 554, 521; guard: 421.
 
+Fixed: a greeting that is no 2yz refuses the session, not the message, and the next MX
+host is tried; a permanent failure later in the session - of the sender, the recipients,
+the content - still ends the delivery. When every MX host refused the session, the
+message bounces; when one refused only for now, or could not be reached, it is tried
+again later.
+
 ### O-22
-**Open.** **A refused session at one address of a multihomed next hop ends the attempt**
+**Closed** in [Vanaheimr/Hermod#301](https://github.com/Vanaheimr/Hermod/pull/301)
+(`2e477d77`). **A refused session at one address of a multihomed next hop ended the attempt**
 (`SMTPOutboundClient.cs:445`: `ConnectAsync` takes the first address that answers, and
 what it says is the answer of the host). RFC 5321 §5.1: "The destination host (perhaps
 taken from the preferred MX record) may be multihomed, in which case the domain name
@@ -1514,6 +1532,11 @@ has it bounced. Seen on the way, without a test: the connect timeout (`:441`) is
 all the addresses together, so an address that does not answer at all leaves no time for
 the next. Test:
 `A_session_refused_at_one_address_of_the_next_hop_goes_to_its_next_address` - 421, 554.
+
+Fixed: the addresses of a host are tried one by one, in the order the resolver gave them,
+each with a connect timeout of its own, and an address that refuses the session is
+followed by the next. When every address that answered refused it, that is the host's
+answer - for now only, if one refused only for now or could not be reached.
 
 ---
 
