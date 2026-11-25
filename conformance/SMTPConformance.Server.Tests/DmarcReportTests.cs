@@ -251,11 +251,11 @@ public sealed class DmarcReportTests
 
     #region The failure report
 
-    private static async Task<IReadOnlyList<QueuedMail>> FailureReport(Reporter Reporter, DmarcEvaluation Evaluation)
+    private static async Task<IReadOnlyList<QueuedMail>> FailureReport(Reporter Reporter, DmarcEvaluation Evaluation, IPAddress? Source = null, String EnvelopeFrom = "news@policy.test")
     {
-        await Reporter.Service.SendForensicAsync(Evaluation, source,
+        await Reporter.Service.SendForensicAsync(Evaluation, Source ?? source,
                                                  "From: <news@policy.test>\r\nTo: <alice@hermod.test>\r\nSubject: failed\r\n",
-                                                 "news@policy.test",
+                                                 EnvelopeFrom,
                                                  "mx.hermod.test; dmarc=fail header.from=policy.test");
         return [ .. Reporter.Queue.Queued ];
     }
@@ -324,6 +324,181 @@ public sealed class DmarcReportTests
         var queued = await FailureReport(reporter, Evaluation(Ruf: "mailto:ruf@policy.test", Spf: SPFResult.Fail, SpfAligned: false));
 
         Assert.That(queued, Is.Empty);
+
+    }
+
+    #endregion
+
+
+    #region R-8 to R-12: where a report goes, and what the failure report says of the message
+
+    /// <summary>
+    /// The lines of a message's header, split at CR LF, at a bare LF and at a bare CR - each
+    /// a line end to some reader.
+    /// </summary>
+    private static IEnumerable<String> HeaderLines(String Message)
+    {
+        var end = Message.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+        return Regex.Split(end >= 0 ? Message[..end] : Message, "\r\n|\r|\n");
+    }
+
+    private static DmarcEvaluation FailedEvaluation(String Ruf = "mailto:ruf@policy.test")
+        => Evaluation(Ruf: Ruf, Spf: SPFResult.Fail, SpfAligned: false, Dkim: DkimResult.Fail, DkimAligned: false, Result: DmarcResult.Fail);
+
+    private static async Task<String> FeedbackReport(DmarcEvaluation Evaluation, IPAddress? Source = null, String EnvelopeFrom = "news@policy.test")
+    {
+        using var reporter = new Reporter();
+        var mail = (await FailureReport(reporter, Evaluation, Source, EnvelopeFrom)).Single();
+        return ReportMail.Part(mail.MessageContent, "message/feedback-report").Text;
+    }
+
+
+    public static IEnumerable<TestCaseData> LineBreaksInReportUris()
+    {
+
+        TestCaseData Case(String Tag, String Name, String LineBreak)
+            => new TestCaseData(Tag, LineBreak).SetName($"A line break in a {Tag} URI makes no recipient and no header field of the report: {Name}")
+                                               .SetCategory(TestCategories.KnownIssue)
+                                               .SetProperty("Finding", "R-8");
+
+        yield return Case("rua", "CR LF", "\r\n");
+        yield return Case("ruf", "CR LF", "\r\n");
+        yield return Case("ruf", "LF",    "\n");
+
+    }
+
+    [TestCaseSource(nameof(LineBreaksInReportUris))]
+    [Description("RFC 7489 §6.4: dmarc-uri = URI (RFC 3986), which has no CR and no LF; RFC 5322 §2.2: \"A field body MUST NOT include CR and LF except when used in 'folding' and 'unfolding'\" - the policy record is the sender's to publish, and \"mailto:dmarc@policy.test<CR><LF>Bcc: victim@policy.test\", taken for an address, is a Bcc field of the report and a recipient with a line break in it")]
+    public async Task A_line_break_in_a_report_URI_makes_no_recipient_and_no_header_field(String Tag, String LineBreak)
+    {
+
+        using var reporter = new Reporter();
+
+        var uri    = $"mailto:dmarc@policy.test{LineBreak}Bcc: victim@policy.test";
+        var queued = Tag == "rua"
+                         ? await reporter.Aggregate(Evaluation(Rua: uri))
+                         : await FailureReport(reporter, FailedEvaluation(Ruf: uri));
+
+        Assert.Multiple(() => {
+            Assert.That(queued.SelectMany(mail => mail.EnvelopeTo),               Has.None.Matches<String>(address => address.IndexOfAny([ '\r', '\n' ]) >= 0), "a recipient with a line break in it");
+            Assert.That(queued.SelectMany(mail => HeaderLines(mail.MessageContent)), Has.None.EqualTo("Bcc: victim@policy.test"));
+        });
+
+    }
+
+
+    [TestCase("mailto:dmarc%21reports@policy.test",              "dmarc!reports@policy.test", TestName = "A percent-encoded character of a report URI is decoded")]
+    [TestCase("mailto:dmarc@policy.test?subject=DMARC%20report", "dmarc@policy.test",         TestName = "The header fields of a report URI are no part of its address")]
+    [Description("RFC 7489 §6.2: a comma or an exclamation point that is part of a DMARC URI \"MUST be encoded per Section 2.1 of [URI]\" - %2C and %21 - and a Mail Receiver \"MUST implement support for a \"mailto:\" URI\"; RFC 6068 §2: mailtoURI = \"mailto:\" [ to ] [ hfields ], to = addr-spec, its characters percent-encoded - the report goes to the address the URI names")]
+    [Property("Finding", "R-9")]
+    [Category(TestCategories.KnownIssue)]
+    public async Task A_report_goes_to_the_address_its_URI_names(String Uri, String Address)
+    {
+
+        using var reporter = new Reporter();
+
+        var queued = await reporter.Aggregate(Evaluation(Rua: Uri));
+
+        Assert.That(queued.SelectMany(mail => mail.EnvelopeTo), Is.EqualTo(new[] { Address }));
+
+    }
+
+
+    [Test(Description = "RFC 7489 §6.2: a mailto URI of the usual kind, with a size limit - the report goes to its address; a guard for R-9")]
+    public async Task A_report_URI_of_the_usual_kind_names_its_address()
+    {
+
+        using var reporter = new Reporter();
+
+        var queued = await reporter.Aggregate(Evaluation(Rua: "mailto:dmarc+reports@policy.test!10m"));
+
+        Assert.That(queued.SelectMany(mail => mail.EnvelopeTo), Is.EqualTo(new[] { "dmarc+reports@policy.test" }));
+
+    }
+
+
+    public static IEnumerable<TestCaseData> LineBreaksInSpfRecords()
+    {
+
+        TestCaseData Case(String Name, String LineBreak)
+            => new TestCaseData(LineBreak).SetName($"A line break in the SPF record makes no field of the failure report: {Name}")
+                                          .SetCategory(TestCategories.KnownIssue)
+                                          .SetProperty("Finding", "R-10");
+
+        yield return Case("CR LF", "\r\n");
+        yield return Case("LF",    "\n");
+        yield return Case("CR",    "\r");
+
+    }
+
+    [TestCaseSource(nameof(LineBreaksInSpfRecords))]
+    [Description("RFC 6591 §4: spf-dns = \"SPF-DNS:\" [CFWS] ( \"txt\" / \"spf\" ) [CFWS] \":\" [CFWS] domain [CFWS] \":\" [CFWS] quoted-string [CFWS] CRLF, and a quoted-string (RFC 5322 §3.2.4) has no CR and no LF but in folding - the SPF record is the sender's to publish, and \"v=spf1 -all<CR><LF>Identity-Alignment: dkim, spf\", written as it is, is a field of the report that says both identities aligned - the escaped quote it ends with notwithstanding")]
+    public async Task A_line_break_in_the_SPF_record_makes_no_field_of_the_failure_report(String LineBreak)
+    {
+
+        var feedback = await FeedbackReport(FailedEvaluation() with { SpfRecord = $"v=spf1 -all{LineBreak}Identity-Alignment: dkim, spf" });
+
+        Assert.That(Regex.Split(feedback, "\r\n|\r|\n").Where(line => line.StartsWith("Identity-Alignment:", StringComparison.OrdinalIgnoreCase)),
+                    Is.EqualTo(new[] { "Identity-Alignment: none" }), feedback);
+
+    }
+
+
+    [Test(Description = "RFC 6591 §4: SPF-DNS names the record type, the domain and the record as a quoted-string - an SPF record of the usual kind as it is; a guard for R-10")]
+    public async Task An_SPF_record_of_the_usual_kind_is_the_quoted_string_of_SPF_DNS()
+    {
+
+        var feedback = await FeedbackReport(FailedEvaluation() with { SpfRecord = "v=spf1 ip4:192.0.2.0/24 -all" });
+
+        Assert.That(Regex.Split(feedback, "\r\n"), Has.One.Matches<String>(line => Regex.IsMatch(line, @"^SPF-DNS:\s*txt\s*:\s*policy\.test\s*:\s*""v=spf1 ip4:192\.0\.2\.0/24 -all""\s*$")), feedback);
+
+    }
+
+
+    [Test(Description = "RFC 5965 §3.5: original-mail-from = \"Original-Mail-From:\" [CFWS] reverse-path [CFWS] CRLF; RFC 5321 §4.1.2: Reverse-path = Path / \"<>\", Path = \"<\" [ A-d-l \":\" ] Mailbox \">\" - the address in angle brackets")]
+    [Property("Finding", "R-11")]
+    [Category(TestCategories.KnownIssue)]
+    public async Task Original_Mail_From_is_a_reverse_path()
+    {
+
+        var feedback = await FeedbackReport(FailedEvaluation());
+
+        Assert.That(Regex.Split(feedback, "\r\n"), Has.One.EqualTo("Original-Mail-From: <news@policy.test>"), feedback);
+
+    }
+
+
+    [Test(Description = "RFC 5965 §3.5, RFC 5321 §4.1.2: the null reverse-path is \"<>\"; a guard for R-11")]
+    public async Task For_a_null_reverse_path_Original_Mail_From_is_empty_angle_brackets()
+    {
+
+        var feedback = await FeedbackReport(FailedEvaluation(), EnvelopeFrom: "");
+
+        Assert.That(Regex.Split(feedback, "\r\n"), Has.One.EqualTo("Original-Mail-From: <>"), feedback);
+
+    }
+
+
+    [Test(Description = "RFC 5965 §3.5: source-ip = \"Source-IP:\" [CFWS] ( IPv4-address-literal / IPv6-address-literal ) [CFWS] CRLF; RFC 5321 §4.1.3: IPv6-address-literal = \"IPv6:\" IPv6-addr")]
+    [Property("Finding", "R-12")]
+    [Category(TestCategories.KnownIssue)]
+    public async Task An_IPv6_Source_IP_is_an_IPv6_address_literal()
+    {
+
+        var feedback = await FeedbackReport(FailedEvaluation(), IPAddress.Parse("2001:db8::25"));
+
+        Assert.That(Regex.Split(feedback, "\r\n"), Has.One.EqualTo("Source-IP: IPv6:2001:db8::25"), feedback);
+
+    }
+
+
+    [Test(Description = "RFC 5965 §3.5, RFC 5321 §4.1.3: IPv4-address-literal = Snum 3(\".\" Snum); a guard for R-12")]
+    public async Task An_IPv4_Source_IP_is_its_dotted_quad()
+    {
+
+        var feedback = await FeedbackReport(FailedEvaluation());
+
+        Assert.That(Regex.Split(feedback, "\r\n"), Has.One.EqualTo("Source-IP: 192.0.2.25"), feedback);
 
     }
 

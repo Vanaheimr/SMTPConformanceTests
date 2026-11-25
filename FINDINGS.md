@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `1544d14a`**
-(Styx `a6b9f9fb`), which closes every finding of all seventeen rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `a95ddebc`**
+(Styx `a6b9f9fb`), which closes every finding of all eighteen rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -77,6 +77,11 @@ the caller gave them (§4.1, §4.3); its line numbers refer to `98fa0297`. The e
 (S-48 to S-50) tests the store a server keeps local mail in when it is given none of its
 own, `FileMailStorage`: what it writes on top of a message (RFC 5322 §2.2, RFC 5321 §4.4),
 and a valid message it cannot keep (RFC 5322 §3.6.4); its line numbers refer to `1544d14a`.
+The nineteenth (R-8 to R-12, T-5 and T-6) tests where the two reporters send a report and
+what the DMARC failure report says of the message: the mailto URIs of rua and ruf (RFC
+7489 §6.2, §6.4, RFC 8460 §3, RFC 6068 §2), and the fields of the failure report that come
+from DNS and from the session (RFC 6591 §4, RFC 5965 §3.5); its line numbers refer to
+`a95ddebc`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -84,7 +89,15 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [R-8](#r-8) | medium | DMARC reports | A line break in a rua or ruf URI went into the report: a Bcc field of its own, a recipient with a line break in it - and into RCPT TO | 3 |
+| [R-9](#r-9) | low | DMARC reports | A mailto URI was taken for an address: percent-encoding not decoded, its header fields part of the domain | 2 |
+| [R-10](#r-10) | medium | DMARC reports | A line break in the SPF record made a field of the failure report of its own: "Identity-Alignment: dkim, spf" | 3 |
+| [R-11](#r-11) | low | DMARC reports | Original-Mail-From was no reverse-path: the address without its angle brackets | 1 |
+| [R-12](#r-12) | low | DMARC reports | An IPv6 Source-IP was no IPv6 address literal: no "IPv6:" | 1 |
+| [T-5](#t-5) | medium | TLS-RPT | A line break in an rua URI went into the report: a Bcc field of its own, a recipient with a line break in it - and into RCPT TO | 2 |
+| [T-6](#t-6) | low | TLS-RPT | A mailto URI was taken for an address: percent-encoding not decoded, its header fields part of it | 2 |
 
 ### Closed
 
@@ -2896,6 +2909,66 @@ with pct=0 for exactly that. Test: `Under_p_reject_with_pct_0_a_failing_message_
 Fixed: pct=0 demotes p=reject to quarantine, as it does for every share pct= does not
 select.
 
+### R-8
+**Open.** **A line break in a report URI went into the report's header and its recipient**
+(`Reporting/DmarcReportService.cs:419`: the address of a mailto URI is what follows
+"mailto:", as it stands; `:203`: it is the recipient of the report, and `:219`, `:170` and
+`ArfReport.cs:65`: its To field; `DNSVerifications/DNSVerifier.cs:1538` keeps a line break
+inside a tag value). RFC 7489 §6.4: `dmarc-uri = URI [ "!" 1*DIGIT [ "k" / "m" / "g" / "t"
+] ]`, a URI as RFC 3986 has it, which has no CR and no LF; RFC 5322 §2.2: "A field body
+MUST NOT include CR and LF except when used in 'folding' and 'unfolding'". The DMARC record
+is the policy domain's to publish: `rua=mailto:dmarc@policy.test<CR><LF>Bcc:
+victim@policy.test` makes a Bcc field of the report, and a recipient with a line break in
+it, which the relay writes into RCPT TO as it is (`SMTPOutboundClient.cs:889`) - the line
+break ends the command there, and what follows is a command of its own to the next hop.
+Tests: `A_line_break_in_a_report_URI_makes_no_recipient_and_no_header_field` - rua with CR
+LF, ruf with CR LF and with LF.
+
+### R-9
+**Open.** **A mailto URI was taken for an address** (`Reporting/DmarcReportService.cs:419`:
+what follows "mailto:", percent-encoding, header fields and all). RFC 7489 §6.2: a comma or
+an exclamation point that is part of a DMARC URI "MUST be encoded per Section 2.1 of
+[URI]", and a Mail Receiver "MUST implement support for a "mailto:" URI"; RFC 6068 §2:
+`mailtoURI = "mailto:" [ to ] [ hfields ]`, `to = addr-spec *("," addr-spec )`, and "A
+number of characters that can appear in <addr-spec> MUST be percent-encoded".
+`mailto:dmarc%21reports@policy.test` names dmarc!reports@policy.test - the report went to
+"dmarc%21reports@policy.test"; `mailto:dmarc@policy.test?subject=DMARC%20report` names
+dmarc@policy.test - the report went nowhere, its host taken for
+"policy.test?subject=dmarc%20report", outside the policy domain and without its consent.
+Tests: `A_report_goes_to_the_address_its_URI_names`, two cases; guard:
+`A_report_URI_of_the_usual_kind_names_its_address`.
+
+### R-10
+**Open.** **The SPF record went into the failure report as DNS gave it**
+(`Reporting/ArfReport.cs:177` to `:180`: SPF-DNS writes the record in quotes, `\` and `"`
+escaped, and nothing else; the record as in S-48, `DNSVerifications/DNSVerifier.cs:643`).
+RFC 6591 §4: `spf-dns = "SPF-DNS:" [CFWS] ( "txt" / "spf" ) [CFWS] ":" [CFWS] domain [CFWS]
+":" [CFWS] quoted-string [CFWS] CRLF`, and a quoted-string (RFC 5322 §3.2.4) has no CR and
+no LF but in folding. The SPF record is the sender's to publish: `v=spf1 -all<CR><LF>
+Identity-Alignment: dkim, spf` makes a second Identity-Alignment field of the report, one
+that says both identities aligned - the escaped quote it ends with notwithstanding; a bare
+LF or CR does the same for a reader that takes it for a line end. Tests:
+`A_line_break_in_the_SPF_record_makes_no_field_of_the_failure_report` - CR LF, LF, CR;
+guard: `An_SPF_record_of_the_usual_kind_is_the_quoted_string_of_SPF_DNS`.
+
+### R-11
+**Open.** **Original-Mail-From was no reverse-path** (`Reporting/ArfReport.cs:88`: the
+address of MAIL FROM without its angle brackets). RFC 5965 §3.2: "The format of this field
+is defined in section 4.1.2 of [SMTP] as "Reverse-path"", and §3.5: `original-mail-from =
+"Original-Mail-From:" [CFWS] reverse-path [CFWS] CRLF`; RFC 5321 §4.1.2: `Reverse-path =
+Path / "<>"`, `Path = "<" [ A-d-l ":" ] Mailbox ">"`. The report says
+`Original-Mail-From: news@policy.test`; the null reverse-path was `<>` already. Test:
+`Original_Mail_From_is_a_reverse_path`; guard:
+`For_a_null_reverse_path_Original_Mail_From_is_empty_angle_brackets`.
+
+### R-12
+**Open.** **An IPv6 Source-IP was no IPv6 address literal** (`Reporting/ArfReport.cs:90`:
+the address as .NET writes it). RFC 5965 §3.5: `source-ip = "Source-IP:" [CFWS] (
+IPv4-address-literal / IPv6-address-literal ) [CFWS] CRLF`; RFC 5321 §4.1.3:
+`IPv6-address-literal = "IPv6:" IPv6-addr`. The failure report for a message from
+2001:db8::25 says `Source-IP: 2001:db8::25`. Test:
+`An_IPv6_Source_IP_is_an_IPv6_address_literal`; guard: `An_IPv4_Source_IP_is_its_dotted_quad`.
+
 ## TLS reporting
 
 RFC 8460 as `TlsRptReportService` reports (`TlsRptTests`, through the service directly;
@@ -2962,6 +3035,28 @@ MTA-STS or DANE policy is defined". Test:
 
 Fixed: `TrySendToMxAsync` takes the next-hop domain, for the DANE reference identifiers,
 and the policy domain, for TLS-RPT, separately.
+
+### T-5
+**Open.** **A line break in an rua URI went into the report's header and its recipient**
+(`Reporting/TlsRptResolver.cs:130`: the address of a mailto URI is what follows "mailto:",
+as it stands; `TlsRptReportService.cs:136`: it is the recipient of the report, `:159`: its
+To field). RFC 8460 §3: `tlsrpt-uri = URI`, "imported from [RFC3986]", which has no CR and
+no LF; RFC 5322 §2.2: "A field body MUST NOT include CR and LF except when used in
+'folding' and 'unfolding'". The TLSRPT record is the recipient domain's to publish:
+`rua=mailto:tlsrpt@policy.test<CR><LF>Bcc: victim@policy.test` makes a Bcc field of the
+report, and a recipient with a line break in it, which the relay writes into RCPT TO as it
+is (`SMTPOutboundClient.cs:889`), a command of its own after it. Tests:
+`A_line_break_in_an_rua_URI_makes_no_recipient_and_no_header_field` - CR LF, LF.
+
+### T-6
+**Open.** **A mailto URI was taken for an address** (`Reporting/TlsRptResolver.cs:130`).
+RFC 8460 §3: "In the case of "mailto", reports should be submitted to the specified email
+address [RFC6068]", and of a tlsrpt-uri: "commas (ASCII 0x2C), exclamation points (ASCII
+0x21), and semicolons (ASCII 0x3B) MUST be encoded"; RFC 6068 §2 as in R-9.
+`mailto:tls%21reports@policy.test` - the report went to "tls%21reports@policy.test";
+`mailto:tlsrpt@policy.test?subject=TLS%20report` - to
+"tlsrpt@policy.test?subject=TLS%20report". Tests:
+`A_report_goes_to_the_address_its_rua_URI_names`, two cases.
 
 ## Priorities and limits
 

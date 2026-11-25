@@ -13,7 +13,17 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-25, Hermod `a95ddebc`):** 1138 tests, **all pass**. An eighteenth round
+**State (2026-11-25, Hermod `a95ddebc`):** 1155 tests, 1141 pass, 14 fail on 7 open
+findings. A nineteenth round tested where the DMARC and the TLS-RPT reporter send a report
+and what the DMARC failure report says of the message - 17 tests, 7 findings: a line break
+in a rua, ruf or TLS-RPT rua URI went into the report as a header field of its own and
+into its recipient, and from there into RCPT TO ([R-8](FINDINGS.md#r-8),
+[T-5](FINDINGS.md#t-5)); a mailto URI was taken for an address, percent-encoding and
+header fields and all ([R-9](FINDINGS.md#r-9), [T-6](FINDINGS.md#t-6)); a line break in
+the SPF record made a field of the failure report of its own ([R-10](FINDINGS.md#r-10));
+Original-Mail-From was no reverse-path ([R-11](FINDINGS.md#r-11)); and an IPv6 Source-IP
+no IPv6 address literal ([R-12](FINDINGS.md#r-12)).
+An eighteenth round
 tested the store a server keeps local mail in when it is given
 none of its own - 10 tests, 3 findings: the SPF record of the sender's domain went into the
 stored header as DNS gave it, so a line break in it made a header field of its own -
@@ -354,7 +364,8 @@ vectors, and the four Linux tools.
 | RFC 6531 §3.2, §3.4, §3.5 SMTPUTF8 in the submission client | 7 | 0 | ~~C-20~~, ~~C-21~~ fixed |
 | RFC 3461 §4, §4.1, §4.3, §4.4 the DSN parameters the submission client and the relay give for an application | 15 | 0 | ~~C-22~~ to ~~C-24~~ fixed |
 | RFC 5322 §2.2, §3.6, §3.6.4, RFC 5321 §4.4 the server's default mail store | 10 | 0 | ~~S-48~~ to ~~S-50~~ fixed |
-| **Total** | **1138** | **0** | |
+| RFC 7489 §6.2, §6.4, RFC 8460 §3, RFC 6068 §2 the report URIs; RFC 6591 §4, RFC 5965 §3.5 the fields of the DMARC failure report | 17 | 14 | R-8 to R-12, T-5, T-6 |
+| **Total** | **1155** | **14** | |
 
 ## External test partners
 

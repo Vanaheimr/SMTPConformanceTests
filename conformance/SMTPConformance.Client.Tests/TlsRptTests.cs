@@ -199,4 +199,56 @@ public sealed class TlsRptTests
 
     #endregion
 
+
+    #region T-5 and T-6: where a report goes
+
+    public static IEnumerable<TestCaseData> LineBreaksInRuaUris()
+    {
+
+        TestCaseData Case(String Name, String LineBreak)
+            => new TestCaseData(LineBreak).SetName($"A line break in an rua URI makes no recipient and no header field of the report: {Name}")
+                                          .SetCategory(TestCategories.KnownIssue)
+                                          .SetProperty("Finding", "T-5");
+
+        yield return Case("CR LF", "\r\n");
+        yield return Case("LF",    "\n");
+
+    }
+
+    [TestCaseSource(nameof(LineBreaksInRuaUris))]
+    [Description("RFC 8460 §3: rua is one or more URIs (RFC 3986), which have no CR and no LF; RFC 5322 §2.2: \"A field body MUST NOT include CR and LF except when used in 'folding' and 'unfolding'\" - the TLSRPT record is the recipient domain's to publish, and \"mailto:tlsrpt@policy.test<CR><LF>Bcc: victim@policy.test\", taken for an address, is a Bcc field of the report and a recipient with a line break in it")]
+    public async Task A_line_break_in_an_rua_URI_makes_no_recipient_and_no_header_field(String LineBreak)
+    {
+
+        using var reporter = new Reporter().Publish("policy.test", $"v=TLSRPTv1; rua=mailto:tlsrpt@policy.test{LineBreak}Bcc: victim@policy.test");
+
+        var queued = await reporter.Report();
+
+        Assert.Multiple(() => {
+            Assert.That(queued.SelectMany(mail => mail.EnvelopeTo), Has.None.Matches<String>(address => address.IndexOfAny([ '\r', '\n' ]) >= 0), "a recipient with a line break in it");
+            Assert.That(queued.SelectMany(mail => Regex.Split(mail.MessageContent[..Math.Max(0, mail.MessageContent.IndexOf("\r\n\r\n", StringComparison.Ordinal))], "\r\n|\r|\n")),
+                        Has.None.EqualTo("Bcc: victim@policy.test"));
+        });
+
+    }
+
+
+    [TestCase("v=TLSRPTv1; rua=mailto:tls%21reports@policy.test",              "tls!reports@policy.test", TestName = "A percent-encoded character of an rua URI is decoded")]
+    [TestCase("v=TLSRPTv1; rua=mailto:tlsrpt@policy.test?subject=TLS%20report", "tlsrpt@policy.test",      TestName = "The header fields of an rua URI are no part of its address")]
+    [Description("RFC 8460 §3: \"In the case of \"mailto\", reports should be submitted to the specified email address [RFC6068]\"; RFC 6068 §2: mailtoURI = \"mailto:\" [ to ] [ hfields ], to = addr-spec, its characters percent-encoded - the report goes to the address the URI names")]
+    [Property("Finding", "T-6")]
+    [Category(TestCategories.KnownIssue)]
+    public async Task A_report_goes_to_the_address_its_rua_URI_names(String Record, String Address)
+    {
+
+        using var reporter = new Reporter().Publish("policy.test", Record);
+
+        var queued = await reporter.Report();
+
+        Assert.That(queued.SelectMany(mail => mail.EnvelopeTo), Is.EqualTo(new[] { Address }));
+
+    }
+
+    #endregion
+
 }
