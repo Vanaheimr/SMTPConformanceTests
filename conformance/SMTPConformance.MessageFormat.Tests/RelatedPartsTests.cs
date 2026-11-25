@@ -65,7 +65,6 @@ public sealed class RelatedPartsTests
 
         TestCaseData Case(String Name, String ContentId)
             => new TestCaseData(ContentId).SetName($"A Content-ID with a comment names its part: {Name}")
-                                          .SetCategory(TestCategories.KnownIssue)
                                           .SetProperty("Finding", "E-17");
 
         yield return Case("a comment after it",  "<logo@example.org> (the logo)");
@@ -89,7 +88,6 @@ public sealed class RelatedPartsTests
 
     [Test(Description = "RFC 2387 §3.2: start = msg-id, the Content-ID of the root - one with a comment after it is the root all the same, and the HTML of the message")]
     [Property("Finding", "E-17")]
-    [Category(TestCategories.KnownIssue)]
     public void The_root_start_names_is_found_by_a_Content_ID_with_a_comment()
     {
 
@@ -138,7 +136,6 @@ public sealed class RelatedPartsTests
 
     [Test(Description = "RFC 2183 §2.8: \"Unrecognized disposition types should be treated as `attachment'\" - a text that is not the body is listed, not lost")]
     [Property("Finding", "E-18")]
-    [Category(TestCategories.KnownIssue)]
     public void A_part_of_an_unknown_disposition_type_is_an_attachment()
     {
 
@@ -175,7 +172,6 @@ public sealed class RelatedPartsTests
 
     [Test(Description = "RFC 2183 §2.1: \"A bodypart should be marked `inline' if it is intended to be displayed automatically upon display of the message\", and §2.3: the filename parameter is for either disposition - a text marked inline is the body, a file name or not")]
     [Property("Finding", "E-19")]
-    [Category(TestCategories.KnownIssue)]
     public void A_text_marked_inline_with_a_file_name_is_the_body()
     {
 
@@ -213,7 +209,6 @@ public sealed class RelatedPartsTests
 
         TestCaseData Case(String Name, String ContentId)
             => new TestCaseData(ContentId).SetName($"A Content-ID that is no msg-id is not written: {Name}")
-                                          .SetCategory(TestCategories.KnownIssue)
                                           .SetProperty("Finding", "E-20");
 
         yield return Case("no @",                 "logo");
@@ -256,7 +251,6 @@ public sealed class RelatedPartsTests
 
     [Test(Description = "RFC 2387 §3.1: \"The type parameter must be specified and its value is the MIME media type of the \"root\" body part\" - the first part, where there is no start")]
     [Property("Finding", "E-21")]
-    [Category(TestCategories.KnownIssue)]
     public void A_multipart_related_has_the_type_of_its_root()
     {
 

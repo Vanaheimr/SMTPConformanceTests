@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `67cf52e5`**
-(Styx `a6b9f9fb`), which closes every finding of all nineteen rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `cb9c13c1`**
+(Styx `a6b9f9fb`), which closes every finding of all twenty rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -93,13 +93,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [E-17](#e-17) | low | MIME | A Content-ID with a comment was not read as a msg-id: the part its cid: URL names, and the root start= names, not found | 3 |
-| [E-18](#e-18) | medium | MIME | A part of a disposition type the reader does not know was lost: neither the body nor an attachment | 1 |
-| [E-19](#e-19) | low | MIME | A text marked inline with a file name was taken for an attachment: the message had no body | 1 |
-| [E-20](#e-20) | low | MIME | A Content-ID was written whether it was a msg-id or not: no @, a space, a non-ASCII character as "?" | 3 |
-| [E-21](#e-21) | low | MIME | A multipart/related was written without its type parameter | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -319,6 +313,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [E-14](#e-14) | medium | message format | `EMail.Parse` read the media type and the name `boundary` with case: a `Multipart/Mixed` had no parts, a `Multipart/Signed` with a valid signature was "no signature", a `Multipart/Encrypted` could not be decrypted | 9 | [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) |
 | [E-15](#e-15) | low | message format | `EMail.Parse` took white space around `=` and comments in the Content-Type for part of the names and values | 3 | [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) |
 | [E-16](#e-16) | low | message format | `EMail.Parse` took a body for a multipart when its Content-Type held the text `boundary=`, not when it was a multipart: multipart/related had no parts, a text/plain lost what followed a line `--` | 2 | [Vanaheimr/Hermod#276](https://github.com/Vanaheimr/Hermod/pull/276) |
+| [E-17](#e-17) | low | MIME | A Content-ID with a comment was not read as a msg-id: the part its cid: URL names, and the root start= names, not found | 3 | [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) |
+| [E-18](#e-18) | medium | MIME | A part of a disposition type the reader does not know was lost: neither the body nor an attachment | 1 | [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) |
+| [E-19](#e-19) | low | MIME | A text marked inline with a file name was taken for an attachment: the message had no body | 1 | [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) |
+| [E-20](#e-20) | low | MIME | A Content-ID was written whether it was a msg-id or not: no @, a space, a non-ASCII character as "?" | 3 | [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) |
+| [E-21](#e-21) | low | MIME | A multipart/related was written without its type parameter | 1 | [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) |
 | [I-5](#i-5) | low | DMARC reader | A date_range outside years 1 to 9999 threw `ArgumentOutOfRangeException` | 2 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-6](#i-6) | low | DSN | A next hop's status code with leading zeros went into the DSN as it was | 3 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-7](#i-7) | low | TLS-RPT ingest | The preamble of the multipart was read as a report part | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -331,7 +330,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 486 tests for these are part of the merge gate now; the observations the first
+The 495 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3549,7 +3548,7 @@ the enum does not list; `EMailBodypart` splits a body when it is a multipart wit
 boundary, and the boundary is read for multiparts only.
 
 ### E-17
-**Open.** **A Content-ID with a comment was not read as a msg-id**
+**Closed** in [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) (`3d2d3e03`). **A Content-ID with a comment was not read as a msg-id**
 (`EMail/Mime/MimeMessage.cs:176`: the field body trimmed of white space and of `<` and `>`
 at its ends, nothing else; `:786`: `FindByContentId` compares with that; `:692`, `:693`: the
 root of a multipart/related is the part whose Content-ID is start= so read). RFC 2045 §7:
@@ -3563,8 +3562,12 @@ found - the HTML of the message is lost when the root is not the first part. Tes
 `The_root_start_names_is_found_by_a_Content_ID_with_a_comment`; guard:
 `A_Content_ID_of_the_usual_kind_names_its_part`.
 
+Fixed: a Content-ID is read as the msg-id it is, as Message-ID is - the comments around it
+no part of it - and so is start=; `FindByContentId` takes a Content-ID either way. One that
+is no msg-id is read as before.
+
 ### E-18
-**Open.** **A part of a disposition type the reader does not know was lost**
+**Closed** in [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) (`3d2d3e03`). **A part of a disposition type the reader does not know was lost**
 (`EMail/Mime/MimeContentType.cs:505`: `IsAttachment` is "attachment" and nothing else;
 `EMail/Mime/MimeMessage.cs:146` to `:148`: a text is an attachment only with a file name).
 RFC 2183 §2.8: "Unrecognized disposition types should be treated as `attachment'". A
@@ -3573,8 +3576,11 @@ the first text is - nor an attachment: the reader lists it nowhere. Test:
 `A_part_of_an_unknown_disposition_type_is_an_attachment`; guard:
 `A_text_marked_attachment_is_an_attachment`.
 
+Fixed: `MimeContentDisposition.IsAttachment` is every disposition but inline, and the new
+`IsInline` is inline: a part of a type the reader does not know is an attachment.
+
 ### E-19
-**Open.** **A text marked inline with a file name was taken for an attachment**
+**Closed** in [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) (`3d2d3e03`). **A text marked inline with a file name was taken for an attachment**
 (`EMail/Mime/MimeMessage.cs:146` to `:148`: a text/plain or text/html with a file name is an
 attachment, whatever its Content-Disposition says; `:721`: an attachment is no body). RFC
 2183 §2.1: "A bodypart should be marked `inline' if it is intended to be displayed
@@ -3585,8 +3591,12 @@ decides where the sender said nothing; where the sender said inline, inline deci
 `A_text_marked_inline_with_a_file_name_is_the_body`; guards:
 `Inline_is_shown_and_attachment_is_not` - inline, attachment with a file name.
 
+Fixed: a text marked inline is not an attachment, a file name or not - the body, where it is
+the first; a second such text of a multipart/mixed, not the body, is listed beside it as
+before.
+
 ### E-20
-**Open.** **A Content-ID was written whether it was a msg-id or not**
+**Closed** in [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) (`3d2d3e03`). **A Content-ID was written whether it was a msg-id or not**
 (`EMail/Mime/MimeEntity.cs:222`: the Content-ID given, trimmed of `<`, `>` and spaces,
 refused only for a line break or a NUL; `:236`: written in angle brackets; `:92`: the header
 line written as US-ASCII, a character outside it a "?"). RFC 2045 §7: `id := "Content-ID"
@@ -3598,8 +3608,11 @@ picture is not shown. Tests: `A_Content_ID_that_is_no_msg_id_is_not_written` - n
 space, a non-ASCII character; either refused or written as the msg-id it is; guard:
 `A_Content_ID_that_is_a_msg_id_is_written`.
 
+Fixed: a Content-ID that is no msg-id - id-left "@" id-right, printable US-ASCII, no white
+space - is refused with an ArgumentException, as a line break in it was.
+
 ### E-21
-**Open.** **A multipart/related was written without its type parameter**
+**Closed** in [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) (`3d2d3e03`). **A multipart/related was written without its type parameter**
 (`EMail/Mime/MimeEntity.cs:296` to `:300`: the parameters the caller gave, and the
 boundary). RFC 2387 §3.1: "The type parameter must be specified and its value is the MIME
 media type of the "root" body part", and §3.2: without start, the root is the first part.
@@ -3607,6 +3620,9 @@ media type of the "root" body part", and §3.2: without start, the root is the f
 multipart/related; boundary=...`; the writer knows the root and its type. Test:
 `A_multipart_related_has_the_type_of_its_root`; guard:
 `A_multipart_related_keeps_the_type_it_is_given`.
+
+Fixed: a multipart/related given no type has the media type of its root - the part start
+names, the first without; a type given is kept.
 
 ## Reports that arrive
 
