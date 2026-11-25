@@ -13,7 +13,16 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-25, Hermod `67cf52e5`):** 1155 tests, **all pass**. A nineteenth round tested where the DMARC and the TLS-RPT reporter send a report
+**State (2026-11-25, Hermod `67cf52e5`):** 1170 tests, 1161 pass, 9 fail on 5 open
+findings. A twentieth round tested the parts an HTML mail refers to, and what a part is
+for - 15 tests, 5 findings: a Content-ID with a comment was not read as a msg-id, so the
+part a cid: URL names, and the root of a multipart/related, were not found
+([E-17](FINDINGS.md#e-17)); a part of a disposition type the reader does not know was lost
+([E-18](FINDINGS.md#e-18)); a text marked inline with a file name was taken for an
+attachment ([E-19](FINDINGS.md#e-19)); a Content-ID was written whether it was a msg-id or
+not, a non-ASCII character as "?" ([E-20](FINDINGS.md#e-20)); and a multipart/related was
+written without its type parameter ([E-21](FINDINGS.md#e-21)).
+A nineteenth round tested where the DMARC and the TLS-RPT reporter send a report
 and what the DMARC failure report says of the message - 17 tests, 7 findings: a line break
 in a rua, ruf or TLS-RPT rua URI went into the report as a header field of its own and
 into its recipient, and from there into RCPT TO ([R-8](FINDINGS.md#r-8),
@@ -365,7 +374,8 @@ vectors, and the four Linux tools.
 | RFC 3461 §4, §4.1, §4.3, §4.4 the DSN parameters the submission client and the relay give for an application | 15 | 0 | ~~C-22~~ to ~~C-24~~ fixed |
 | RFC 5322 §2.2, §3.6, §3.6.4, RFC 5321 §4.4 the server's default mail store | 10 | 0 | ~~S-48~~ to ~~S-50~~ fixed |
 | RFC 7489 §6.2, §6.4, RFC 8460 §3, RFC 6068 §2 the report URIs; RFC 6591 §4, RFC 5965 §3.5 the fields of the DMARC failure report | 17 | 0 | ~~R-8~~ to ~~R-12~~, ~~T-5~~, ~~T-6~~ fixed |
-| **Total** | **1155** | **0** | |
+| RFC 2045 §7, RFC 2392 Content-ID and cid:; RFC 2387 multipart/related; RFC 2183 Content-Disposition - written and read | 15 | 9 | E-17 to E-21 |
+| **Total** | **1170** | **9** | |
 
 ## External test partners
 

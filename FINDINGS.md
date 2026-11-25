@@ -81,7 +81,11 @@ The nineteenth (R-8 to R-12, T-5 and T-6) tests where the two reporters send a r
 what the DMARC failure report says of the message: the mailto URIs of rua and ruf (RFC
 7489 §6.2, §6.4, RFC 8460 §3, RFC 6068 §2), and the fields of the failure report that come
 from DNS and from the session (RFC 6591 §4, RFC 5965 §3.5); its line numbers refer to
-`a95ddebc`.
+`a95ddebc`. The twentieth (E-17 to E-21) tests the parts an HTML mail refers to, and what a
+part is for: the Content-ID, a msg-id that a cid: URL names (RFC 2045 §7, RFC 5322 §3.6.4,
+RFC 2392), multipart/related and its type and start (RFC 2387), and Content-Disposition
+(RFC 2183) - as `MimeAttachment` and `MimeMultipart` write them and `MimeMessage` reads
+them; its line numbers refer to `67cf52e5`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -89,7 +93,13 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [E-17](#e-17) | low | MIME | A Content-ID with a comment was not read as a msg-id: the part its cid: URL names, and the root start= names, not found | 3 |
+| [E-18](#e-18) | medium | MIME | A part of a disposition type the reader does not know was lost: neither the body nor an attachment | 1 |
+| [E-19](#e-19) | low | MIME | A text marked inline with a file name was taken for an attachment: the message had no body | 1 |
+| [E-20](#e-20) | low | MIME | A Content-ID was written whether it was a msg-id or not: no @, a space, a non-ASCII character as "?" | 3 |
+| [E-21](#e-21) | low | MIME | A multipart/related was written without its type parameter | 1 |
 
 ### Closed
 
@@ -3537,6 +3547,66 @@ multipart. Tests: `An_unrecognised_multipart_subtype_is_read_as_mixed_by_EMail`,
 Fixed: the new `MailContentType.IsMultipart` is true for every multipart subtype, also one
 the enum does not list; `EMailBodypart` splits a body when it is a multipart with a
 boundary, and the boundary is read for multiparts only.
+
+### E-17
+**Open.** **A Content-ID with a comment was not read as a msg-id**
+(`EMail/Mime/MimeMessage.cs:176`: the field body trimmed of white space and of `<` and `>`
+at its ends, nothing else; `:786`: `FindByContentId` compares with that; `:692`, `:693`: the
+root of a multipart/related is the part whose Content-ID is start= so read). RFC 2045 §7:
+`id := "Content-ID" ":" msg-id`; RFC 5322 §3.6.4: `msg-id = [CFWS] "<" id-left "@" id-right
+">" [CFWS]` - a comment before or after the brackets is no part of the id, as the reader
+already knows for Message-ID, In-Reply-To and References (`:792` and on). `Content-ID:
+<logo@example.org> (the logo)` is read as "logo@example.org> (the logo)": the cid: URL the
+HTML names the image by finds no part (RFC 2392 §2), and the root start= names is not
+found - the HTML of the message is lost when the root is not the first part. Tests:
+`A_Content_ID_with_a_comment_names_its_part` - a comment after it, before it;
+`The_root_start_names_is_found_by_a_Content_ID_with_a_comment`; guard:
+`A_Content_ID_of_the_usual_kind_names_its_part`.
+
+### E-18
+**Open.** **A part of a disposition type the reader does not know was lost**
+(`EMail/Mime/MimeContentType.cs:505`: `IsAttachment` is "attachment" and nothing else;
+`EMail/Mime/MimeMessage.cs:146` to `:148`: a text is an attachment only with a file name).
+RFC 2183 §2.8: "Unrecognized disposition types should be treated as `attachment'". A
+text/plain marked `Content-Disposition: x-archive` beside the body is neither the body -
+the first text is - nor an attachment: the reader lists it nowhere. Test:
+`A_part_of_an_unknown_disposition_type_is_an_attachment`; guard:
+`A_text_marked_attachment_is_an_attachment`.
+
+### E-19
+**Open.** **A text marked inline with a file name was taken for an attachment**
+(`EMail/Mime/MimeMessage.cs:146` to `:148`: a text/plain or text/html with a file name is an
+attachment, whatever its Content-Disposition says; `:721`: an attachment is no body). RFC
+2183 §2.1: "A bodypart should be marked `inline' if it is intended to be displayed
+automatically upon display of the message", and §2.3: the filename parameter is one of
+either disposition. A message whose one text is `Content-Disposition: inline;
+filename="notes.txt"` has no body, and its text is listed as an attachment. The file name
+decides where the sender said nothing; where the sender said inline, inline decides. Test:
+`A_text_marked_inline_with_a_file_name_is_the_body`; guards:
+`Inline_is_shown_and_attachment_is_not` - inline, attachment with a file name.
+
+### E-20
+**Open.** **A Content-ID was written whether it was a msg-id or not**
+(`EMail/Mime/MimeEntity.cs:222`: the Content-ID given, trimmed of `<`, `>` and spaces,
+refused only for a line break or a NUL; `:236`: written in angle brackets; `:92`: the header
+line written as US-ASCII, a character outside it a "?"). RFC 2045 §7: `id := "Content-ID"
+":" msg-id`; RFC 5322 §3.6.4: `msg-id = "<" id-left "@" id-right ">"`, `id-left =
+dot-atom-text`, printable US-ASCII. `ContentId: "logo"` is written `Content-ID: <logo>`,
+`"my logo@example.org"` with its space; `"bild-ä@example.org"` is written
+`<bild-?@example.org>` - another id than the one the HTML refers to by `cid:`, so the
+picture is not shown. Tests: `A_Content_ID_that_is_no_msg_id_is_not_written` - no @, a
+space, a non-ASCII character; either refused or written as the msg-id it is; guard:
+`A_Content_ID_that_is_a_msg_id_is_written`.
+
+### E-21
+**Open.** **A multipart/related was written without its type parameter**
+(`EMail/Mime/MimeEntity.cs:296` to `:300`: the parameters the caller gave, and the
+boundary). RFC 2387 §3.1: "The type parameter must be specified and its value is the MIME
+media type of the "root" body part", and §3.2: without start, the root is the first part.
+`new MimeMultipart("related", [ html, image ])` is written `Content-Type:
+multipart/related; boundary=...`; the writer knows the root and its type. Test:
+`A_multipart_related_has_the_type_of_its_root`; guard:
+`A_multipart_related_keeps_the_type_it_is_given`.
 
 ## Reports that arrive
 
