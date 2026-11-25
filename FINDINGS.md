@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `a95ddebc`**
-(Styx `a6b9f9fb`), which closes every finding of all eighteen rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `67cf52e5`**
+(Styx `a6b9f9fb`), which closes every finding of all nineteen rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -89,15 +89,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [R-8](#r-8) | medium | DMARC reports | A line break in a rua or ruf URI went into the report: a Bcc field of its own, a recipient with a line break in it - and into RCPT TO | 3 |
-| [R-9](#r-9) | low | DMARC reports | A mailto URI was taken for an address: percent-encoding not decoded, its header fields part of the domain | 2 |
-| [R-10](#r-10) | medium | DMARC reports | A line break in the SPF record made a field of the failure report of its own: "Identity-Alignment: dkim, spf" | 3 |
-| [R-11](#r-11) | low | DMARC reports | Original-Mail-From was no reverse-path: the address without its angle brackets | 1 |
-| [R-12](#r-12) | low | DMARC reports | An IPv6 Source-IP was no IPv6 address literal: no "IPv6:" | 1 |
-| [T-5](#t-5) | medium | TLS-RPT | A line break in an rua URI went into the report: a Bcc field of its own, a recipient with a line break in it - and into RCPT TO | 2 |
-| [T-6](#t-6) | low | TLS-RPT | A mailto URI was taken for an address: percent-encoding not decoded, its header fields part of it | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -242,10 +234,17 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [R-5](#r-5) | medium | DMARC reports | Failure reports lacked Identity-Alignment and SPF-DNS (REQUIRED) | 2 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
 | [R-6](#r-6) | low | DMARC reports | fo=1 was ignored: only DMARC failures were reported | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
 | [R-7](#r-7) | low | DMARC | p=reject with pct=0 let a failing message through as p=none, not quarantined | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
+| [R-8](#r-8) | medium | DMARC reports | A line break in a rua or ruf URI went into the report: a Bcc field of its own, a recipient with a line break in it - and into RCPT TO | 3 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
+| [R-9](#r-9) | low | DMARC reports | A mailto URI was taken for an address: percent-encoding not decoded, its header fields part of the domain | 2 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
+| [R-10](#r-10) | medium | DMARC reports | A line break in the SPF record made a field of the failure report of its own: "Identity-Alignment: dkim, spf" | 3 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
+| [R-11](#r-11) | low | DMARC reports | Original-Mail-From was no reverse-path: the address without its angle brackets | 1 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
+| [R-12](#r-12) | low | DMARC reports | An IPv6 Source-IP was no IPv6 address literal: no "IPv6:" | 1 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
 | [T-1](#t-1) | medium | TLS-RPT | Two records, a record not beginning with `v=TLSRPTv1;`, or `v=tlsrptv1` still named destinations | 3 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
 | [T-2](#t-2) | low | TLS-RPT | No policy-string in the JSON | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
 | [T-3](#t-3) | medium | TLS-RPT | Under an MTA-STS policy in testing mode, a certificate that failed the policy was reported as a success | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
 | [T-4](#t-4) | low | TLS-RPT | Through a smart host, the session was reported to the recipient's domain, under the smart host's policy | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
+| [T-5](#t-5) | medium | TLS-RPT | A line break in an rua URI went into the report: a Bcc field of its own, a recipient with a line break in it - and into RCPT TO | 2 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
+| [T-6](#t-6) | low | TLS-RPT | A mailto URI was taken for an address: percent-encoding not decoded, its header fields part of it | 2 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
 | [Q-1](#q-1) | low | MT-PRIORITY | `+3`, `-0`, `05` were taken | 3 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
 | [Q-2](#q-2) | low | MT-PRIORITY | MT-PRIORITY twice was taken | 1 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
 | [Q-3](#q-3) | medium | MT-PRIORITY | A client nobody vouched for raised its own priority | 1 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
@@ -322,7 +321,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 472 tests for these are part of the merge gate now; the observations the first
+The 486 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -2910,7 +2909,7 @@ Fixed: pct=0 demotes p=reject to quarantine, as it does for every share pct= doe
 select.
 
 ### R-8
-**Open.** **A line break in a report URI went into the report's header and its recipient**
+**Closed** in [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) (`d8df40e6`). **A line break in a report URI went into the report's header and its recipient**
 (`Reporting/DmarcReportService.cs:419`: the address of a mailto URI is what follows
 "mailto:", as it stands; `:203`: it is the recipient of the report, and `:219`, `:170` and
 `ArfReport.cs:65`: its To field; `DNSVerifications/DNSVerifier.cs:1538` keeps a line break
@@ -2924,8 +2923,13 @@ break ends the command there, and what follows is a command of its own to the ne
 Tests: `A_line_break_in_a_report_URI_makes_no_recipient_and_no_header_field` - rua with CR
 LF, ruf with CR LF and with LF.
 
+Fixed: the reporter reads a report URI as RFC 6068 §2 has it (`MailtoUri.Addresses`). A
+URI with a character RFC 3986 has in none - a line break, a space, a control or a non-ASCII
+character - names no address, nor does what decodes to no addr-spec, a percent-encoded
+line break among it; the report goes to no such recipient, and no header field comes of it.
+
 ### R-9
-**Open.** **A mailto URI was taken for an address** (`Reporting/DmarcReportService.cs:419`:
+**Closed** in [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) (`d8df40e6`). **A mailto URI was taken for an address** (`Reporting/DmarcReportService.cs:419`:
 what follows "mailto:", percent-encoding, header fields and all). RFC 7489 §6.2: a comma or
 an exclamation point that is part of a DMARC URI "MUST be encoded per Section 2.1 of
 [URI]", and a Mail Receiver "MUST implement support for a "mailto:" URI"; RFC 6068 §2:
@@ -2938,8 +2942,12 @@ dmarc@policy.test - the report went nowhere, its host taken for
 Tests: `A_report_goes_to_the_address_its_URI_names`, two cases; guard:
 `A_report_URI_of_the_usual_kind_names_its_address`.
 
+Fixed: the address is percent-decoded in UTF-8, the URI's header fields are no part of it,
+and a `to` header field names addresses too. The error report's Submitting-URI is the
+address percent-encoded again (`MailtoUri.Of`).
+
 ### R-10
-**Open.** **The SPF record went into the failure report as DNS gave it**
+**Closed** in [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) (`d8df40e6`). **The SPF record went into the failure report as DNS gave it**
 (`Reporting/ArfReport.cs:177` to `:180`: SPF-DNS writes the record in quotes, `\` and `"`
 escaped, and nothing else; the record as in S-48, `DNSVerifications/DNSVerifier.cs:643`).
 RFC 6591 §4: `spf-dns = "SPF-DNS:" [CFWS] ( "txt" / "spf" ) [CFWS] ":" [CFWS] domain [CFWS]
@@ -2951,8 +2959,12 @@ LF or CR does the same for a reader that takes it for a line end. Tests:
 `A_line_break_in_the_SPF_record_makes_no_field_of_the_failure_report` - CR LF, LF, CR;
 guard: `An_SPF_record_of_the_usual_kind_is_the_quoted_string_of_SPF_DNS`.
 
+Fixed: SPF-DNS, the DKIM fields and Reported-Domain go through `HeaderField.Of`, the
+store's field of S-48, moved for both to share: each run of control characters is one space,
+and a line longer than 998 octets is folded before white space.
+
 ### R-11
-**Open.** **Original-Mail-From was no reverse-path** (`Reporting/ArfReport.cs:88`: the
+**Closed** in [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) (`d8df40e6`). **Original-Mail-From was no reverse-path** (`Reporting/ArfReport.cs:88`: the
 address of MAIL FROM without its angle brackets). RFC 5965 §3.2: "The format of this field
 is defined in section 4.1.2 of [SMTP] as "Reverse-path"", and §3.5: `original-mail-from =
 "Original-Mail-From:" [CFWS] reverse-path [CFWS] CRLF`; RFC 5321 §4.1.2: `Reverse-path =
@@ -2961,13 +2973,19 @@ Path / "<>"`, `Path = "<" [ A-d-l ":" ] Mailbox ">"`. The report says
 `Original_Mail_From_is_a_reverse_path`; guard:
 `For_a_null_reverse_path_Original_Mail_From_is_empty_angle_brackets`.
 
+Fixed: Original-Mail-From is the reverse-path, the mailbox in angle brackets, `<>` for the
+null one.
+
 ### R-12
-**Open.** **An IPv6 Source-IP was no IPv6 address literal** (`Reporting/ArfReport.cs:90`:
+**Closed** in [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) (`d8df40e6`). **An IPv6 Source-IP was no IPv6 address literal** (`Reporting/ArfReport.cs:90`:
 the address as .NET writes it). RFC 5965 §3.5: `source-ip = "Source-IP:" [CFWS] (
 IPv4-address-literal / IPv6-address-literal ) [CFWS] CRLF`; RFC 5321 §4.1.3:
 `IPv6-address-literal = "IPv6:" IPv6-addr`. The failure report for a message from
 2001:db8::25 says `Source-IP: 2001:db8::25`. Test:
 `An_IPv6_Source_IP_is_an_IPv6_address_literal`; guard: `An_IPv4_Source_IP_is_its_dotted_quad`.
+
+Fixed: Source-IP is an address literal: "IPv6:" before an IPv6 address, an IPv4 address
+mapped into IPv6 the IPv4 address, and a scope dropped.
 
 ## TLS reporting
 
@@ -3037,7 +3055,7 @@ Fixed: `TrySendToMxAsync` takes the next-hop domain, for the DANE reference iden
 and the policy domain, for TLS-RPT, separately.
 
 ### T-5
-**Open.** **A line break in an rua URI went into the report's header and its recipient**
+**Closed** in [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) (`d8df40e6`). **A line break in an rua URI went into the report's header and its recipient**
 (`Reporting/TlsRptResolver.cs:130`: the address of a mailto URI is what follows "mailto:",
 as it stands; `TlsRptReportService.cs:136`: it is the recipient of the report, `:159`: its
 To field). RFC 8460 §3: `tlsrpt-uri = URI`, "imported from [RFC3986]", which has no CR and
@@ -3048,8 +3066,11 @@ report, and a recipient with a line break in it, which the relay writes into RCP
 is (`SMTPOutboundClient.cs:889`), a command of its own after it. Tests:
 `A_line_break_in_an_rua_URI_makes_no_recipient_and_no_header_field` - CR LF, LF.
 
+Fixed: as R-8 - the resolver reads an rua URI with `MailtoUri.Addresses`, and one with a
+line break in it names no recipient.
+
 ### T-6
-**Open.** **A mailto URI was taken for an address** (`Reporting/TlsRptResolver.cs:130`).
+**Closed** in [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) (`d8df40e6`). **A mailto URI was taken for an address** (`Reporting/TlsRptResolver.cs:130`).
 RFC 8460 §3: "In the case of "mailto", reports should be submitted to the specified email
 address [RFC6068]", and of a tlsrpt-uri: "commas (ASCII 0x2C), exclamation points (ASCII
 0x21), and semicolons (ASCII 0x3B) MUST be encoded"; RFC 6068 §2 as in R-9.
@@ -3057,6 +3078,9 @@ address [RFC6068]", and of a tlsrpt-uri: "commas (ASCII 0x2C), exclamation point
 `mailto:tlsrpt@policy.test?subject=TLS%20report` - to
 "tlsrpt@policy.test?subject=TLS%20report". Tests:
 `A_report_goes_to_the_address_its_rua_URI_names`, two cases.
+
+Fixed: as R-9 - percent-decoded, its header fields no part of the address, and one address
+named twice reported to once.
 
 ## Priorities and limits
 

@@ -358,7 +358,6 @@ public sealed class DmarcReportTests
 
         TestCaseData Case(String Tag, String Name, String LineBreak)
             => new TestCaseData(Tag, LineBreak).SetName($"A line break in a {Tag} URI makes no recipient and no header field of the report: {Name}")
-                                               .SetCategory(TestCategories.KnownIssue)
                                                .SetProperty("Finding", "R-8");
 
         yield return Case("rua", "CR LF", "\r\n");
@@ -391,7 +390,6 @@ public sealed class DmarcReportTests
     [TestCase("mailto:dmarc@policy.test?subject=DMARC%20report", "dmarc@policy.test",         TestName = "The header fields of a report URI are no part of its address")]
     [Description("RFC 7489 §6.2: a comma or an exclamation point that is part of a DMARC URI \"MUST be encoded per Section 2.1 of [URI]\" - %2C and %21 - and a Mail Receiver \"MUST implement support for a \"mailto:\" URI\"; RFC 6068 §2: mailtoURI = \"mailto:\" [ to ] [ hfields ], to = addr-spec, its characters percent-encoded - the report goes to the address the URI names")]
     [Property("Finding", "R-9")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_report_goes_to_the_address_its_URI_names(String Uri, String Address)
     {
 
@@ -422,7 +420,6 @@ public sealed class DmarcReportTests
 
         TestCaseData Case(String Name, String LineBreak)
             => new TestCaseData(LineBreak).SetName($"A line break in the SPF record makes no field of the failure report: {Name}")
-                                          .SetCategory(TestCategories.KnownIssue)
                                           .SetProperty("Finding", "R-10");
 
         yield return Case("CR LF", "\r\n");
@@ -457,7 +454,6 @@ public sealed class DmarcReportTests
 
     [Test(Description = "RFC 5965 §3.5: original-mail-from = \"Original-Mail-From:\" [CFWS] reverse-path [CFWS] CRLF; RFC 5321 §4.1.2: Reverse-path = Path / \"<>\", Path = \"<\" [ A-d-l \":\" ] Mailbox \">\" - the address in angle brackets")]
     [Property("Finding", "R-11")]
-    [Category(TestCategories.KnownIssue)]
     public async Task Original_Mail_From_is_a_reverse_path()
     {
 
@@ -481,7 +477,6 @@ public sealed class DmarcReportTests
 
     [Test(Description = "RFC 5965 §3.5: source-ip = \"Source-IP:\" [CFWS] ( IPv4-address-literal / IPv6-address-literal ) [CFWS] CRLF; RFC 5321 §4.1.3: IPv6-address-literal = \"IPv6:\" IPv6-addr")]
     [Property("Finding", "R-12")]
-    [Category(TestCategories.KnownIssue)]
     public async Task An_IPv6_Source_IP_is_an_IPv6_address_literal()
     {
 

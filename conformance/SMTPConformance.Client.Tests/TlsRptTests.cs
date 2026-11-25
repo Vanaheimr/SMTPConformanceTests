@@ -207,7 +207,6 @@ public sealed class TlsRptTests
 
         TestCaseData Case(String Name, String LineBreak)
             => new TestCaseData(LineBreak).SetName($"A line break in an rua URI makes no recipient and no header field of the report: {Name}")
-                                          .SetCategory(TestCategories.KnownIssue)
                                           .SetProperty("Finding", "T-5");
 
         yield return Case("CR LF", "\r\n");
@@ -237,7 +236,6 @@ public sealed class TlsRptTests
     [TestCase("v=TLSRPTv1; rua=mailto:tlsrpt@policy.test?subject=TLS%20report", "tlsrpt@policy.test",      TestName = "The header fields of an rua URI are no part of its address")]
     [Description("RFC 8460 §3: \"In the case of \"mailto\", reports should be submitted to the specified email address [RFC6068]\"; RFC 6068 §2: mailtoURI = \"mailto:\" [ to ] [ hfields ], to = addr-spec, its characters percent-encoded - the report goes to the address the URI names")]
     [Property("Finding", "T-6")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_report_goes_to_the_address_its_rua_URI_names(String Record, String Address)
     {
 
