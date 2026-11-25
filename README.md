@@ -13,7 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-25, Hermod `1544d14a`):** 1128 tests, **all pass**. A seventeenth round
+**State (2026-11-25, Hermod `1544d14a`):** 1138 tests, 1130 pass, 8 fail on 3 open
+findings. An eighteenth round tested the store a server keeps local mail in when it is given
+none of its own - 10 tests, 3 findings: the SPF record of the sender's domain went into the
+stored header as DNS gave it, so a line break in it made a header field of its own -
+"X-DMARC-Result: Pass" - and an empty line ended the header ([S-48](FINDINGS.md#s-48)); the
+store's own fields went before the Return-Path ([S-49](FINDINGS.md#s-49)); and a message
+whose Message-ID was too long for a file name could not be stored ([S-50](FINDINGS.md#s-50)).
+A seventeenth round
 tested DSN as the submission client and the relay ask for it when an application hands them
 a message - 15 tests, 3 findings: ENVID went on MAIL as the caller gave it, not as xtext, so
 a line break in it made a command of its own - a recipient the sender did not name
@@ -345,7 +352,8 @@ vectors, and the four Linux tools.
 | RFC 8601 §2.7.2, §5 Authentication-Results; RFC 6531 §3.7.3 the Received field of an SMTPUTF8 transaction | 9 | 0 | ~~S-43~~ to ~~S-47~~ fixed |
 | RFC 6531 §3.2, §3.4, §3.5 SMTPUTF8 in the submission client | 7 | 0 | ~~C-20~~, ~~C-21~~ fixed |
 | RFC 3461 §4, §4.1, §4.3, §4.4 the DSN parameters the submission client and the relay give for an application | 15 | 0 | ~~C-22~~ to ~~C-24~~ fixed |
-| **Total** | **1128** | **0** | |
+| RFC 5322 §2.2, §3.6, §3.6.4, RFC 5321 §4.4 the server's default mail store | 10 | 8 | S-48 to S-50 |
+| **Total** | **1138** | **8** | |
 
 ## External test partners
 

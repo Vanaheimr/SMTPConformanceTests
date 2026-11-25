@@ -73,7 +73,10 @@ and the parameter with a message that does not need it (§3.4); its line numbers
 `44ad353b`. The seventeenth (C-22 to C-24) tests DSN as the two clients ask for it when an
 application hands them a message - the submission client, and the relay by
 `MailSender.SendDirectAsync`: ENVID as xtext (RFC 3461 §4, §4.4), RET and NOTIFY=NEVER as
-the caller gave them (§4.1, §4.3); its line numbers refer to `98fa0297`.
+the caller gave them (§4.1, §4.3); its line numbers refer to `98fa0297`. The eighteenth
+(S-48 to S-50) tests the store a server keeps local mail in when it is given none of its
+own, `FileMailStorage`: what it writes on top of a message (RFC 5322 §2.2, RFC 5321 §4.4),
+and a valid message it cannot keep (RFC 5322 §3.6.4); its line numbers refer to `1544d14a`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -81,7 +84,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [S-48](#s-48) | medium | storage | The default store wrote the SPF record of the sender's domain into the stored header as DNS gave it: a line break in it made a header field of its own - "X-DMARC-Result: Pass" - an empty line ended the header | 4 |
+| [S-49](#s-49) | low | storage | The default store wrote fields of its own before the Return-Path: a stored message did not begin with it | 2 |
+| [S-50](#s-50) | low | storage | A message whose Message-ID was too long for a file name could not be stored: 451 at every try | 2 |
 
 ### Closed
 
@@ -1050,6 +1057,49 @@ guard: `Without_SMTPUTF8_the_server_names_itself_in_A_labels_in_the_Received_fie
 Fixed: in the Received field and as the authserv-id of Authentication-Results the server
 names itself in its U-labels for an SMTPUTF8 transaction, in its A-labels otherwise - the
 authserv-id was the configured name as it stood, U-labels in every message.
+
+### S-48
+**Open.** **The default store writes what DNS says into the stored header as it is**
+(`MailStorage/FileMailStorage.cs:45`: `AddHeader` appends name, ": ", value and CR LF;
+`:58`: `X-SPF-Record` is the SPF record of the sender's domain, the TXT record as it came -
+`DNSVerifier.cs:643` takes any record that begins with "v=spf1 " for one, and keeps it when
+its syntax is wrong, as the permerror's record; `:60` and `:64`: `X-DKIM-Details`, `X-MX-Records`
+likewise). RFC 5322 §2.2: "A field body MUST NOT include CR and LF except when used in
+'folding' and 'unfolding'". A TXT record is octets, line breaks among them, and the SPF record
+of the sender's domain is the sender's to publish: "v=spf1 -all<CR><LF>X-DMARC-Result: Pass"
+makes the stored header say `X-DMARC-Result: None`, then `X-DMARC-Result: Pass` - a DMARC
+pass the server never found, in the file whatever reads the store reads; a bare LF or a bare
+CR does the same for a reader that takes it for a line end. And an empty line in the record
+ends the header there: the message's own fields - From, Subject, the server's
+Authentication-Results and Received - are body. `FileMailStorage` is the store of every
+`SMTPServer` that is given none (`SMTPServer.cs:102`). Tests:
+`A_line_break_in_a_DNS_record_makes_no_header_field_of_the_stored_message` - CR LF, LF, CR -,
+`An_empty_line_in_a_DNS_record_does_not_end_the_stored_header`; guard:
+`With_an_SPF_record_of_the_usual_kind_the_stored_header_is_whole`.
+
+### S-49
+**Open.** **The default store writes fields of its own before the Return-Path**
+(`MailStorage/FileMailStorage.cs:47` to `:64`: `X-Envelope-From`, `X-Envelope-To`,
+`X-Received-At` and the verification results go first, `:73`: the message after them).
+RFC 5321 §4.4: "When the delivery SMTP server makes the 'final delivery' of a message, it
+inserts a return-path line at the beginning of the mail data"; RFC 5322 §3.6: "the trace
+header fields and resent header fields MUST NOT be reordered, and SHOULD be kept in blocks
+prepended to the message". The message as the server hands it to the store begins with its
+Return-Path (S-29); the stored file does not - a reader that takes the first line for where
+bounces go, or the first fields for the trace block, reads the store's own. Tests:
+`A_stored_message_begins_with_its_Return_Path`, `A_stored_bounce_begins_with_an_empty_Return_Path`.
+
+### S-50
+**Open.** **A message whose Message-ID is too long for a file name cannot be stored**
+(`MailStorage/FileMailStorage.cs:39` and `:40`: the file is named after the Message-ID, of
+whatever length; a name of more than 255 characters is none NTFS or ext4 take, the write
+throws, and `SMTPSession.cs:1554` answers 451). RFC 5322 §3.6.4: `msg-id = [CFWS] "<"
+id-left "@" id-right ">" [CFWS]`, of no length of its own but the line's (§2.1.1); RFC 5321
+§4.5.3.1: "To the maximum extent possible, implementation techniques that impose no limits
+on the length of these objects should be used". A Message-ID of 300 characters - a valid
+message - is refused with 451 at every try, until its sender gives up and bounces it.
+Tests: `A_message_with_a_long_Message_ID_is_stored` - 300 and 900 characters; guard:
+`Two_messages_with_one_Message_ID_are_both_stored`.
 
 ---
 

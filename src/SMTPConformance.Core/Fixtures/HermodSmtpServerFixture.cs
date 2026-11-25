@@ -127,6 +127,13 @@ public sealed class HermodSmtpServerFixtureOptions
     /// </summary>
     public Boolean                                    EnableTlsRptIngestion    { get; init; } = false;
 
+    /// <summary>
+    /// Whether the server stores local mail in its own default store - files in the storage
+    /// directory, <see cref="HermodSmtpServerFixture.StorageDirectory"/> - instead of the
+    /// capturing one: what a server that is given no store does.
+    /// </summary>
+    public Boolean                                    DefaultFileStorage       { get; init; } = false;
+
 }
 
 
@@ -166,6 +173,11 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
     public UInt16                 ImplicitTlsPort   => (UInt16) Server.ImplicitTlsEndPoints[0].Port;
 
     public String                 Host              => "127.0.0.1";
+
+    /// <summary>
+    /// The server's storage directory: where its default store puts local mail.
+    /// </summary>
+    public String                 StorageDirectory  => directory;
 
     private readonly Task         runTask;
     private readonly String       directory;
@@ -252,7 +264,7 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
                                      Options.UserStore ?? users,
                                      Options.WithQueue ? queue : null,
                                      Options.RateLimits,
-                                     storage,
+                                     Options.DefaultFileStorage ? null : storage,
                                      Options.RecipientValidator,
                                      Options.MailSubmission);
 
