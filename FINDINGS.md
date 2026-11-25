@@ -70,7 +70,10 @@ those the message brought along (RFC 8601 §5), and what it says SPF authenticat
 refer to `5fed035a`. The sixteenth (C-20 and C-21) tests SMTPUTF8 as the submission client
 uses it: an internationalized message to a server without SMTPUTF8 (RFC 6531 §3.2, §3.5),
 and the parameter with a message that does not need it (§3.4); its line numbers refer to
-`44ad353b`.
+`44ad353b`. The seventeenth (C-22 to C-24) tests DSN as the two clients ask for it when an
+application hands them a message - the submission client, and the relay by
+`MailSender.SendDirectAsync`: ENVID as xtext (RFC 3461 §4, §4.4), RET and NOTIFY=NEVER as
+the caller gave them (§4.1, §4.3); its line numbers refer to `98fa0297`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -78,7 +81,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [C-22](#c-22) | medium | DSN | ENVID went on MAIL as the caller gave it, not as xtext: a space, "=" or "+" made it another parameter or another value, a line break another command - a recipient of the ENVID's making | 7 |
+| [C-23](#c-23) | low | DSN | RET without NOTIFY and ENVID was left out: the failed DSN returned the whole message | 2 |
+| [C-24](#c-24) | low | DSN | NOTIFY=NEVER could not be asked for: `DsnNotify.Never` was taken for no request, and the failed DSNs came | 2 |
 
 ### Closed
 
@@ -1349,6 +1356,48 @@ every server without SMTPUTF8. Test: `An_8bit_body_alone_goes_without_SMTPUTF8`;
 
 Fixed: a message needs SMTPUTF8 for its envelope and its header section, not for its
 body; an 8-bit body alone goes with BODY=8BITMIME, to a server without SMTPUTF8 too.
+
+### C-22
+**Open.** **ENVID goes on MAIL as the caller gave it** (`DsnCommands.cs:67`: `ENVID={dsn.EnvId}`,
+for the submission client, `SMTPSubmissionClient.cs:1429`, and for the relay,
+`SMTPOutboundClient.cs:848`, when an application hands it a message by
+`MailSender.SendDirectAsync`). RFC 3461 §4: "the esmtp-values for these parameters are
+encoded as 'xtext'"; §4.4: "envid-parameter = 'ENVID=' xtext", "The ENVID parameter MAY be
+up to 100 characters in length", and "the value of the ENVID parameter prior to encoding as
+'xtext' MUST consist entirely of printable (graphic and white space) characters from the
+US-ASCII repertoire". "order 42" goes as "ENVID=order 42" - "42" a parameter of its own, which
+a server refuses -, "batch=7" as "ENVID=batch=7", which no esmtp-value is, "QQ+314159" as
+"ENVID=QQ+314159", which decodes to "QQ14159"; 101 characters go as they are. And an
+identifier with CR LF in it ends the MAIL command there: "x\r\nRCPT TO:<intruder@evil.test>"
+gives the server a RCPT of its own, and the message a recipient its sender did not name - an
+application that takes the identifier from its input lets that input add recipients. The
+queue (`MailSender.SendAsync`) takes the same value into `QueuedMail.EnvId`, which is the
+received xtext otherwise. Tests: `ENVID_goes_as_xtext` - a space, "=", "+" -,
+`An_ENVID_with_a_line_break_is_no_command_of_its_own`, `No_ENVID_goes_longer_than_100_characters`;
+for the relay `The_relay_gives_ENVID_as_xtext`, `An_ENVID_with_a_line_break_is_no_command_of_the_relay`;
+guard: `An_ENVID_of_xchars_goes_as_it_is`.
+
+### C-23
+**Open.** **RET without NOTIFY and ENVID is left out** (`DsnParameters.cs:44`: a DSN is
+"requested" with a NOTIFY other than NEVER or an ENVID; `DsnCommands.cs:56`: otherwise
+MAIL goes without RET). RFC 3461 §4.3: "The RET esmtp-keyword on the extended MAIL command
+specifies whether or not the message should be included in any failed DSN issued for this
+message transmission"; §4.1: "the absence of a NOTIFY parameter in a RCPT command may be
+interpreted as either NOTIFY=FAILURE or NOTIFY=FAILURE,DELAY" - a failed DSN comes without
+NOTIFY too. A caller who asks for `DsnRet.Hdrs` alone, to keep the body out of a bounce,
+gets it back whole if the server returns full messages. Tests: `RET_goes_without_NOTIFY_and_ENVID`,
+for the relay `The_relay_gives_RET_without_NOTIFY_and_ENVID`; guard: `RET_goes_with_NOTIFY`.
+
+### C-24
+**Open.** **NOTIFY=NEVER cannot be asked for** (`DsnParameters.cs:44` and
+`DsnCommands.cs:79`: `DsnNotify.Never` is no request, and RCPT goes without NOTIFY;
+`DsnCommands.FormatNotify` writes "NEVER", but is never given it). RFC 3461 §4.1: "A NOTIFY
+parameter value of 'NEVER' requests that a DSN not be returned to the sender under any
+conditions" - and without NOTIFY the server sends the failed ones. A caller that asks for no
+DSN at all - an automatic sender, whose bounces nobody reads - gets them all the same.
+Tests: `NOTIFY_NEVER_goes_on_RCPT`, for the relay `The_relay_gives_NOTIFY_NEVER`; guard:
+`A_message_that_asks_for_no_DSN_goes_without_DSN_parameters` - the default asks for
+nothing, and goes without NOTIFY.
 
 ---
 
