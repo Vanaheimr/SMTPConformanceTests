@@ -145,7 +145,6 @@ public sealed class FileStorageTests : HermodServerTestBase
 
         TestCaseData Case(String Name, String LineBreak)
             => new TestCaseData(LineBreak).SetName($"A line break in a DNS record makes no header field of the stored message: {Name}")
-                                          .SetCategory(TestCategories.KnownIssue)
                                           .SetProperty("Finding", "S-48");
 
         yield return Case("CR LF",  "\r\n");
@@ -170,7 +169,6 @@ public sealed class FileStorageTests : HermodServerTestBase
 
     [Test(Description = "RFC 5322 §2.1: \"A message consists of header fields [...] optionally followed by a message body\", the header ending at the first empty line - an empty line in the SPF record of the sender's domain, written into the stored header, ends it there, and the message's own header fields are its body")]
     [Property("Finding", "S-48")]
-    [Category(TestCategories.KnownIssue)]
     public async Task An_empty_line_in_a_DNS_record_does_not_end_the_stored_header()
     {
 
@@ -203,7 +201,6 @@ public sealed class FileStorageTests : HermodServerTestBase
 
     [Test(Description = "RFC 5321 §4.4: \"When the delivery SMTP server makes the 'final delivery' of a message, it inserts a return-path line at the beginning of the mail data\"; RFC 5322 §3.6: \"the trace header fields and resent header fields MUST NOT be reordered, and SHOULD be kept in blocks prepended to the message\" - the stored message begins with its Return-Path, not with fields of the store's own")]
     [Property("Finding", "S-49")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_stored_message_begins_with_its_Return_Path()
     {
 
@@ -223,7 +220,6 @@ public sealed class FileStorageTests : HermodServerTestBase
 
     [Test(Description = "RFC 5321 §4.4: Return-path-line = \"Return-Path:\" FWS Reverse-path, at the beginning of the mail data - a bounce, sent with the null reverse-path, is stored beginning with \"Return-Path: <>\"")]
     [Property("Finding", "S-49")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_stored_bounce_begins_with_an_empty_Return_Path()
     {
 
@@ -249,7 +245,6 @@ public sealed class FileStorageTests : HermodServerTestBase
     [TestCase(900)]
     [Description("RFC 5322 §3.6.4: msg-id = \"<\" id-left \"@\" id-right \">\", of no length of its own but the line's (§2.1.1: 998 characters); RFC 5321 §4.5.3.1: \"To the maximum extent possible, implementation techniques that impose no limits on the length of these objects should be used\" - a message whose Message-ID is longer than a file name may be is a valid message all the same, and is stored, not refused with 451 at every try until its sender gives up")]
     [Property("Finding", "S-50")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_message_with_a_long_Message_ID_is_stored(Int32 Length)
     {
 

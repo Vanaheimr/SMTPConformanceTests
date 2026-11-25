@@ -84,11 +84,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [S-48](#s-48) | medium | storage | The default store wrote the SPF record of the sender's domain into the stored header as DNS gave it: a line break in it made a header field of its own - "X-DMARC-Result: Pass" - an empty line ended the header | 4 |
-| [S-49](#s-49) | low | storage | The default store wrote fields of its own before the Return-Path: a stored message did not begin with it | 2 |
-| [S-50](#s-50) | low | storage | A message whose Message-ID was too long for a file name could not be stored: 451 at every try | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -150,6 +146,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-45](#s-45) | low | trace | The SPF result named the local-part of the reverse-path, which SPF did not authenticate | 1 | [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308) |
 | [S-46](#s-46) | low | SMTPUTF8 | An SMTPUTF8 transaction was received "with ESMTP", not "with UTF8SMTP" | 1 | [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308) |
 | [S-47](#s-47) | low | SMTPUTF8 | A server named in U-labels wrote A-labels into the Received field of an SMTPUTF8 transaction | 1 | [Vanaheimr/Hermod#308](https://github.com/Vanaheimr/Hermod/pull/308) |
+| [S-48](#s-48) | medium | storage | The default store wrote the SPF record of the sender's domain into the stored header as DNS gave it: a line break in it made a header field of its own - "X-DMARC-Result: Pass" - an empty line ended the header | 4 | [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312) |
+| [S-49](#s-49) | low | storage | The default store wrote fields of its own before the Return-Path: a stored message did not begin with it | 2 | [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312) |
+| [S-50](#s-50) | low | storage | A message whose Message-ID was too long for a file name could not be stored: 451 at every try | 2 | [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312) |
 | [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
 | [O-1](#o-1) | **high** | outbound | Every reply but EHLO's was read as one line: a multi-line reply shifted all that followed | 5 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [O-2](#o-2) | **high** | outbound | A recipient the next hop refused disappeared: no bounce, no retry | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
@@ -310,7 +309,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 464 tests for these are part of the merge gate now; the observations the first
+The 472 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1059,7 +1058,8 @@ names itself in its U-labels for an SMTPUTF8 transaction, in its A-labels otherw
 authserv-id was the configured name as it stood, U-labels in every message.
 
 ### S-48
-**Open.** **The default store writes what DNS says into the stored header as it is**
+**Closed** in [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312)
+(`fd7c323c`). **The default store writes what DNS says into the stored header as it is**
 (`MailStorage/FileMailStorage.cs:45`: `AddHeader` appends name, ": ", value and CR LF;
 `:58`: `X-SPF-Record` is the SPF record of the sender's domain, the TXT record as it came -
 `DNSVerifier.cs:643` takes any record that begins with "v=spf1 " for one, and keeps it when
@@ -1077,8 +1077,14 @@ Authentication-Results and Received - are body. `FileMailStorage` is the store o
 `An_empty_line_in_a_DNS_record_does_not_end_the_stored_header`; guard:
 `With_an_SPF_record_of_the_usual_kind_the_stored_header_is_whole`.
 
+Fixed: a value goes into the header as a field body. Each run of control characters
+in it - CR, LF, NEL and the others but HTAB - and of U+2028 and U+2029 is one space,
+and a value whose line would be longer than 998 octets is folded before white space in
+it (RFC 5322 §2.1.1); unfolded, it is the value again.
+
 ### S-49
-**Open.** **The default store writes fields of its own before the Return-Path**
+**Closed** in [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312)
+(`fd7c323c`). **The default store writes fields of its own before the Return-Path**
 (`MailStorage/FileMailStorage.cs:47` to `:64`: `X-Envelope-From`, `X-Envelope-To`,
 `X-Received-At` and the verification results go first, `:73`: the message after them).
 RFC 5321 §4.4: "When the delivery SMTP server makes the 'final delivery' of a message, it
@@ -1089,8 +1095,12 @@ Return-Path (S-29); the stored file does not - a reader that takes the first lin
 bounces go, or the first fields for the trace block, reads the store's own. Tests:
 `A_stored_message_begins_with_its_Return_Path`, `A_stored_bounce_begins_with_an_empty_Return_Path`.
 
+Fixed: the store's fields go behind the Return-Path, a folded one too; first only in a
+message that has none.
+
 ### S-50
-**Open.** **A message whose Message-ID is too long for a file name cannot be stored**
+**Closed** in [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312)
+(`fd7c323c`). **A message whose Message-ID is too long for a file name cannot be stored**
 (`MailStorage/FileMailStorage.cs:39` and `:40`: the file is named after the Message-ID, of
 whatever length; a name of more than 255 characters is none NTFS or ext4 take, the write
 throws, and `SMTPSession.cs:1554` answers 451). RFC 5322 §3.6.4: `msg-id = [CFWS] "<"
@@ -1100,6 +1110,11 @@ on the length of these objects should be used". A Message-ID of 300 characters -
 message - is refused with 451 at every try, until its sender gives up and bounces it.
 Tests: `A_message_with_a_long_Message_ID_is_stored` - 300 and 900 characters; guard:
 `Two_messages_with_one_Message_ID_are_both_stored`.
+
+Fixed: a Message-ID of more than 100 octets names the file by its beginning - cut
+between characters, not inside one - and 16 hex digits of the SHA-256 of the whole of
+it, so that long Message-IDs that begin alike name files of their own; a shorter one
+names it as before.
 
 ---
 
