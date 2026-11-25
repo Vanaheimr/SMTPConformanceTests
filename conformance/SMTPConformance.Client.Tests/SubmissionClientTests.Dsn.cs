@@ -84,7 +84,6 @@ public sealed partial class SubmissionClientTests
 
         TestCaseData Case(String Name, String EnvId, String XText)
             => new TestCaseData(EnvId, XText).SetName($"ENVID goes as xtext: {Name}")
-                                             .SetCategory(TestCategories.KnownIssue)
                                              .SetProperty("Finding", "C-22");
 
         yield return Case("a space",             "order 42",      "order+2042");
@@ -113,7 +112,6 @@ public sealed partial class SubmissionClientTests
 
     [Test(Description = "RFC 3461 §4.4: the ENVID is of printable US-ASCII characters - CR and LF are none - and RFC 5321 §2.3.8: a command line ends with the first CR LF; an envelope identifier with a line break in it ends the MAIL command there, and what follows is a command of its own")]
     [Property("Finding", "C-22")]
-    [Category(TestCategories.KnownIssue)]
     public async Task An_ENVID_with_a_line_break_is_no_command_of_its_own()
     {
 
@@ -130,7 +128,6 @@ public sealed partial class SubmissionClientTests
 
     [Test(Description = "RFC 3461 §4.4: \"The ENVID parameter MAY be up to 100 characters in length\" - a longer one is refused by a server that checks (§5.1 (a)), so it does not go")]
     [Property("Finding", "C-22")]
-    [Category(TestCategories.KnownIssue)]
     public async Task No_ENVID_goes_longer_than_100_characters()
     {
 
@@ -167,7 +164,6 @@ public sealed partial class SubmissionClientTests
 
     [Test(Description = "RFC 3461 §4.3: \"The RET esmtp-keyword on the extended MAIL command specifies whether or not the message should be included in any failed DSN\"; §4.1: \"the absence of a NOTIFY parameter in a RCPT command may be interpreted as either NOTIFY=FAILURE or NOTIFY=FAILURE,DELAY\" - a failed DSN comes without NOTIFY too, and RET=HDRS keeps the body out of it")]
     [Property("Finding", "C-23")]
-    [Category(TestCategories.KnownIssue)]
     public async Task RET_goes_without_NOTIFY_and_ENVID()
     {
 
@@ -209,7 +205,6 @@ public sealed partial class SubmissionClientTests
 
     [Test(Description = "RFC 3461 §4.1: \"A NOTIFY parameter value of 'NEVER' requests that a DSN not be returned to the sender under any conditions\" - and the absence of NOTIFY is NOTIFY=FAILURE: a caller who asks for no DSN at all and whose RCPT goes without NOTIFY gets the failed ones all the same")]
     [Property("Finding", "C-24")]
-    [Category(TestCategories.KnownIssue)]
     public async Task NOTIFY_NEVER_goes_on_RCPT()
     {
 

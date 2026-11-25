@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `98fa0297`**
-(Styx `a6b9f9fb`), which closes every finding of all sixteen rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `1544d14a`**
+(Styx `a6b9f9fb`), which closes every finding of all seventeen rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -81,11 +81,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [C-22](#c-22) | medium | DSN | ENVID went on MAIL as the caller gave it, not as xtext: a space, "=" or "+" made it another parameter or another value, a line break another command - a recipient of the ENVID's making | 7 |
-| [C-23](#c-23) | low | DSN | RET without NOTIFY and ENVID was left out: the failed DSN returned the whole message | 2 |
-| [C-24](#c-24) | low | DSN | NOTIFY=NEVER could not be asked for: `DsnNotify.Never` was taken for no request, and the failed DSNs came | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -186,6 +182,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-19](#c-19) | medium | REQUIRETLS | The submission client gave a REQUIRETLS message to a server without REQUIRETLS, and left the option out | 1 | [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305) |
 | [C-20](#c-20) | medium | SMTPUTF8 | The submission client sent an internationalized message to a server without SMTPUTF8 - UTF-8 addresses in MAIL and RCPT, UTF-8 in the header | 4 | [Vanaheimr/Hermod#309](https://github.com/Vanaheimr/Hermod/pull/309) |
 | [C-21](#c-21) | low | SMTPUTF8 | The submission client asked for SMTPUTF8 for a message whose only non-ASCII octets are in an 8-bit body | 1 | [Vanaheimr/Hermod#309](https://github.com/Vanaheimr/Hermod/pull/309) |
+| [C-22](#c-22) | medium | DSN | ENVID went on MAIL as the caller gave it, not as xtext: a space, "=" or "+" made it another parameter or another value, a line break another command - a recipient of the ENVID's making | 7 | [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311) |
+| [C-23](#c-23) | low | DSN | RET without NOTIFY and ENVID was left out: the failed DSN returned the whole message | 2 | [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311) |
+| [C-24](#c-24) | low | DSN | NOTIFY=NEVER could not be asked for: `DsnNotify.Never` was taken for no request, and the failed DSNs came | 2 | [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311) |
 | [D-1](#d-1) | **high** | reports | Bounces had CR CR LF line ends | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-4](#d-4) | **high** | reports | A message that mentions "multipart/report" or quotes a bounce failed without a bounce | 3 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-2](#d-2) | medium | reports | Every bounce had the same Message-ID, `System.Func`1[System.Guid]`, and an invalid boundary | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
@@ -304,7 +303,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 453 tests for these are part of the merge gate now; the observations the first
+The 464 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1358,7 +1357,8 @@ Fixed: a message needs SMTPUTF8 for its envelope and its header section, not for
 body; an 8-bit body alone goes with BODY=8BITMIME, to a server without SMTPUTF8 too.
 
 ### C-22
-**Open.** **ENVID goes on MAIL as the caller gave it** (`DsnCommands.cs:67`: `ENVID={dsn.EnvId}`,
+**Closed** in [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311)
+(`65a80bfd`). **ENVID went on MAIL as the caller gave it** (`DsnCommands.cs:67`: `ENVID={dsn.EnvId}`,
 for the submission client, `SMTPSubmissionClient.cs:1429`, and for the relay,
 `SMTPOutboundClient.cs:848`, when an application hands it a message by
 `MailSender.SendDirectAsync`). RFC 3461 §4: "the esmtp-values for these parameters are
@@ -1377,8 +1377,17 @@ received xtext otherwise. Tests: `ENVID_goes_as_xtext` - a space, "=", "+" -,
 for the relay `The_relay_gives_ENVID_as_xtext`, `An_ENVID_with_a_line_break_is_no_command_of_the_relay`;
 guard: `An_ENVID_of_xchars_goes_as_it_is`.
 
+Fixed: `DsnParameters.EnvId` is the identifier itself, and goes on MAIL as xtext. One that
+cannot be an ENVID - empty, a character that is not printable US-ASCII, more than 100
+characters as xtext - is refused before anything goes out: by the submission client as
+`MailSentStatus.InvalidEnvelopeId`, before MAIL; by `MailSender.SendDirectAsync` as a
+permanent failure for every recipient domain; by `MailSender.SendAsync` and `Queue` with an
+`ArgumentException`. The queue keeps the xtext, and an ENVID received with a message is
+relayed as it came (§5.2.1 (a): "with the same value").
+
 ### C-23
-**Open.** **RET without NOTIFY and ENVID is left out** (`DsnParameters.cs:44`: a DSN is
+**Closed** in [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311)
+(`65a80bfd`). **RET without NOTIFY and ENVID was left out** (`DsnParameters.cs:44`: a DSN is
 "requested" with a NOTIFY other than NEVER or an ENVID; `DsnCommands.cs:56`: otherwise
 MAIL goes without RET). RFC 3461 §4.3: "The RET esmtp-keyword on the extended MAIL command
 specifies whether or not the message should be included in any failed DSN issued for this
@@ -1388,8 +1397,12 @@ NOTIFY too. A caller who asks for `DsnRet.Hdrs` alone, to keep the body out of a
 gets it back whole if the server returns full messages. Tests: `RET_goes_without_NOTIFY_and_ENVID`,
 for the relay `The_relay_gives_RET_without_NOTIFY_and_ENVID`; guard: `RET_goes_with_NOTIFY`.
 
+Fixed: RET is a request of its own; MAIL has it whenever it was given and the server
+offers DSN.
+
 ### C-24
-**Open.** **NOTIFY=NEVER cannot be asked for** (`DsnParameters.cs:44` and
+**Closed** in [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311)
+(`65a80bfd`). **NOTIFY=NEVER could not be asked for** (`DsnParameters.cs:44` and
 `DsnCommands.cs:79`: `DsnNotify.Never` is no request, and RCPT goes without NOTIFY;
 `DsnCommands.FormatNotify` writes "NEVER", but is never given it). RFC 3461 §4.1: "A NOTIFY
 parameter value of 'NEVER' requests that a DSN not be returned to the sender under any
@@ -1398,6 +1411,11 @@ DSN at all - an automatic sender, whose bounces nobody reads - gets them all the
 Tests: `NOTIFY_NEVER_goes_on_RCPT`, for the relay `The_relay_gives_NOTIFY_NEVER`; guard:
 `A_message_that_asks_for_no_DSN_goes_without_DSN_parameters` - the default asks for
 nothing, and goes without NOTIFY.
+
+Fixed: `DsnParameters.Notify` is nullable - null is no NOTIFY, the server's default;
+`DsnNotify.Never` goes as NOTIFY=NEVER on every RCPT. A queued message keeps an explicit
+NEVER with each recipient, so the queue's own meaning of a message-wide Never, none given,
+stays.
 
 ---
 

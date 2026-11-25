@@ -50,7 +50,6 @@ public sealed partial class OutboundClientTests
 
     [Test(Description = "RFC 3461 §4.4: \"envid-parameter = 'ENVID=' xtext\"; \"the value of the ENVID parameter prior to encoding as 'xtext' MUST consist entirely of printable (graphic and white space) characters from the US-ASCII repertoire\" - a space goes as \"+20\"")]
     [Property("Finding", "C-22")]
-    [Category(TestCategories.KnownIssue)]
     public async Task The_relay_gives_ENVID_as_xtext()
     {
 
@@ -64,7 +63,6 @@ public sealed partial class OutboundClientTests
 
     [Test(Description = "RFC 3461 §4.4: the ENVID is of printable US-ASCII characters - CR and LF are none - and RFC 5321 §2.3.8: a command line ends with the first CR LF; an envelope identifier with a line break in it is no command of its own")]
     [Property("Finding", "C-22")]
-    [Category(TestCategories.KnownIssue)]
     public async Task An_ENVID_with_a_line_break_is_no_command_of_the_relay()
     {
 
@@ -81,7 +79,6 @@ public sealed partial class OutboundClientTests
 
     [Test(Description = "RFC 3461 §4.3: \"The RET esmtp-keyword on the extended MAIL command specifies whether or not the message should be included in any failed DSN\" - and a failed DSN comes without NOTIFY too (§4.1)")]
     [Property("Finding", "C-23")]
-    [Category(TestCategories.KnownIssue)]
     public async Task The_relay_gives_RET_without_NOTIFY_and_ENVID()
     {
 
@@ -98,7 +95,6 @@ public sealed partial class OutboundClientTests
 
     [Test(Description = "RFC 3461 §4.1: \"A NOTIFY parameter value of 'NEVER' requests that a DSN not be returned to the sender under any conditions\" - without it the next hop sends the failed ones")]
     [Property("Finding", "C-24")]
-    [Category(TestCategories.KnownIssue)]
     public async Task The_relay_gives_NOTIFY_NEVER()
     {
 

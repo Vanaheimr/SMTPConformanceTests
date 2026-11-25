@@ -13,13 +13,13 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-25, Hermod `98fa0297`):** 1128 tests, 1117 pass, 11 fail on 3 open
-findings. A seventeenth round tested DSN as the submission client and the relay ask for it
-when an application hands them a message - 15 tests, 3 findings: ENVID went on MAIL as the
-caller gave it, not as xtext, so a line break in it made a command of its own - a recipient
-the sender did not name ([C-22](FINDINGS.md#c-22)); RET without NOTIFY and ENVID was left
-out ([C-23](FINDINGS.md#c-23)); and NOTIFY=NEVER could not be asked for
-([C-24](FINDINGS.md#c-24)).
+**State (2026-11-25, Hermod `1544d14a`):** 1128 tests, **all pass**. A seventeenth round
+tested DSN as the submission client and the relay ask for it when an application hands them
+a message - 15 tests, 3 findings: ENVID went on MAIL as the caller gave it, not as xtext, so
+a line break in it made a command of its own - a recipient the sender did not name
+([C-22](FINDINGS.md#c-22)); RET without NOTIFY and ENVID was left out
+([C-23](FINDINGS.md#c-23)); and NOTIFY=NEVER could not be asked for
+([C-24](FINDINGS.md#c-24)). All three fixed in [#311](https://github.com/Vanaheimr/Hermod/pull/311).
 A sixteenth round
 tested SMTPUTF8 as the submission client uses it - 7 tests, 2 findings: the client sent an
 internationalized message - UTF-8 addresses in MAIL and RCPT, UTF-8 in the header - to a
@@ -344,8 +344,8 @@ vectors, and the four Linux tools.
 | RFC 8689 REQUIRETLS: the MX hosts a message that requires TLS goes to, 5.7.30 and 5.7.10, its bounces, "TLS-Required: No", the submission client | 18 | 0 | ~~O-23~~ to ~~O-27~~, ~~D-14~~, ~~D-15~~, ~~C-19~~ fixed |
 | RFC 8601 §2.7.2, §5 Authentication-Results; RFC 6531 §3.7.3 the Received field of an SMTPUTF8 transaction | 9 | 0 | ~~S-43~~ to ~~S-47~~ fixed |
 | RFC 6531 §3.2, §3.4, §3.5 SMTPUTF8 in the submission client | 7 | 0 | ~~C-20~~, ~~C-21~~ fixed |
-| RFC 3461 §4, §4.1, §4.3, §4.4 the DSN parameters the submission client and the relay give for an application | 15 | 11 | C-22 to C-24 |
-| **Total** | **1128** | **11** | |
+| RFC 3461 §4, §4.1, §4.3, §4.4 the DSN parameters the submission client and the relay give for an application | 15 | 0 | ~~C-22~~ to ~~C-24~~ fixed |
+| **Total** | **1128** | **0** | |
 
 ## External test partners
 
