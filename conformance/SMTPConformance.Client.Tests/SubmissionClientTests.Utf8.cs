@@ -56,7 +56,6 @@ public sealed partial class SubmissionClientTests
 
         TestCaseData Case(String Name, String From, String To, String Subject)
             => new TestCaseData(From, To, Subject).SetName($"No server without SMTPUTF8 gets an internationalized message: {Name}")
-                                                  .SetCategory(TestCategories.KnownIssue)
                                                   .SetProperty("Finding", "C-20");
 
         yield return Case("a recipient with a UTF-8 local-part",  "app@client.example",  "jörg@scripted.test",  "hello");
@@ -115,7 +114,6 @@ public sealed partial class SubmissionClientTests
     #region C-21: SMTPUTF8 for an 8-bit body
 
     [Test(Description = "RFC 6531 §3.4: \"If the SMTPUTF8-aware SMTP client is aware that neither the envelope nor the message being sent requires any of the SMTPUTF8 extension capabilities, it SHOULD NOT supply the SMTPUTF8 parameter\"; §3.6 - an 8-bit body is BODY=8BITMIME's (RFC 6152), not SMTPUTF8's")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "C-21")]
     public async Task An_8bit_body_alone_goes_without_SMTPUTF8()
     {

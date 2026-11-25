@@ -13,12 +13,12 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-24, Hermod `44ad353b`):** 1113 tests, 1108 pass, 5 fail on 2 open
-findings. A sixteenth round tested SMTPUTF8 as the submission client uses it - 7 tests, 2
-findings: the client sends an internationalized message - UTF-8 addresses in MAIL and RCPT,
-UTF-8 in the header - to a server that does not offer SMTPUTF8 ([C-20](FINDINGS.md#c-20)),
-and asks for SMTPUTF8 for a message whose only non-ASCII octets are in an 8-bit body
-([C-21](FINDINGS.md#c-21)).
+**State (2026-11-25, Hermod `98fa0297`):** 1113 tests, **all pass**. A sixteenth round
+tested SMTPUTF8 as the submission client uses it - 7 tests, 2 findings: the client sent an
+internationalized message - UTF-8 addresses in MAIL and RCPT, UTF-8 in the header - to a
+server that does not offer SMTPUTF8 ([C-20](FINDINGS.md#c-20)), and asked for SMTPUTF8 for
+a message whose only non-ASCII octets are in an 8-bit body ([C-21](FINDINGS.md#c-21)).
+Both fixed in [#309](https://github.com/Vanaheimr/Hermod/pull/309).
 A fifteenth round
 tested the header fields the server writes into a message - Authentication-Results, and
 the Received field of an SMTPUTF8 transaction - 9 tests, 5 findings. The heaviest: an
@@ -336,8 +336,8 @@ vectors, and the four Linux tools.
 | RFC 5321 §3.8 a server that shuts down, §3.1, §5.1, RFC 7504 §3 a next hop that refuses the session; RFC 3461 §4.5, RFC 1870 §6 parameters given twice | 15 | 0 | ~~S-41~~, ~~S-42~~, ~~O-21~~, ~~O-22~~ fixed |
 | RFC 8689 REQUIRETLS: the MX hosts a message that requires TLS goes to, 5.7.30 and 5.7.10, its bounces, "TLS-Required: No", the submission client | 18 | 0 | ~~O-23~~ to ~~O-27~~, ~~D-14~~, ~~D-15~~, ~~C-19~~ fixed |
 | RFC 8601 §2.7.2, §5 Authentication-Results; RFC 6531 §3.7.3 the Received field of an SMTPUTF8 transaction | 9 | 0 | ~~S-43~~ to ~~S-47~~ fixed |
-| RFC 6531 §3.2, §3.4, §3.5 SMTPUTF8 in the submission client | 7 | 5 | C-20, C-21 |
-| **Total** | **1113** | **5** | |
+| RFC 6531 §3.2, §3.4, §3.5 SMTPUTF8 in the submission client | 7 | 0 | ~~C-20~~, ~~C-21~~ fixed |
+| **Total** | **1113** | **0** | |
 
 ## External test partners
 

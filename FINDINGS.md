@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `44ad353b`**
-(Styx `a6b9f9fb`), which closes every finding of all fifteen rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `98fa0297`**
+(Styx `a6b9f9fb`), which closes every finding of all sixteen rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -78,10 +78,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [C-20](#c-20) | medium | SMTPUTF8 | The submission client sends an internationalized message to a server without SMTPUTF8 - UTF-8 addresses in MAIL and RCPT, UTF-8 in the header | 4 |
-| [C-21](#c-21) | low | SMTPUTF8 | The submission client asks for SMTPUTF8 for a message whose only non-ASCII octets are in an 8-bit body | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -180,6 +177,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-17](#c-17) | low | client | AUTH PLAIN went with its initial response, however long: an AUTH line of more than 512 octets | 1 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
 | [C-18](#c-18) | low | client | A SCRAM challenge that is no base64 was not cancelled with "*": the client threw, and its QUIT was taken for the response | 2 | [Vanaheimr/Hermod#298](https://github.com/Vanaheimr/Hermod/pull/298) |
 | [C-19](#c-19) | medium | REQUIRETLS | The submission client gave a REQUIRETLS message to a server without REQUIRETLS, and left the option out | 1 | [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305) |
+| [C-20](#c-20) | medium | SMTPUTF8 | The submission client sent an internationalized message to a server without SMTPUTF8 - UTF-8 addresses in MAIL and RCPT, UTF-8 in the header | 4 | [Vanaheimr/Hermod#309](https://github.com/Vanaheimr/Hermod/pull/309) |
+| [C-21](#c-21) | low | SMTPUTF8 | The submission client asked for SMTPUTF8 for a message whose only non-ASCII octets are in an 8-bit body | 1 | [Vanaheimr/Hermod#309](https://github.com/Vanaheimr/Hermod/pull/309) |
 | [D-1](#d-1) | **high** | reports | Bounces had CR CR LF line ends | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-4](#d-4) | **high** | reports | A message that mentions "multipart/report" or quotes a bounce failed without a bounce | 3 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-2](#d-2) | medium | reports | Every bounce had the same Message-ID, `System.Func`1[System.Guid]`, and an invalid boundary | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
@@ -298,7 +297,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 448 tests for these are part of the merge gate now; the observations the first
+The 453 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1315,7 +1314,8 @@ Fixed: a message that requires TLS goes to no server that does not offer REQUIRE
 TLS - `failed`, and no MAIL; to one that does, with REQUIRETLS on MAIL.
 
 ### C-20
-**Open.** **The submission client sends an internationalized message to a server without
+**Closed** in [Vanaheimr/Hermod#309](https://github.com/Vanaheimr/Hermod/pull/309)
+(`330f192e`). **The submission client sent an internationalized message to a server without
 SMTPUTF8** (`SMTPSubmissionClient.cs:1388`: SMTPUTF8 goes on MAIL when the server offers it
 and the message needs it - and when the server does not, the message goes all the same,
 without it). RFC 6531 §3.2: "If the SMTPUTF8 SMTP extension is not offered by the SMTP
@@ -1329,8 +1329,15 @@ and "Subject: Grüße aus Köln". Test: `No_server_without_SMTPUTF8_gets_an_inte
 - a recipient and a sender with a UTF-8 local-part, a recipient in U-labels, a Subject in
 UTF-8; guard: `An_internationalized_message_goes_with_SMTPUTF8_to_a_server_that_offers_it`.
 
+Fixed: a message that needs SMTPUTF8 - UTF-8 in an envelope address, a local-part or a
+domain in U-labels, or in the header - goes to no server that does not offer it. It is a
+permanent failure, `MailSentStatus.SmtpUtf8NotSupported`, decided before MAIL, and the
+session ends with QUIT; there is no downgrade, which would break DKIM signatures over the
+header.
+
 ### C-21
-**Open.** **The submission client asks for SMTPUTF8 for an 8-bit body** (`SMTPSubmissionClient.cs:636`:
+**Closed** in [Vanaheimr/Hermod#309](https://github.com/Vanaheimr/Hermod/pull/309)
+(`330f192e`). **The submission client asked for SMTPUTF8 for an 8-bit body** (`SMTPSubmissionClient.cs:636`:
 a message needs SMTPUTF8 when any character of it, the body's included, is not ASCII). RFC
 6531 §3.4: "If the SMTPUTF8-aware SMTP client is aware that neither the envelope nor the
 message being sent requires any of the SMTPUTF8 extension capabilities, it SHOULD NOT supply
@@ -1339,6 +1346,9 @@ the SMTPUTF8 parameter with the MAIL command"; §3.6 - an 8-bit body is BODY=8BI
 goes with "BODY=8BITMIME SMTPUTF8"; a fix of C-20 that kept this test would refuse it to
 every server without SMTPUTF8. Test: `An_8bit_body_alone_goes_without_SMTPUTF8`; guard:
 `An_8bit_body_alone_goes_to_a_server_without_SMTPUTF8`.
+
+Fixed: a message needs SMTPUTF8 for its envelope and its header section, not for its
+body; an 8-bit body alone goes with BODY=8BITMIME, to a server without SMTPUTF8 too.
 
 ---
 
