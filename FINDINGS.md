@@ -85,7 +85,11 @@ from DNS and from the session (RFC 6591 §4, RFC 5965 §3.5); its line numbers r
 part is for: the Content-ID, a msg-id that a cid: URL names (RFC 2045 §7, RFC 5322 §3.6.4,
 RFC 2392), multipart/related and its type and start (RFC 2387), and Content-Disposition
 (RFC 2183) - as `MimeAttachment` and `MimeMultipart` write them and `MimeMessage` reads
-them; its line numbers refer to `67cf52e5`.
+them; its line numbers refer to `67cf52e5`. The twenty-first (E-22 to E-25) tests what
+an answer takes from the message it answers and the list it came through: the subject of a
+reply (RFC 5322 §3.6.5), List-Post as `MailReplies` reads it and the older builder writes
+it (RFC 2369 §2, §3.4), and the mailto URL in it (RFC 6068 §2); its line numbers refer to
+`cb9c13c1`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -93,7 +97,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [E-22](#e-22) | low | answers | The subject of a reply to a list's post had two "Re: ": "Re: [dev] Re: Hello" | 2 |
+| [E-23](#e-23) | low | answers | White space inside the angle brackets of List-Post lost the list: the reply went to the sender | 2 |
+| [E-24](#e-24) | low | answers | List-Post was read for the first mailto anywhere in it: in a comment, after what RFC 2369 says to ignore | 3 |
+| [E-25](#e-25) | low | message format | The older builder wrote List-Post's mailto URL with the address as it is: "?", "#", "%", "/" not percent-encoded | 4 |
 
 ### Closed
 
@@ -3623,6 +3632,61 @@ multipart/related; boundary=...`; the writer knows the root and its type. Test:
 
 Fixed: a multipart/related given no type has the media type of its root - the part start
 names, the first without; a type given is kept.
+
+### E-22
+**Open.** **The subject of a reply to a list's post had two "Re: "**
+(`EMail/Mime/MailReplies.cs:71`: the prefixes taken away are those at the beginning of the
+subject; `:92`, `:98`: "Re: " before what is left). RFC 5322 §3.6.5: the subject of a reply
+"MAY start with the string "Re: " [...] followed by the contents of the "Subject:" field
+body of the original message. If this is done, only one instance of the literal string
+"Re: " ought to be used since use of other strings or more than one instance can lead to
+undesirable consequences." A list puts its tag before the subject - "[dev] Re: Hello" -
+and the reply is "Re: [dev] Re: Hello"; the reply to that is the same, with two "Re: " in
+it still. Tests: `The_subject_of_a_reply_has_one_Re` - "[dev] Re: Hello", "Re: [dev] Re:
+Hello"; guards: `The_subject_of_a_reply_is_Re_and_the_original` - "[dev] Hello", "Re: Re:
+Hello".
+
+### E-23
+**Open.** **White space inside the angle brackets of List-Post lost the list**
+(`EMail/Mime/MailReplies.cs:74`: `<mailto:` without white space, the address up to `>` or
+`?`; `:161`: an address with a space in it is none). RFC 2369 §2: "The contents of the list
+header fields mostly consist of angle-bracket ('<', '>') enclosed URLs, with internal
+whitespace being ignored. MTAs MUST NOT insert whitespace within the brackets, but client
+applications should treat any whitespace, that might be inserted by poorly behaved MTAs,
+as characters to ignore." `List-Post: <mailto:list@` folded before `example.org>`, or `<
+mailto:list@example.org >`, names no list: the reply to the list goes to the sender.
+Tests: `White_space_inside_the_angle_brackets_of_List_Post_is_ignored` - folded inside the
+URL, around it; guard: `List_Post_names_the_list_its_mailto_URL_names`.
+
+### E-24
+**Open.** **List-Post was read for the first mailto anywhere in it**
+(`EMail/Mime/MailReplies.cs:74`, `:159`: the first `<mailto:` in the field, in a comment
+or after what is to be ignored). RFC 2369 §2: "client applications MUST follow the
+following guidelines for handling the contents of the header fields": a field that,
+"following any leading whitespace, including comments", begins with no `<` SHOULD be
+ignored; "Any characters following an angle bracket enclosed URL SHOULD be ignored, unless
+a comma is the first non-whitespace/comment character after the closing angle bracket";
+and "If a sub-item (comma-separated item) within the field is not an angle-bracket
+enclosed URL, the remainder of the field [...] SHOULD be ignored." `(not
+<mailto:wrong@example.org>) <mailto:list@example.org>` posted to wrong@example.org;
+`<https://example.org/post> (moderated) <mailto:other@example.org>` and
+`<https://example.org/post>, by mail: <mailto:other@example.org>` to other@example.org,
+which the field does not name. Tests: `List_Post_is_read_as_RFC_2369_says` - those three;
+guards: `List_Post_names_the_list_its_mailto_URL_names` - a mailto URL, one after another
+and a comma, a comment after it, NO.
+
+### E-25
+**Open.** **The older builder wrote List-Post's mailto URL with the address as it is**
+(`EMail/Builder.cs:458`: `<mailto:` + the address + `>`). RFC 2369 §2: the list header
+fields hold URLs; RFC 6068 §2: "A number of characters that can appear in <addr-spec> MUST
+be percent-encoded: these are the characters that cannot appear in a URI according to
+[STD66] as well as "%" (because it is used for percent-encoding) and all the characters in
+gen-delims except "@" and ":" (i.e., "/", "?", "#", "[", and "]")." The list
+`dev?announce@lists.example.org` is written `<mailto:dev?announce@lists.example.org>` - a
+URL whose address is "dev", the rest a header field; `list#1@` begins a fragment, `list%1@`
+a percent-encoding that is none, and `dev/announce@` a path. Hermod has `MailtoUri.Of` for
+this since #316. Tests: `List_Post_names_the_lists_address` - a slash, a question mark, a
+number sign, a percent sign; guard: `List_Post_of_an_address_of_the_usual_kind`.
 
 ## Reports that arrive
 
