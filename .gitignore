@@ -16,3 +16,7 @@ artifacts/
 # IMailStorage is injected. The fixtures point it into the temp directory, but a
 # stray run of the library's own defaults drops a ./mailstore next to the binary.
 mailstore/
+
+# Claude Code puts a git worktree of its own here (EnterWorktree, isolated agents):
+# a whole checkout of the suite, submodules and all, which is no part of it.
+.claude/worktrees/
