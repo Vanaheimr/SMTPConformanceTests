@@ -108,7 +108,11 @@ sends in answer to a message: a DMARC failure report in answer to an ARF report 
 recipient named twice (RFC 8098 §2.1); its line numbers refer to `83b63bb0`. The
 twenty-sixth (D-16, D-17) tests what the relay's reports say of the next hop: the
 Diagnostic-Code of a multi-line reply (RFC 3461 §9.2), and the Remote-MTA of a next hop
-known by its address (§9.3); its line numbers refer to `0aec4e4a`.
+known by its address (§9.3); its line numbers refer to `0aec4e4a`. The twenty-seventh
+(S-51, S-52) tests the sizes of RFC 5321 §4.5.3.1 on the server - a domain of 255 octets, a
+path of 256, a reply line of 512 - and what it makes of a name or a path longer than they
+allow: the header lines it writes of it (RFC 5322 §2.1.1), and the reply that repeats it;
+its line numbers refer to `0aa5a6e6`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -116,7 +120,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [S-51](#s-51) | low | trace fields | An EHLO name or a path longer than RFC 5321 allows was taken, and written into a header line of more than 998 characters | 4 |
+| [S-52](#s-52) | low | replies | EHLO and HELO repeated an argument longer than a domain name in a reply line of more than 512 octets | 2 |
 
 ### Closed
 
@@ -1180,6 +1187,36 @@ Fixed: a Message-ID of more than 100 octets names the file by its beginning - cu
 between characters, not inside one - and 16 hex digits of the SHA-256 of the whole of
 it, so that long Message-IDs that begin alike name files of their own; a shorter one
 names it as before.
+
+### S-51
+**Open.** **An EHLO name or a path longer than RFC 5321 allows was taken, and written into
+a header line of more than 998 characters** (`SMTPSession.cs:397`, `:406`: an EHLO or HELO
+argument of any length is taken; `:764`, `:877`: so is a path; `:1808`: the Received field
+names the EHLO name, `:1824` the one recipient, `:1528` the Return-Path the reverse-path,
+each on one line; `DsnGenerator.cs:312`: so does Final-Recipient). RFC 5321 §4.5.3.1.2: "The
+maximum total length of a domain name or number is 255 octets"; §4.5.3.1.1, §4.5.3.1.3: a
+local-part of 64 octets, a path of 256; §4.5.3.1: "Objects larger than these sizes SHOULD be
+avoided when possible", clients "MUST be prepared for a server to reject them" - §4.5.3.1.9,
+"501 Path too long". Taken all the same, within the command line of 1024 octets, they make
+lines that RFC 5322 §2.1.1 forbids: "Each line of characters MUST be no more than 998
+characters". An EHLO name of 1000 octets is a Received line of 1037 characters, a reverse-path
+of 997 a Return-Path of 1010, a forward-path of 1004 a line of 1010 in Received, and a
+forward-path of 989 with NOTIFY=SUCCESS a Final-Recipient of 1012 in the delivered DSN. Tests:
+`No_header_line_of_more_than_998_characters` - the EHLO name, the reverse-path, the
+forward-path, the delivered DSN; refused is as good as written within the limit; guard:
+`Names_and_paths_of_the_sizes_RFC_5321_asks_for_are_taken` - an EHLO name of 255 octets, a
+reverse-path of 256, a local-part of 64.
+
+### S-52
+**Open.** **EHLO and HELO repeated an argument longer than a domain name in a reply line of
+more than 512 octets** (`SMTPSession.cs:403`: "Hello" and the HELO argument; `:415`: the first
+line of the EHLO reply, the same). RFC 5321 §4.5.3.1.5: "The maximum total length of a reply
+line including the reply code and the <CRLF> is 512 octets. More information may be conveyed
+through multiple-line replies" - all a client has to be able to read (§4.5.3.1). An argument
+of 1000 octets, which is no domain name (§4.5.3.1.2: 255 octets), is answered with a reply
+line of 1027 octets to EHLO, of 1033 to HELO. Tests:
+`No_reply_line_of_more_than_512_octets` - EHLO, HELO; guard: the EHLO name of 255 octets in
+`Names_and_paths_of_the_sizes_RFC_5321_asks_for_are_taken`.
 
 ---
 
