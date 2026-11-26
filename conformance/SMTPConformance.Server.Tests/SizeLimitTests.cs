@@ -107,7 +107,6 @@ public sealed class SizeLimitTests : HermodServerTestBase
 
         TestCaseData Case(String Name, String Ehlo, String MailFrom, String RcptTo)
             => new TestCaseData(Ehlo, MailFrom, RcptTo).SetName($"No header line of more than 998 characters: {Name}")
-                                                       .SetCategory(TestCategories.KnownIssue)
                                                        .SetProperty("Finding", "S-51");
 
         yield return Case("an EHLO name of 1000 octets, in Received",
@@ -152,7 +151,6 @@ public sealed class SizeLimitTests : HermodServerTestBase
 
         TestCaseData Case(String Command)
             => new TestCaseData(Command).SetName($"No reply line of more than 512 octets: {Command} with a name of 1000 octets")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "S-52");
 
         yield return Case("EHLO");

@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `0aa5a6e6`**
-(Styx `6dc4bb30`), which closes every finding of all twenty-six rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `69096a60`**
+(Styx `6dc4bb30`), which closes every finding of all twenty-seven rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -120,10 +120,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [S-51](#s-51) | low | trace fields | An EHLO name or a path longer than RFC 5321 allows was taken, and written into a header line of more than 998 characters | 4 |
-| [S-52](#s-52) | low | replies | EHLO and HELO repeated an argument longer than a domain name in a reply line of more than 512 octets | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -188,6 +185,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-48](#s-48) | medium | storage | The default store wrote the SPF record of the sender's domain into the stored header as DNS gave it: a line break in it made a header field of its own - "X-DMARC-Result: Pass" - an empty line ended the header | 4 | [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312) |
 | [S-49](#s-49) | low | storage | The default store wrote fields of its own before the Return-Path: a stored message did not begin with it | 2 | [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312) |
 | [S-50](#s-50) | low | storage | A message whose Message-ID was too long for a file name could not be stored: 451 at every try | 2 | [Vanaheimr/Hermod#312](https://github.com/Vanaheimr/Hermod/pull/312) |
+| [S-51](#s-51) | low | trace fields | An EHLO name or a path longer than RFC 5321 allows was taken, and written into a header line of more than 998 characters | 4 | [Vanaheimr/Hermod#335](https://github.com/Vanaheimr/Hermod/pull/335) |
+| [S-52](#s-52) | low | replies | EHLO and HELO repeated an argument longer than a domain name in a reply line of more than 512 octets | 2 | [Vanaheimr/Hermod#335](https://github.com/Vanaheimr/Hermod/pull/335) |
 | [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
 | [O-1](#o-1) | **high** | outbound | Every reply but EHLO's was read as one line: a multi-line reply shifted all that followed | 5 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [O-2](#o-2) | **high** | outbound | A recipient the next hop refused disappeared: no bounce, no retry | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
@@ -381,7 +380,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 551 tests for these are part of the merge gate now; the observations the first
+The 557 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1189,7 +1188,7 @@ it, so that long Message-IDs that begin alike name files of their own; a shorter
 names it as before.
 
 ### S-51
-**Open.** **An EHLO name or a path longer than RFC 5321 allows was taken, and written into
+**Closed** in [Vanaheimr/Hermod#335](https://github.com/Vanaheimr/Hermod/pull/335) (`c7233d17`). **An EHLO name or a path longer than RFC 5321 allows was taken, and written into
 a header line of more than 998 characters** (`SMTPSession.cs:397`, `:406`: an EHLO or HELO
 argument of any length is taken; `:764`, `:877`: so is a path; `:1808`: the Received field
 names the EHLO name, `:1824` the one recipient, `:1528` the Return-Path the reverse-path,
@@ -1207,8 +1206,13 @@ forward-path, the delivered DSN; refused is as good as written within the limit;
 `Names_and_paths_of_the_sizes_RFC_5321_asks_for_are_taken` - an EHLO name of 255 octets, a
 reverse-path of 256, a local-part of 64.
 
+Fixed: a reverse-path of more than 256 octets is answered with `501 5.1.7 Path too long`, a
+forward-path with `501 5.1.3 Path too long` (§4.5.3.1.9) - "<", the mailbox and ">", in
+octets of UTF-8 -, and an EHLO or HELO argument of more than 255 octets with 501; what is
+taken fits in the lines it goes into.
+
 ### S-52
-**Open.** **EHLO and HELO repeated an argument longer than a domain name in a reply line of
+**Closed** in [Vanaheimr/Hermod#335](https://github.com/Vanaheimr/Hermod/pull/335) (`c7233d17`). **EHLO and HELO repeated an argument longer than a domain name in a reply line of
 more than 512 octets** (`SMTPSession.cs:403`: "Hello" and the HELO argument; `:415`: the first
 line of the EHLO reply, the same). RFC 5321 §4.5.3.1.5: "The maximum total length of a reply
 line including the reply code and the <CRLF> is 512 octets. More information may be conveyed
@@ -1217,6 +1221,10 @@ of 1000 octets, which is no domain name (§4.5.3.1.2: 255 octets), is answered w
 line of 1027 octets to EHLO, of 1033 to HELO. Tests:
 `No_reply_line_of_more_than_512_octets` - EHLO, HELO; guard: the EHLO name of 255 octets in
 `Names_and_paths_of_the_sizes_RFC_5321_asks_for_are_taken`.
+
+Fixed: an EHLO or HELO argument of more than 255 octets is answered with 501 - no enhanced
+status code, as RFC 2034 §4 has it for HELO and EHLO - and greets nobody; one of 255 octets
+is greeted on a line of less than 512.
 
 ---
 

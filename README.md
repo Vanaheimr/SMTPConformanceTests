@@ -13,12 +13,12 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-26, Hermod `0aa5a6e6`):** 1257 tests, 1251 pass, 6 fail on 2 open
-findings. A twenty-seventh round tested the sizes of RFC 5321 §4.5.3.1 on the server - 7
+**State (2026-11-26, Hermod `69096a60`):** 1257 tests, **all pass**. A twenty-seventh round tested the sizes of RFC 5321 §4.5.3.1 on the server - 7
 tests, 2 findings: an EHLO name or a path longer than RFC 5321 allows was taken, and written
 into a Received, Return-Path or Final-Recipient line of more than 998 characters
 ([S-51](FINDINGS.md#s-51)); and EHLO and HELO repeated such a name in a reply line of more
-than 512 octets ([S-52](FINDINGS.md#s-52)).
+than 512 octets ([S-52](FINDINGS.md#s-52)). Both fixed in
+[#335](https://github.com/Vanaheimr/Hermod/pull/335).
 A twenty-sixth round tested what the relay's reports say of the next hop - 9
 tests, 2 findings: a multi-line reply lost the reply codes of its lines in Diagnostic-Code,
 and three long reply lines made a line of more than 998 characters ([D-16](FINDINGS.md#d-16));
@@ -429,8 +429,8 @@ vectors, and the four Linux tools.
 | RFC 3030 §3 BINARYMIME, RFC 6152 §3, RFC 2045 §2.7 to §2.9: binary data - a line of more than 998 octets, a NUL - from the submission client and the relay | 14 | 0 | ~~C-25~~, ~~C-26~~, ~~O-32~~, ~~O-33~~ fixed |
 | RFC 6650 §6, RFC 3834 §5.2, RFC 8098 §2.1: the reports sent in answer to a message - none to an ARF report, the Auto-Submitted of a failure report, the MDNs for a recipient named twice | 9 | 0 | ~~R-13~~, ~~R-14~~, ~~K-11~~ fixed |
 | RFC 3461 §6.3 (h), (i), §9.2, §9.3, RFC 5322 §2.1.1: what the relay's reports say of the next hop - the Diagnostic-Code of a multi-line reply, the Remote-MTA of a next hop known by its address | 9 | 0 | ~~D-16~~, ~~D-17~~ fixed |
-| RFC 5321 §4.5.3.1, RFC 5322 §2.1.1: the sizes of a domain, a path and a reply line on the server - an EHLO name or a path longer than they allow, in the header lines of the message and the DSN, and in the reply | 7 | 6 | S-51, S-52 |
-| **Total** | **1257** | **6** | |
+| RFC 5321 §4.5.3.1, RFC 5322 §2.1.1: the sizes of a domain, a path and a reply line on the server - an EHLO name or a path longer than they allow, in the header lines of the message and the DSN, and in the reply | 7 | 0 | ~~S-51~~, ~~S-52~~ fixed |
+| **Total** | **1257** | **0** | |
 
 ## External test partners
 
