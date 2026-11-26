@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `e7ab2253`**
-(Styx `6dc4bb30`), which closes every finding of all twenty-three rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `83b63bb0`**
+(Styx `6dc4bb30`), which closes every finding of all twenty-four rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -110,12 +110,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [C-25](#c-25) | low | client | Binary data went as BODY=8BITMIME to a server that offers BINARYMIME | 2 |
-| [C-26](#c-26) | medium | client | Binary data - a line of more than 998 octets, a NUL - went to a server without BINARYMIME | 4 |
-| [O-32](#o-32) | medium | outbound | The relay sent binary data to a next hop without BINARYMIME | 4 |
-| [O-33](#o-33) | low | outbound | The relay sent binary data as DATA to a next hop that offers BINARYMIME | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -212,6 +207,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [O-29](#o-29) | low | outbound | The retry intervals and the give-up time could not be configured | 2 | [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) |
 | [O-30](#o-30) | low | outbound | A message refused for now could be tried again after 27 minutes | 1 | [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) |
 | [O-31](#o-31) | low | outbound | Recipients at one domain written two ways - in other capitals, in U-labels and A-labels - got a copy each | 2 | [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) |
+| [O-32](#o-32) | medium | outbound | The relay sent binary data to a next hop without BINARYMIME | 4 | [Vanaheimr/Hermod#331](https://github.com/Vanaheimr/Hermod/pull/331) |
+| [O-33](#o-33) | low | outbound | The relay sent binary data as DATA to a next hop that offers BINARYMIME | 1 | [Vanaheimr/Hermod#331](https://github.com/Vanaheimr/Hermod/pull/331) |
 | [C-11](#c-11) | low | client | One refused recipient stopped the message for all | 1 | [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) |
 | [C-12](#c-12) | medium | SCRAM client | A 235 without the server-final-message was taken as success: the server never proved it knows the password | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [C-13](#c-13) | low | SCRAM client | The client did not normalize the password (SASLprep) | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
@@ -226,6 +223,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [C-22](#c-22) | medium | DSN | ENVID went on MAIL as the caller gave it, not as xtext: a space, "=" or "+" made it another parameter or another value, a line break another command - a recipient of the ENVID's making | 7 | [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311) |
 | [C-23](#c-23) | low | DSN | RET without NOTIFY and ENVID was left out: the failed DSN returned the whole message | 2 | [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311) |
 | [C-24](#c-24) | low | DSN | NOTIFY=NEVER could not be asked for: `DsnNotify.Never` was taken for no request, and the failed DSNs came | 2 | [Vanaheimr/Hermod#311](https://github.com/Vanaheimr/Hermod/pull/311) |
+| [C-25](#c-25) | low | client | Binary data went as BODY=8BITMIME to a server that offers BINARYMIME | 2 | [Vanaheimr/Hermod#331](https://github.com/Vanaheimr/Hermod/pull/331) |
+| [C-26](#c-26) | medium | client | Binary data - a line of more than 998 octets, a NUL - went to a server without BINARYMIME | 4 | [Vanaheimr/Hermod#331](https://github.com/Vanaheimr/Hermod/pull/331) |
 | [D-1](#d-1) | **high** | reports | Bounces had CR CR LF line ends | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-4](#d-4) | **high** | reports | A message that mentions "multipart/report" or quotes a bounce failed without a bounce | 3 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
 | [D-2](#d-2) | medium | reports | Every bounce had the same Message-ID, `System.Func`1[System.Guid]`, and an invalid boundary | 1 | [Vanaheimr/Hermod#134](https://github.com/Vanaheimr/Hermod/pull/134) |
@@ -364,7 +363,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 525 tests for these are part of the merge gate now; the observations the first
+The 536 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1538,7 +1537,7 @@ NEVER with each recipient, so the queue's own meaning of a message-wide Never, n
 stays.
 
 ### C-25
-**Open.** **Binary data went as BODY=8BITMIME to a server that offers BINARYMIME**
+**Closed** in [Vanaheimr/Hermod#331](https://github.com/Vanaheimr/Hermod/pull/331) (`cd22515f`). **Binary data went as BODY=8BITMIME to a server that offers BINARYMIME**
 (`SMTPSubmissionClient/SMTPSubmissionClient.cs:1426`: a server that offers 8BITMIME is given
 BODY=8BITMIME, whatever the message; `:1428`: BODY=BINARYMIME only to one that does not).
 RFC 3030 §3: binary data is BODY=BINARYMIME - "The BINARYMIME service extension can only be
@@ -1550,8 +1549,12 @@ but declared 8-bit text: the server is never told that every octet is to be kept
 Tests: `Binary_data_goes_as_BODY_BINARYMIME` - a line of 1200 octets, a NUL; guard:
 `Eight_bit_text_goes_to_a_server_with_BINARYMIME`.
 
+Fixed: binary data - a line of more than 998 octets, a NUL, `MessageOctets.IsBinary` - goes
+as BDAT with BODY=BINARYMIME to a server that offers BINARYMIME and CHUNKING. 8-bit text
+goes as BODY=8BITMIME, as before.
+
 ### C-26
-**Open.** **Binary data went to a server without BINARYMIME**
+**Closed** in [Vanaheimr/Hermod#331](https://github.com/Vanaheimr/Hermod/pull/331) (`cd22515f`). **Binary data went to a server without BINARYMIME**
 (`SMTPSubmissionClient/SMTPSubmissionClient.cs:1374` to `:1376`: only octets above 127 are
 looked for - not the length of a line, not a NUL; `:1570`: DATA, `:1548`: BDAT, either way).
 RFC 3030 §3: to a server that does not offer BINARYMIME "the sender-SMTP MUST NOT, under any
@@ -1564,6 +1567,10 @@ and no BINARYMIME, declared BODY=8BITMIME. A server that keeps to its 1000 octet
 `Binary_data_is_not_sent_to_a_server_without_BINARYMIME` - 8BITMIME alone, CHUNKING without
 BINARYMIME, each with a line of 1200 octets and with a NUL; guard:
 `A_line_of_998_octets_is_no_binary_data`.
+
+Fixed: to a server that does not offer BINARYMIME and CHUNKING, binary data is not sent -
+`MailSentStatus.BinaryNotSupported`, decided before MAIL. There is no conversion, which
+would break the signatures over the content.
 
 ---
 
@@ -2076,7 +2083,7 @@ Fixed: the server and `MailSender` group the recipients by `Idna.Key` - A-labels
 case, no trailing dot - and the queued message targets that name.
 
 ### O-32
-**Open.** **The relay sent binary data to a next hop without BINARYMIME**
+**Closed** in [Vanaheimr/Hermod#331](https://github.com/Vanaheimr/Hermod/pull/331) (`cd22515f`). **The relay sent binary data to a next hop without BINARYMIME**
 (`SMTPOutboundClient.cs:830`, `:837`: only octets above 127 are looked for - not the length
 of a line, not a NUL; `:913`, `:922`: every message goes as DATA). RFC 3030 §3: to a server
 that does not offer BINARYMIME "the sender-SMTP MUST NOT, under any circumstances, send binary
@@ -2091,8 +2098,11 @@ so binary data a client sent it goes on the same way. Tests:
 without BINARYMIME, each with a line of 1200 octets and with a NUL; guard:
 `A_line_of_998_octets_is_relayed`.
 
+Fixed: to a next hop that does not offer BINARYMIME and CHUNKING, binary data is a permanent
+failure, 5.6.3, and bounced - "it may treat this as a permanent error"; no conversion.
+
 ### O-33
-**Open.** **The relay sent binary data as DATA to a next hop that offers BINARYMIME**
+**Closed** in [Vanaheimr/Hermod#331](https://github.com/Vanaheimr/Hermod/pull/331) (`cd22515f`). **The relay sent binary data as DATA to a next hop that offers BINARYMIME**
 (`SMTPOutboundClient.cs:913`: the relay knows no BDAT; `:852`: BODY=8BITMIME is the one body
 type it gives). RFC 3030 §3: "BINARYMIME cannot be used with the DATA command", and binary
 data is BODY=BINARYMIME; RFC 6152 §3: 8BITMIME "DOES NOT provide a means of transferring an
@@ -2100,6 +2110,10 @@ object with the BINARY content-transfer-encoding". A next hop that offers CHUNKI
 BINARYMIME is sent a line of 1200 octets as DATA, declared nothing. Test:
 `Binary_data_goes_to_a_next_hop_with_BINARYMIME_as_BODY_BINARYMIME_only` - as BDAT with
 BODY=BINARYMIME, or not at all.
+
+Fixed: binary data goes to a next hop that offers BINARYMIME and CHUNKING as BDAT LAST, with
+BODY=BINARYMIME, its octets as they are (`MessageOctets.Bdat`); everything else as DATA, as
+before.
 
 ---
 

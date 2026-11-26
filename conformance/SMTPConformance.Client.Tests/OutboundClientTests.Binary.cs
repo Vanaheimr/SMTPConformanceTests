@@ -44,12 +44,10 @@ public sealed partial class OutboundClientTests
 
             yield return new TestCaseData(new[] { "PIPELINING", "SIZE 10485760", "8BITMIME", "ENHANCEDSTATUSCODES" }, body)
                              .SetName($"Binary data, {what}, is not relayed to a next hop with 8BITMIME and without BINARYMIME")
-                             .SetCategory(TestCategories.KnownIssue)
                              .SetProperty("Finding", "O-32");
 
             yield return new TestCaseData(new[] { "PIPELINING", "SIZE 10485760", "8BITMIME", "ENHANCEDSTATUSCODES", "CHUNKING" }, body)
                              .SetName($"Binary data, {what}, is not relayed to a next hop with CHUNKING and without BINARYMIME")
-                             .SetCategory(TestCategories.KnownIssue)
                              .SetProperty("Finding", "O-32");
 
         }
@@ -75,7 +73,6 @@ public sealed partial class OutboundClientTests
 
 
     [Test]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "O-33")]
     [Description("RFC 3030 §3: binary data goes as BODY=BINARYMIME, and \"BINARYMIME cannot be used with the DATA command\"; RFC 6152 §3: not as BODY=8BITMIME - to a next hop that offers CHUNKING and BINARYMIME, binary data goes as BDAT with BODY=BINARYMIME, or not at all")]
     public async Task Binary_data_goes_to_a_next_hop_with_BINARYMIME_as_BODY_BINARYMIME_only()

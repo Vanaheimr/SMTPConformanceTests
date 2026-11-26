@@ -104,12 +104,10 @@ public sealed partial class SubmissionClientTests
 
             yield return new TestCaseData(new[] { "PIPELINING", "SIZE 10485760", "8BITMIME", "ENHANCEDSTATUSCODES" }, body.Arguments[0])
                              .SetName($"Binary data, {what}, is not sent to a server with 8BITMIME and without BINARYMIME")
-                             .SetCategory(TestCategories.KnownIssue)
                              .SetProperty("Finding", "C-26");
 
             yield return new TestCaseData(new[] { "PIPELINING", "SIZE 10485760", "8BITMIME", "ENHANCEDSTATUSCODES", "CHUNKING" }, body.Arguments[0])
                              .SetName($"Binary data, {what}, is not sent to a server with CHUNKING and without BINARYMIME")
-                             .SetCategory(TestCategories.KnownIssue)
                              .SetProperty("Finding", "C-26");
 
         }
@@ -134,7 +132,6 @@ public sealed partial class SubmissionClientTests
 
 
     [TestCaseSource(nameof(BinaryBodies))]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "C-25")]
     [Description("RFC 3030 §3: binary data goes as BODY=BINARYMIME - \"The BINARYMIME service extension can only be used with the \"CHUNKING\" service extension\" -, not as BODY=8BITMIME, which \"DOES NOT provide a means of transferring an object with the BINARY content-transfer-encoding\" (RFC 6152 §3) - to a server that offers both, the message goes as BDAT with BODY=BINARYMIME")]
     public async Task Binary_data_goes_as_BODY_BINARYMIME(String BodyLine)
