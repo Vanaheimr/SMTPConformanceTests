@@ -70,7 +70,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Name, SmtpServerScript Script, String Notify, Boolean Delay, String Reply)
             => new TestCaseData(Script, Notify, Delay, Reply).SetName($"A multi-line reply in Diagnostic-Code: {Name}")
-                                                             .SetCategory(TestCategories.KnownIssue)
                                                              .SetProperty("Finding", "D-16");
 
         yield return Case("the bounce, a reply to RCPT",
@@ -110,7 +109,6 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 5321 §4.5.3.1.5: \"The maximum total length of a reply line including the reply code and the <CRLF> is 512 octets\" - a reply of three such lines; RFC 5322 §2.1.1: \"Each line of characters MUST be no more than 998 characters, and SHOULD be no more than 78 characters, excluding the CRLF\" - the bounce that transcribes it (RFC 3461 §9.2) has no line longer")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "D-16")]
     public async Task A_reply_of_three_long_lines_makes_no_line_longer_than_998_characters()
     {
@@ -156,7 +154,6 @@ public sealed partial class OutboundClientTests
 
         TestCaseData Case(String Name, SmtpServerScript Script, String Notify)
             => new TestCaseData(Script, Notify).SetName($"The Remote-MTA of a smart host given as an address is a domain-literal: {Name}")
-                                               .SetCategory(TestCategories.KnownIssue)
                                                .SetProperty("Finding", "D-17");
 
         yield return Case("the bounce",

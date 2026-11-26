@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `0aec4e4a`**
-(Styx `6dc4bb30`), which closes every finding of all twenty-five rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `0aa5a6e6`**
+(Styx `6dc4bb30`), which closes every finding of all twenty-six rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -116,10 +116,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [D-16](#d-16) | low | reports | A multi-line reply of the next hop lost its reply codes in Diagnostic-Code, and made a line of more than 998 characters | 6 |
-| [D-17](#d-17) | low | reports | The Remote-MTA of a next hop known by its address was no domain-literal: "dns; 127.0.0.1" | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -249,6 +246,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [D-13](#d-13) | low | reports | The bounce of an SMTPUTF8 message had UTF-8 in message/delivery-status and in message/rfc822 | 2 | [Vanaheimr/Hermod#290](https://github.com/Vanaheimr/Hermod/pull/290) |
 | [D-14](#d-14) | medium | REQUIRETLS | The bounce of a REQUIRETLS message returned the whole message, body and all, RET=FULL or none | 2 | [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305) |
 | [D-15](#d-15) | low | REQUIRETLS | The bounce of a REQUIRETLS message was queued without REQUIRETLS | 1 | [Vanaheimr/Hermod#305](https://github.com/Vanaheimr/Hermod/pull/305) |
+| [D-16](#d-16) | low | reports | A multi-line reply of the next hop lost its reply codes in Diagnostic-Code, and made a line of more than 998 characters | 6 | [Vanaheimr/Hermod#334](https://github.com/Vanaheimr/Hermod/pull/334) |
+| [D-17](#d-17) | low | reports | The Remote-MTA of a next hop known by its address was no domain-literal: "dns; 127.0.0.1" | 2 | [Vanaheimr/Hermod#334](https://github.com/Vanaheimr/Hermod/pull/334) |
 | [M-1](#m-1) | **high** | MTA-STS | `*.example.com` matched `example.com` and `foo.bar.example.com` | 7 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
 | [M-2](#m-2) | medium | MTA-STS | Any TXT record containing "v=STSv1" announced a policy | 7 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
 | [M-3](#m-3) | medium | MTA-STS | A policy needed only a mode; enforce without mx allowed every MX | 8 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
@@ -375,7 +374,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 543 tests for these are part of the merge gate now; the observations the first
+The 551 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -2316,7 +2315,7 @@ Fixed: every report on such a message - bounce, delay, relayed - is queued with
 RequireTls, and goes with REQUIRETLS where the next hop offers it (O-26).
 
 ### D-16
-**Open.** **A multi-line reply of the next hop lost its reply codes in Diagnostic-Code,
+**Closed** in [Vanaheimr/Hermod#334](https://github.com/Vanaheimr/Hermod/pull/334) (`531ffcf2`). **A multi-line reply of the next hop lost its reply codes in Diagnostic-Code,
 and made a line of more than 998 characters** (`SMTPConnection.cs:59`, `:65`: the text of a
 reply is the text of its lines without their codes, joined by a space, and "code text" one
 line; `SMTPOutboundClient.cs:908`: so a recipient's outcome keeps it; `DsnGenerator.cs:390`:
@@ -2337,8 +2336,14 @@ to the end of the data, the delayed DSN, the relayed DSN;
 `A_reply_of_three_long_lines_makes_no_line_longer_than_998_characters`; guard:
 `A_single_line_reply_is_transcribed_exactly`.
 
+Fixed: `SMTPReply.Transcript` is the reply as it was received, every line with its code; a
+recipient's outcome keeps it, a refusal of MAIL, DATA or the message and the reply that takes
+the message keep it as their text. `DsnGenerator` writes every line of it on a line of its
+own, after CR LF SPACE, and folds a line too long for one at a space within it (RFC 5322
+§2.2.3), which unfolding takes back exactly.
+
 ### D-17
-**Open.** **The Remote-MTA of a next hop known by its address was no domain-literal**
+**Closed** in [Vanaheimr/Hermod#334](https://github.com/Vanaheimr/Hermod/pull/334) (`531ffcf2`). **The Remote-MTA of a next hop known by its address was no domain-literal**
 (`DsnGenerator.cs:317`: `Remote-MTA: dns;` and the next hop as the relay was given it -
 `SMTPOutboundClient.cs:186`, a smart host as configured). RFC 3461 §6.3 (h): "the Remote-MTA
 field MUST be supplied for each of those recipients. The mta-name-type subfields of those
@@ -2349,6 +2354,9 @@ A smart host given as 127.0.0.1 is written `Remote-MTA: dns; 127.0.0.1`, a domai
 not; `dns; [127.0.0.1]` says what it is. Tests:
 `The_Remote_MTA_of_a_next_hop_given_as_an_address_is_a_domain_literal` - the bounce, the
 relayed DSN.
+
+Fixed: `DsnGenerator.MtaName` writes an address as a domain-literal, `[192.0.2.1]`, or
+`[IPv6:2001:db8::1]` (RFC 5321 §4.1.3); a name, or a literal, as it is.
 
 ---
 

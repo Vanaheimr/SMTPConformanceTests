@@ -13,12 +13,12 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-26, Hermod `0aec4e4a`):** 1250 tests, 1242 pass, 8 fail on 2 open
-findings. A twenty-sixth round tested what the relay's reports say of the next hop - 9
+**State (2026-11-26, Hermod `0aa5a6e6`):** 1250 tests, **all pass**. A twenty-sixth round tested what the relay's reports say of the next hop - 9
 tests, 2 findings: a multi-line reply lost the reply codes of its lines in Diagnostic-Code,
 and three long reply lines made a line of more than 998 characters ([D-16](FINDINGS.md#d-16));
 and a smart host given as an address was the Remote-MTA "dns; 127.0.0.1", where RFC 3461
-§9.3 asks for a domain-literal, "[127.0.0.1]" ([D-17](FINDINGS.md#d-17)).
+§9.3 asks for a domain-literal, "[127.0.0.1]" ([D-17](FINDINGS.md#d-17)). Both fixed in
+[#334](https://github.com/Vanaheimr/Hermod/pull/334).
 A twenty-fifth round tested the reports Hermod sends in answer to a message - 9
 tests, 3 findings: a DMARC failure report was sent in answer to an ARF report - a failure
 report or an abuse report that itself failed DMARC ([R-13](FINDINGS.md#r-13)); the failure
@@ -422,8 +422,8 @@ vectors, and the four Linux tools.
 | RFC 5321 §4.5.4.1 the sending strategy: the delay before a destination that failed is tried again, the retry interval, the parameters of the retry algorithm, one copy for one domain (§2.4, RFC 5890 §2.3.2.1) | 12 | 0 | ~~O-28~~ to ~~O-31~~ fixed |
 | RFC 3030 §3 BINARYMIME, RFC 6152 §3, RFC 2045 §2.7 to §2.9: binary data - a line of more than 998 octets, a NUL - from the submission client and the relay | 14 | 0 | ~~C-25~~, ~~C-26~~, ~~O-32~~, ~~O-33~~ fixed |
 | RFC 6650 §6, RFC 3834 §5.2, RFC 8098 §2.1: the reports sent in answer to a message - none to an ARF report, the Auto-Submitted of a failure report, the MDNs for a recipient named twice | 9 | 0 | ~~R-13~~, ~~R-14~~, ~~K-11~~ fixed |
-| RFC 3461 §6.3 (h), (i), §9.2, §9.3, RFC 5322 §2.1.1: what the relay's reports say of the next hop - the Diagnostic-Code of a multi-line reply, the Remote-MTA of a next hop known by its address | 9 | 8 | D-16, D-17 |
-| **Total** | **1250** | **8** | |
+| RFC 3461 §6.3 (h), (i), §9.2, §9.3, RFC 5322 §2.1.1: what the relay's reports say of the next hop - the Diagnostic-Code of a multi-line reply, the Remote-MTA of a next hop known by its address | 9 | 0 | ~~D-16~~, ~~D-17~~ fixed |
+| **Total** | **1250** | **0** | |
 
 ## External test partners
 
