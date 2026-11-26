@@ -13,14 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-26, Hermod `45315aa7`):** 1206 tests, 1194 pass, 12 fail on 4 open
-findings. A twenty-second round tested what a part is when the reader does not know its
+**State (2026-11-26, Hermod `0a93a6fb`):** 1206 tests, **all pass**. A twenty-second round tested what a part is when the reader does not know its
 subtype, and the message a message carries - 18 tests, 4 findings: a text of a subtype the
 reader does not know was an attachment, so a text/markdown mail had no body
 ([E-26](FINDINGS.md#e-26)); a message part of a subtype it does not know was lost
 ([E-27](FINDINGS.md#e-27)); an attached message with UTF-8 in its header was written
 message/rfc822, not message/global ([E-28](FINDINGS.md#e-28)); and one with a line over 998
-octets or a NUL was written 7bit or 8bit, not binary ([E-29](FINDINGS.md#e-29)).
+octets or a NUL was written 7bit or 8bit, not binary ([E-29](FINDINGS.md#e-29)). All four
+fixed in [#326](https://github.com/Vanaheimr/Hermod/pull/326).
 A twenty-first round tested what an answer takes from the message it answers and
 the list it came through - 18 tests, 4 findings: the subject of a reply to a list's post had
 two "Re: " ([E-22](FINDINGS.md#e-22)); white space inside the angle brackets of List-Post
@@ -391,8 +391,8 @@ vectors, and the four Linux tools.
 | RFC 7489 §6.2, §6.4, RFC 8460 §3, RFC 6068 §2 the report URIs; RFC 6591 §4, RFC 5965 §3.5 the fields of the DMARC failure report | 17 | 0 | ~~R-8~~ to ~~R-12~~, ~~T-5~~, ~~T-6~~ fixed |
 | RFC 2045 §7, RFC 2392 Content-ID and cid:; RFC 2387 multipart/related; RFC 2183 Content-Disposition - written and read | 15 | 0 | ~~E-17~~ to ~~E-21~~ fixed |
 | RFC 5322 §3.6.5 the subject of a reply; RFC 2369 §2, §3.4 List-Post, read and written; RFC 6068 §2 its mailto URL | 18 | 0 | ~~E-22~~ to ~~E-25~~ fixed |
-| RFC 2046 §4.1.4, §5.2.4 a text and a message of an unknown subtype; §5.2.1, RFC 6532 §3.7 message/rfc822 and message/global; RFC 2045 §2.7 to §2.9, §6.2 7bit, 8bit, binary | 18 | 12 | E-26 to E-29 |
-| **Total** | **1206** | **12** | |
+| RFC 2046 §4.1.4, §5.2.4 a text and a message of an unknown subtype; §5.2.1, RFC 6532 §3.7 message/rfc822 and message/global; RFC 2045 §2.7 to §2.9, §6.2 7bit, 8bit, binary | 18 | 0 | ~~E-26~~ to ~~E-29~~ fixed |
+| **Total** | **1206** | **0** | |
 
 ## External test partners
 

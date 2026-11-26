@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `45315aa7`**
-(Styx `a6b9f9fb`), which closes every finding of all twenty-one rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `0a93a6fb`**
+(Styx `a6b9f9fb`), which closes every finding of all twenty-two rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -102,12 +102,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [E-26](#e-26) | low | MIME | A text of a subtype the reader does not know was an attachment: a text/markdown mail had no body | 3 |
-| [E-27](#e-27) | low | MIME | A message part of a subtype the reader does not know was lost: neither the text nor an attachment | 3 |
-| [E-28](#e-28) | low | MIME | An attached message with UTF-8 in its header was written message/rfc822, not message/global | 3 |
-| [E-29](#e-29) | low | MIME | An attached message with a line over 998 octets or a NUL was written 7bit or 8bit, not binary | 3 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -336,6 +331,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [E-23](#e-23) | low | answers | White space inside the angle brackets of List-Post lost the list: the reply went to the sender | 2 | [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) |
 | [E-24](#e-24) | low | answers | List-Post was read for the first mailto anywhere in it: in a comment, after what RFC 2369 says to ignore | 3 | [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) |
 | [E-25](#e-25) | low | message format | The older builder wrote List-Post's mailto URL with the address as it is: "?", "#", "%", "/" not percent-encoded | 4 | [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) |
+| [E-26](#e-26) | low | MIME | A text of a subtype the reader does not know was an attachment: a text/markdown mail had no body | 3 | [Vanaheimr/Hermod#326](https://github.com/Vanaheimr/Hermod/pull/326) |
+| [E-27](#e-27) | low | MIME | A message part of a subtype the reader does not know was lost: neither the text nor an attachment | 3 | [Vanaheimr/Hermod#326](https://github.com/Vanaheimr/Hermod/pull/326) |
+| [E-28](#e-28) | low | MIME | An attached message with UTF-8 in its header was written message/rfc822, not message/global | 3 | [Vanaheimr/Hermod#326](https://github.com/Vanaheimr/Hermod/pull/326) |
+| [E-29](#e-29) | low | MIME | An attached message with a line over 998 octets or a NUL was written 7bit or 8bit, not binary | 3 | [Vanaheimr/Hermod#326](https://github.com/Vanaheimr/Hermod/pull/326) |
 | [I-5](#i-5) | low | DMARC reader | A date_range outside years 1 to 9999 threw `ArgumentOutOfRangeException` | 2 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-6](#i-6) | low | DSN | A next hop's status code with leading zeros went into the DSN as it was | 3 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-7](#i-7) | low | TLS-RPT ingest | The preamble of the multipart was read as a report part | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -348,7 +347,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 506 tests for these are part of the merge gate now; the observations the first
+The 518 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3713,7 +3712,7 @@ Fixed: the older builder writes `MailtoUri.Of` the address - "/", "?", "#" and "
 percent-encoded - so the URL names the list's address.
 
 ### E-26
-**Open.** **A text of a subtype the reader does not know was an attachment**
+**Closed** in [Vanaheimr/Hermod#326](https://github.com/Vanaheimr/Hermod/pull/326) (`c97be4d5`). **A text of a subtype the reader does not know was an attachment**
 (`EMail/Mime/MimeMessage.cs:157`: text/plain and text/html are the texts to show; `:164`,
 `:165`: every other type is an attachment; `:738`, `:741`: only text/plain and text/html are
 the body). RFC 2046 §4.1.4: "Unrecognized subtypes of "text" should be treated as subtype
@@ -3725,8 +3724,13 @@ text/markdown the first part of a multipart/mixed; guard:
 `A_text_marked_attachment_is_listed_whatever_its_subtype` - a text/calendar marked
 attachment, with a file name.
 
+Fixed: a text of another subtype, in a charset the reader knows, not marked attachment nor
+given a file name but inline, is the body where there is no text/plain; beside one it stays
+an attachment - the text/calendar of an invitation. In a charset the reader does not know it
+is an attachment, as §4.1.4 says.
+
 ### E-27
-**Open.** **A message part of a subtype the reader does not know was lost**
+**Closed** in [Vanaheimr/Hermod#326](https://github.com/Vanaheimr/Hermod/pull/326) (`c97be4d5`). **A message part of a subtype the reader does not know was lost**
 (`EMail/Mime/MimeMessage.cs:161`: every message/* but rfc822 and global is no attachment -
 "the report parts of a bounce or a read receipt" - and no text either). RFC 2046 §5.2.4:
 "MIME implementations must in general treat unrecognized subtypes of "message" as being
@@ -3737,8 +3741,12 @@ an attachment: the reader shows no trace of it. Tests:
 `A_forwarded_message_is_an_attachment`, `The_report_parts_of_a_bounce_are_no_attachments` -
 message/delivery-status and text/rfc822-headers of a multipart/report.
 
+Fixed: the parts of a report are named - delivery-status, disposition-notification and
+their global forms, feedback-report, tracking-status, global-headers, text/rfc822-headers -
+and a message of any other subtype is an attachment.
+
 ### E-28
-**Open.** **An attached message with UTF-8 in its header was written message/rfc822**
+**Closed** in [Vanaheimr/Hermod#326](https://github.com/Vanaheimr/Hermod/pull/326) (`c97be4d5`). **An attached message with UTF-8 in its header was written message/rfc822**
 (`EMail/Mime/MimeEntity.cs:468`, `:486`: `MimeAttachedMessage` is message/rfc822 whatever
 it carries). RFC 6532 §3.7: a message is a "message/global message" if "it contains 8-bit
 UTF-8 header values", and message/global is the media type for one - "otherwise identical
@@ -3751,8 +3759,11 @@ SMTPUTF8 reader is promised a header it can read. Tests:
 From, its address; guards: `An_attached_message_with_an_ASCII_header_is_message_rfc822` - a
 UTF-8 body; `A_message_global_part_is_read_as_its_message`.
 
+Fixed: an attached message with 8-bit in a header of its own or of one of its parts is
+message/global.
+
 ### E-29
-**Open.** **An attached message with a line over 998 octets or a NUL was written 7bit or 8bit**
+**Closed** in [Vanaheimr/Hermod#326](https://github.com/Vanaheimr/Hermod/pull/326) (`c97be4d5`). **An attached message with a line over 998 octets or a NUL was written 7bit or 8bit**
 (`EMail/Mime/MimeEntity.cs:473` to `:487`: 7bit when no octet is above 127 and none is NUL,
 8bit otherwise - the lengths of the lines never looked at). RFC 2045 §2.7 and §2.8: 7bit and
 8bit data are "relatively short lines with 998 octets or less between CRLF line separation
@@ -3766,6 +3777,10 @@ no 8bit data is said to be, and a relay that keeps to the 1000 octets of a line 
 §4.5.3.1.6) breaks it. Tests: `An_attached_message_that_is_no_7bit_and_no_8bit_data_is_binary`
 - a line of 1000 US-ASCII octets, of 1000 octets 8-bit, a NUL; guard:
 `An_attached_message_of_short_US_ASCII_lines_is_7bit` - a line of 998.
+
+Fixed: the lines are measured, after their line ends are made CRLF; a line over 998 octets
+or a NUL is binary. The message is still attached octet for octet - a mail that carries a
+binary one is binary, and needs BDAT with BODY=BINARYMIME (RFC 3030) to be sent.
 
 ## Reports that arrive
 

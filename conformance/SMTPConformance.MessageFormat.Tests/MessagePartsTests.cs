@@ -45,7 +45,6 @@ public sealed class MessagePartsTests
 
         TestCaseData Case(String Name, String Message, Int32[] Path)
             => new TestCaseData(Message, Path).SetName($"A text of a subtype the reader does not know is text: {Name}")
-                                              .SetCategory(TestCategories.KnownIssue)
                                               .SetProperty("Finding", "E-26");
 
         yield return Case("text/markdown, the message", """
@@ -152,7 +151,6 @@ public sealed class MessagePartsTests
 
         TestCaseData Case(String Subtype, String Content)
             => new TestCaseData(Subtype, Content).SetName($"A message part of a subtype the reader does not know is an attachment: message/{Subtype}")
-                                                 .SetCategory(TestCategories.KnownIssue)
                                                  .SetProperty("Finding", "E-27");
 
         yield return Case("http",      "GET /index.html HTTP/1.1\r\nHost: example.org\r\n");
@@ -255,7 +253,6 @@ public sealed class MessagePartsTests
 
         TestCaseData Case(String Name, String Message)
             => new TestCaseData(Message).SetName($"An attached message with UTF-8 in its header is message/global: {Name}")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "E-28");
 
         yield return Case("the subject",           "From: other@example.net\r\nSubject: Grüße aus Jena\r\n\r\nThe text.\r\n");
@@ -304,7 +301,6 @@ public sealed class MessagePartsTests
 
         TestCaseData Case(String Name, Byte[] Message)
             => new TestCaseData(Message).SetName($"An attached message that is no 7bit and no 8bit data is binary: {Name}")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "E-29");
 
         var head = "From: other@example.net\r\nSubject: Hello\r\n\r\n";
