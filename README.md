@@ -13,7 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-26, Hermod `0a93a6fb`):** 1206 tests, **all pass**. A twenty-second round tested what a part is when the reader does not know its
+**State (2026-11-26, Hermod `0a93a6fb`):** 1218 tests, 1211 pass, 7 fail on 4 open
+findings. A twenty-third round tested when the relay tries again, and how many copies it
+sends (RFC 5321 §4.5.4.1) - 12 tests, 4 findings: a next hop that refused the session for now
+was tried again at once for the next message to it ([O-28](FINDINGS.md#o-28)); the retry
+intervals and the give-up time could not be configured ([O-29](FINDINGS.md#o-29)); a message
+refused for now could be tried again after 27 minutes ([O-30](FINDINGS.md#o-30)); and
+recipients at one domain written two ways got a copy each ([O-31](FINDINGS.md#o-31)).
+A twenty-second round tested what a part is when the reader does not know its
 subtype, and the message a message carries - 18 tests, 4 findings: a text of a subtype the
 reader does not know was an attachment, so a text/markdown mail had no body
 ([E-26](FINDINGS.md#e-26)); a message part of a subtype it does not know was lost
@@ -392,7 +399,8 @@ vectors, and the four Linux tools.
 | RFC 2045 §7, RFC 2392 Content-ID and cid:; RFC 2387 multipart/related; RFC 2183 Content-Disposition - written and read | 15 | 0 | ~~E-17~~ to ~~E-21~~ fixed |
 | RFC 5322 §3.6.5 the subject of a reply; RFC 2369 §2, §3.4 List-Post, read and written; RFC 6068 §2 its mailto URL | 18 | 0 | ~~E-22~~ to ~~E-25~~ fixed |
 | RFC 2046 §4.1.4, §5.2.4 a text and a message of an unknown subtype; §5.2.1, RFC 6532 §3.7 message/rfc822 and message/global; RFC 2045 §2.7 to §2.9, §6.2 7bit, 8bit, binary | 18 | 0 | ~~E-26~~ to ~~E-29~~ fixed |
-| **Total** | **1206** | **0** | |
+| RFC 5321 §4.5.4.1 the sending strategy: the delay before a destination that failed is tried again, the retry interval, the parameters of the retry algorithm, one copy for one domain (§2.4, RFC 5890 §2.3.2.1) | 12 | 7 | O-28 to O-31 |
+| **Total** | **1218** | **7** | |
 
 ## External test partners
 

@@ -94,7 +94,12 @@ know its subtype, and the message a message carries: a text (RFC 2046 §4.1.4) a
 (§5.2.4) of a subtype the reader does not know, message/global for an attached message with
 UTF-8 in its header (RFC 6532 §3.7), and what 7bit and 8bit promise of its octets (RFC 2045
 §2.7, §2.8, §6.2) - as `MimeMessage` reads them and `MimeAttachedMessage` writes them; its
-line numbers refer to `45315aa7`.
+line numbers refer to `45315aa7`. The twenty-third (O-28 to O-31) tests when the relay tries
+again, and how many copies it sends - the sending strategy of RFC 5321 §4.5.4.1: the delay
+before a destination that failed is tried again, the retry interval, the parameters of the
+retry algorithm, and one copy for the recipients of one domain - as `QueueProcessor` and
+`RetryCalculator` retry and the server queues what it relays; its line numbers refer to
+`0a93a6fb`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -102,7 +107,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [O-28](#o-28) | medium | outbound | A next hop that refused the session for now was tried again at once for the next message to it | 2 |
+| [O-29](#o-29) | low | outbound | The retry intervals and the give-up time could not be configured | 2 |
+| [O-30](#o-30) | low | outbound | A message refused for now could be tried again after 27 minutes | 1 |
+| [O-31](#o-31) | low | outbound | Recipients at one domain written two ways - in other capitals, in U-labels and A-labels - got a copy each | 2 |
 
 ### Closed
 
@@ -1961,6 +1971,58 @@ parameter is specified, the TLS-Required header field MUST be ignored").
 Fixed: the one TLS-Required field of the header, "No", sets the recipient domain's MTA-STS
 policy and DANE aside; STARTTLS is tried all the same. With REQUIRETLS the field is
 ignored.
+
+### O-28
+**Open.** **A next hop that refused the session for now was tried again at once for the next
+message to it** (`QueueProcessor.cs:150`, `:228`: before an attempt only `CanSendToDomain`
+is asked, and `:484` knows when the domain was last sent to and how often - not whether that
+went well; `:345`: a failure for now sets the retry of the message, not of the destination).
+RFC 5321 §4.5.4.1: "The sender MUST delay retrying a particular destination after one attempt
+has failed"; "A client SHOULD keep a list of hosts it cannot reach and corresponding
+connection timeouts, rather than just retrying queued mail items." A next hop that greets
+with 421, or closes the connection unasked, is tried again for every message queued for it
+in the meantime - each of them waiting for the same session to fail. `DomainCooldownSeconds`
+(60 by default) is a rate limit: it holds back the next message after a delivery as after a
+failure, and for a minute, not for the retry interval. Tests:
+`A_destination_that_failed_is_not_tried_again_at_once` - a 421 greeting, a connection closed
+at once; guards: `A_recipient_refused_for_now_does_not_hold_back_the_next_message` - a 450
+to one RCPT is the recipient's failure, not the destination's -, and
+`A_destination_that_took_a_message_takes_the_next_one_at_once`.
+
+### O-29
+**Open.** **The retry intervals and the give-up time could not be configured**
+(`RetryCalculator.cs:34`: the intervals a private array; `:50`, `:51`: `MaxRetries` a
+constant, `MaxQueueTime` a static field; `QueueProcessorConfig` has neither). RFC 5321
+§4.5.4.1: "The parameters to the retry algorithm MUST be configurable." An operator whose
+mail must give up sooner - or later -, or who retries a smart host of their own more often,
+cannot. Tests: `The_give_up_time_is_configurable` - with no time left, a message refused for
+now has failed and is bounced -, and `The_retry_intervals_are_configurable` - with three
+hours, it is tried again in three hours; they look for `QueueProcessorConfig.GiveUpAfter` and
+`QueueProcessorConfig.RetryIntervals` by name. Guard:
+`By_default_a_message_refused_for_now_is_kept`.
+
+### O-30
+**Open.** **A message refused for now could be tried again after 27 minutes**
+(`RetryCalculator.cs:37`: 30 minutes the first retry; `:60`: plus or minus 10 % "jitter").
+RFC 5321 §4.5.4.1: "In general, the retry interval SHOULD be at least 30 minutes". The jitter
+spreads the retries, as it should - but around 30 minutes, so that every other first retry
+comes sooner, as soon as after 27. Test: `No_retry_comes_sooner_than_30_minutes` - 20 copies
+of a message, each refused for now, the soonest of their retries.
+
+### O-31
+**Open.** **Recipients at one domain written two ways got a copy each**
+(`SMTPSession.cs:1593`: the relayed recipients are grouped by their domain as written,
+ordinally). RFC 5321 §4.5.4.1: when the server "to which a copy of the message is to be sent
+is the same for multiple recipients, then only one copy of the message SHOULD be
+transmitted. That is, the SMTP client SHOULD use the command sequence: MAIL, RCPT, RCPT, ...,
+RCPT, DATA"; §2.4: "Mailbox domains follow normal DNS rules and are hence not case
+sensitive"; RFC 5890 §2.3.2.1: a U-label and its A-label are the same label. RCPT TO:
+first@outbound.test and second@OUTBOUND.test are queued as two messages for two "domains",
+and go in two transactions to the same MX host; first@bücher.test and
+second@xn--bcher-kva.test alike. `MailSender` groups without regard to case, but not the two
+forms of a name either. Tests: `Recipients_at_one_domain_get_one_copy` - other capitals,
+U-labels and A-labels; guards: the same domain written alike, and
+`Recipients_at_two_domains_get_two_copies`.
 
 ---
 
