@@ -91,12 +91,10 @@ public sealed partial class OutboundClientTests
 
         yield return new TestCaseData(new SmtpServerScript { Greeting = "421 4.3.2 Service not available, closing transmission channel" })
                          .SetName("A next hop that greeted with 421 is not tried again at once for the next message")
-                         .SetCategory(TestCategories.KnownIssue)
                          .SetProperty("Finding", "O-28");
 
         yield return new TestCaseData(new Object?[] { null })
                          .SetName("A next hop that closed the connection unasked is not tried again at once for the next message")
-                         .SetCategory(TestCategories.KnownIssue)
                          .SetProperty("Finding", "O-28");
 
     }
@@ -167,7 +165,6 @@ public sealed partial class OutboundClientTests
     #region O-29: the parameters of the retry algorithm are the operator's
 
     [Test(Description = "RFC 5321 §4.5.4.1: \"The parameters to the retry algorithm MUST be configurable\" - a give-up time of the operator's (QueueProcessorConfig.GiveUpAfter): with none left, a message refused for now has failed and is bounced")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "O-29")]
     public async Task The_give_up_time_is_configurable()
     {
@@ -194,7 +191,6 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 5321 §4.5.4.1: \"The parameters to the retry algorithm MUST be configurable\" - retry intervals of the operator's (QueueProcessorConfig.RetryIntervals): with three hours, a message refused for now is tried again in three hours")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "O-29")]
     public async Task The_retry_intervals_are_configurable()
     {
@@ -243,7 +239,6 @@ public sealed partial class OutboundClientTests
     #region O-30: a retry no sooner than 30 minutes
 
     [Test(Description = "RFC 5321 §4.5.4.1: \"In general, the retry interval SHOULD be at least 30 minutes\" - none of 20 messages refused for now is tried again sooner")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "O-30")]
     public async Task No_retry_comes_sooner_than_30_minutes()
     {
@@ -297,13 +292,11 @@ public sealed partial class OutboundClientTests
         // RFC 5321 §2.4: "Mailbox domains follow normal DNS rules and are hence not case sensitive."
         yield return new TestCaseData(false, new[] { "first@outbound.test", "second@OUTBOUND.test" })
                          .SetName("Two recipients at outbound.test and OUTBOUND.test get one copy")
-                         .SetCategory(TestCategories.KnownIssue)
                          .SetProperty("Finding", "O-31");
 
         // RFC 5890 §2.3.2.1: a U-label and its A-label are the same label - one domain, one MX.
         yield return new TestCaseData(true, new[] { "first@bücher.test", "second@xn--bcher-kva.test" })
                          .SetName("Two recipients at bücher.test and xn--bcher-kva.test get one copy")
-                         .SetCategory(TestCategories.KnownIssue)
                          .SetProperty("Finding", "O-31");
 
         yield return new TestCaseData(false, new[] { "first@outbound.test", "second@outbound.test" })

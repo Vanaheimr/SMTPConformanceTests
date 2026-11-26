@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `0a93a6fb`**
-(Styx `a6b9f9fb`), which closes every finding of all twenty-two rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `e7ab2253`**
+(Styx `6dc4bb30`), which closes every finding of all twenty-three rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -107,12 +107,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [O-28](#o-28) | medium | outbound | A next hop that refused the session for now was tried again at once for the next message to it | 2 |
-| [O-29](#o-29) | low | outbound | The retry intervals and the give-up time could not be configured | 2 |
-| [O-30](#o-30) | low | outbound | A message refused for now could be tried again after 27 minutes | 1 |
-| [O-31](#o-31) | low | outbound | Recipients at one domain written two ways - in other capitals, in U-labels and A-labels - got a copy each | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -205,6 +200,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [O-25](#o-25) | low | REQUIRETLS | No TLS for a REQUIRETLS message - no STARTTLS, a certificate not trusted - was a failure for now, not 5.7.10 | 2 | [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304) |
 | [O-26](#o-26) | low | REQUIRETLS | A bounce that carried REQUIRETLS was refused to a next hop without it, 5.7.30, and lost | 1 | [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304) |
 | [O-27](#o-27) | low | REQUIRETLS | "TLS-Required: No" was not heeded: an MTA-STS policy held back a report on the domain's broken TLS | 2 | [Vanaheimr/Hermod#304](https://github.com/Vanaheimr/Hermod/pull/304) |
+| [O-28](#o-28) | medium | outbound | A next hop that refused the session for now was tried again at once for the next message to it | 2 | [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) |
+| [O-29](#o-29) | low | outbound | The retry intervals and the give-up time could not be configured | 2 | [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) |
+| [O-30](#o-30) | low | outbound | A message refused for now could be tried again after 27 minutes | 1 | [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) |
+| [O-31](#o-31) | low | outbound | Recipients at one domain written two ways - in other capitals, in U-labels and A-labels - got a copy each | 2 | [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) |
 | [C-11](#c-11) | low | client | One refused recipient stopped the message for all | 1 | [Vanaheimr/Hermod#131](https://github.com/Vanaheimr/Hermod/pull/131) |
 | [C-12](#c-12) | medium | SCRAM client | A 235 without the server-final-message was taken as success: the server never proved it knows the password | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
 | [C-13](#c-13) | low | SCRAM client | The client did not normalize the password (SASLprep) | 1 | [Vanaheimr/Hermod#284](https://github.com/Vanaheimr/Hermod/pull/284) |
@@ -357,7 +356,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 518 tests for these are part of the merge gate now; the observations the first
+The 525 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1973,7 +1972,7 @@ policy and DANE aside; STARTTLS is tried all the same. With REQUIRETLS the field
 ignored.
 
 ### O-28
-**Open.** **A next hop that refused the session for now was tried again at once for the next
+**Closed** in [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) (`85b9194e`). **A next hop that refused the session for now was tried again at once for the next
 message to it** (`QueueProcessor.cs:150`, `:228`: before an attempt only `CanSendToDomain`
 is asked, and `:484` knows when the domain was last sent to and how often - not whether that
 went well; `:345`: a failure for now sets the retry of the message, not of the destination).
@@ -1989,8 +1988,15 @@ at once; guards: `A_recipient_refused_for_now_does_not_hold_back_the_next_messag
 to one RCPT is the recipient's failure, not the destination's -, and
 `A_destination_that_took_a_message_takes_the_next_one_at_once`.
 
+Fixed: the `QueueProcessor` keeps the destinations that failed at their last attempt - no
+session, or none but a refusal of it, 421 or a connection closed, before any recipient was
+answered - and holds back their messages until the message that failed there is due. Then
+the first message that is due tries the destination, and the others wait for what it says;
+one held back past its give-up time has failed and is bounced. A refusal of a recipient or
+of the message is no failure of the destination.
+
 ### O-29
-**Open.** **The retry intervals and the give-up time could not be configured**
+**Closed** in [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) (`85b9194e`). **The retry intervals and the give-up time could not be configured**
 (`RetryCalculator.cs:34`: the intervals a private array; `:50`, `:51`: `MaxRetries` a
 constant, `MaxQueueTime` a static field; `QueueProcessorConfig` has neither). RFC 5321
 §4.5.4.1: "The parameters to the retry algorithm MUST be configurable." An operator whose
@@ -2001,16 +2007,22 @@ hours, it is tried again in three hours; they look for `QueueProcessorConfig.Giv
 `QueueProcessorConfig.RetryIntervals` by name. Guard:
 `By_default_a_message_refused_for_now_is_kept`.
 
+Fixed: `QueueProcessorConfig` has `RetryIntervals`, `GiveUpAfter` and `MaxRetries`, with the
+defaults `RetryCalculator` had - 30 minutes up to a day, five days, 12 attempts. The
+Will-Retry-Until of a delay DSN is the give-up time the processor uses.
+
 ### O-30
-**Open.** **A message refused for now could be tried again after 27 minutes**
+**Closed** in [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) (`85b9194e`). **A message refused for now could be tried again after 27 minutes**
 (`RetryCalculator.cs:37`: 30 minutes the first retry; `:60`: plus or minus 10 % "jitter").
 RFC 5321 §4.5.4.1: "In general, the retry interval SHOULD be at least 30 minutes". The jitter
 spreads the retries, as it should - but around 30 minutes, so that every other first retry
 comes sooner, as soon as after 27. Test: `No_retry_comes_sooner_than_30_minutes` - 20 copies
 of a message, each refused for now, the soonest of their retries.
 
+Fixed: the jitter only adds, up to 10 %: no retry comes sooner than its interval.
+
 ### O-31
-**Open.** **Recipients at one domain written two ways got a copy each**
+**Closed** in [Vanaheimr/Hermod#329](https://github.com/Vanaheimr/Hermod/pull/329) (`85b9194e`). **Recipients at one domain written two ways got a copy each**
 (`SMTPSession.cs:1593`: the relayed recipients are grouped by their domain as written,
 ordinally). RFC 5321 §4.5.4.1: when the server "to which a copy of the message is to be sent
 is the same for multiple recipients, then only one copy of the message SHOULD be
@@ -2023,6 +2035,9 @@ second@xn--bcher-kva.test alike. `MailSender` groups without regard to case, but
 forms of a name either. Tests: `Recipients_at_one_domain_get_one_copy` - other capitals,
 U-labels and A-labels; guards: the same domain written alike, and
 `Recipients_at_two_domains_get_two_copies`.
+
+Fixed: the server and `MailSender` group the recipients by `Idna.Key` - A-labels, lower
+case, no trailing dot - and the queued message targets that name.
 
 ---
 
