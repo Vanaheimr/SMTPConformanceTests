@@ -115,7 +115,11 @@ allow: the header lines it writes of it (RFC 5322 §2.1.1), and the reply that r
 its line numbers refer to `0aa5a6e6`. The twenty-eighth (S-53 to S-55) tests the BDAT
 command as RFC 3030 §2 writes it, and the commands between two chunks of one message: an
 argument outside its grammar, a size the server cannot read, a RCPT after the first chunk;
-its line numbers refer to `69096a60`.
+its line numbers refer to `69096a60`. The twenty-ninth (S-56 to S-58) tests what RFC 6409
+asks of the server as the Message Submission Agent - a client signed in on the submission
+port, its message relayed or delivered by the server itself, not handed to an application:
+the header fields RFC 5322 requires, a Message-ID, and an envelope of fully qualified
+domains; its line numbers refer to `75f0dca0`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -123,7 +127,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [S-56](#s-56) | medium | submission | A submitted message without Date or From, or with a From that names no domain, was relayed and delivered as it was | 4 |
+| [S-57](#s-57) | low | submission | A submitted message without a Message-ID went on without one | 1 |
+| [S-58](#s-58) | low | submission | A single-label domain in the envelope of a submission was taken, and the message queued for it | 2 |
 
 ### Closed
 
@@ -1292,6 +1300,50 @@ RSET command had been issued").
 
 Fixed: a RCPT after a chunk is `503 5.5.1 RCPT after BDAT`, and the transaction goes on with
 the recipients named before.
+
+### S-56
+**Open.** **A submitted message without Date or From, or with a From that names no domain, was
+relayed and delivered as it was** (`SMTPSession.cs:1508`: the message is the trace fields and
+the octets that arrived, nothing else; `:1601`, `:1639`: so it is stored, so it is queued).
+RFC 6409 §8: "Any message forwarded or delivered by the MSA MUST conform to the requirements
+of [SMTP-MTA] and [MESSAGE-FORMAT]"; RFC 5322 §3.6: "The only required header fields are the
+origination date field and the originator address field(s)", and §3.4.1: `addr-spec =
+local-part "@" domain`. alice, signed in on the submission port, sends a message with From
+and no Date: it is queued for bob@remote.example, and delivered to alice@hermod.test, without
+a Date; one with Date and no From, or with `From: alice`, goes on the same. RFC 5321 §6.4 lets
+"one used as the target of SMTP as an initial posting (message submission) protocol" add "a
+date, time, or time zone when none appears" and correct "addresses to proper FQDN format";
+RFC 6409 §4.1 has 554 for a message it refuses. A message handed to an `IMailSubmission`
+application is the application's to complete, and not tested here. Tests:
+`A_submitted_message_goes_on_as_RFC_5322_has_it` - no Date, relayed; no Date, delivered; no
+From; a From without a domain: refused, or relayed or delivered with one Date, one From, and
+fully qualified addresses in it; guard: `A_message_from_another_server_is_delivered_as_it_came`
+(§6.4: "These changes MUST NOT be applied by an SMTP server that provides an intermediate
+relay function").
+
+### S-57
+**Open.** **A submitted message without a Message-ID went on without one** (`SMTPSession.cs:1508`,
+as S-56). RFC 6409 §8.3: "The MSA SHOULD add or replace the 'Message-ID' field, if it lacks
+it, or it is not valid syntax"; RFC 5322 §3.6.4: "every message SHOULD have a "Message-ID:"
+field"; RFC 5321 §6.4: "Addition of a message-id field when none appears". The receivers of
+the message are left to tell it from others by nothing - and some refuse a message without
+one. Test: `A_submitted_message_without_a_Message_ID_gets_one` - one Message-ID, a msg-id
+(`"<" id-left "@" id-right ">"`); guards: `The_Message_ID_of_a_submitted_message_is_kept` -
+one of valid syntax, and the Date the client gave, go on as they are;
+`A_message_from_another_server_is_delivered_as_it_came` - no Message-ID added to mail that is
+no submission.
+
+### S-58
+**Open.** **A single-label domain in the envelope of a submission was taken, and the message
+queued for it** (`SMTPSession.cs:764`, `:937`: a reverse-path and a forward-path are taken
+whatever their domain; `:972`: a recipient not local is relayed). RFC 6409 §4.2: "The MSA
+MUST ensure that all domains in the SMTP envelope are fully qualified", "Reply code 554 is to
+be used to reject a MAIL, RCPT, or DATA command that contains improper domain references".
+`RCPT TO:<bob@intranet>` from alice, signed in, is 250, and the message is queued for the
+domain "intranet"; `MAIL FROM:<alice@intranet>` is 250, and the message is relayed with that
+reverse-path - for the next hop to bounce it to a domain that is none. Tests:
+`The_envelope_of_a_submission_is_fully_qualified` - a recipient at a single-label domain, a
+sender at one: refused, or relayed with an envelope of fully qualified domains.
 
 ---
 
