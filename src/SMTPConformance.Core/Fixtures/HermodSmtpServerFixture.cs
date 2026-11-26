@@ -128,6 +128,12 @@ public sealed class HermodSmtpServerFixtureOptions
     public Boolean                                    EnableTlsRptIngestion    { get; init; } = false;
 
     /// <summary>
+    /// Whether the server sends DMARC reports (RFC 7489 §7) - the aggregate reports and the
+    /// failure reports a policy asks for with ruf= -, queued for relay.
+    /// </summary>
+    public Boolean                                    EnableDmarcReporting     { get; init; } = false;
+
+    /// <summary>
     /// Whether the server stores local mail in its own default store - files in the storage
     /// directory, <see cref="HermodSmtpServerFixture.StorageDirectory"/> - instead of the
     /// capturing one: what a server that is given no store does.
@@ -250,7 +256,9 @@ public sealed class HermodSmtpServerFixture : IAsyncDisposable
                           AuthMechanisms           = Options.AuthMechanisms,
                           AuthOnMtaPort            = Options.AuthOnMtaPort,
                           EnableAutoMdn            = Options.EnableAutoMdn,
-                          EnableTlsRptIngestion    = Options.EnableTlsRptIngestion
+                          EnableTlsRptIngestion    = Options.EnableTlsRptIngestion,
+                          EnableDmarcReporting     = Options.EnableDmarcReporting,
+                          EnableDmarcForensic      = Options.EnableDmarcReporting
                       };
 
         var storage = new CapturingMailStorage();

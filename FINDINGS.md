@@ -102,7 +102,10 @@ retry algorithm, and one copy for the recipients of one domain - as `QueueProces
 `0a93a6fb`. The twenty-fourth (C-25, C-26, O-32, O-33) tests binary data on the wire - a
 line of more than 998 octets, a NUL (RFC 2045 §2.7 to §2.9) - and BODY=BINARYMIME over BDAT
 (RFC 3030 §3), as `SMTPSubmissionClient` and `SMTPOutboundClient` send a message; its line
-numbers refer to `e7ab2253`.
+numbers refer to `e7ab2253`. The twenty-fifth (R-13, R-14, K-11) tests the reports Hermod
+sends in answer to a message: a DMARC failure report in answer to an ARF report (RFC 6650
+§6), what Auto-Submitted says of a failure report (RFC 3834 §5.2), and the MDNs for a
+recipient named twice (RFC 8098 §2.1); its line numbers refer to `83b63bb0`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -110,7 +113,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [R-13](#r-13) | medium | DMARC reports | A failure report was sent in answer to an ARF report | 3 |
+| [R-14](#r-14) | low | DMARC reports | A failure report was labelled Auto-Submitted: auto-generated | 3 |
+| [K-11](#k-11) | low | MDN | A recipient named twice was sent two MDNs | 1 |
 
 ### Closed
 
@@ -3166,6 +3173,33 @@ IPv4-address-literal / IPv6-address-literal ) [CFWS] CRLF`; RFC 5321 §4.1.3:
 Fixed: Source-IP is an address literal: "IPv6:" before an IPv6 address, an IPv4 address
 mapped into IPv6 the IPv4 address, and a scope dropped.
 
+### R-13
+**Open.** **A failure report was sent in answer to an ARF report** (`SMTPSession.cs:1353`:
+every message DMARC evaluated under a policy with ruf= goes to the reporter;
+`Reporting/DmarcReportService.cs:260` to `:271`: fo= and the hourly budget decide, not what
+the message is). RFC 6650 §6, for reports "of messages that fail particular message
+authentication checks" that automation sends: "If the message under evaluation by the
+Verifier is an ARF [RFC5965] message, a report MUST NOT be automatically generated"; RFC
+5965 §2: an ARF message is a multipart/report of report-type "feedback-report"; RFC 7489
+§7.3: a DMARC failure report is one (RFC 6591). A failure report from another receiver, or
+an abuse report, that fails DMARC at a domain whose policy asks for failure reports is
+answered with a failure report - and two reporters that answer reports so send them back
+and forth. Tests: `No_failure_report_is_sent_in_answer_to_an_ARF_report` - a DMARC failure
+report, an abuse report, the media type in capitals with report-type quoted; guard:
+`A_DSN_that_fails_DMARC_is_reported`.
+
+### R-14
+**Open.** **A failure report was labelled Auto-Submitted: auto-generated**
+(`Reporting/ArfReport.cs:69`). RFC 3834 §5.2: auto-generated "MUST NOT be used on a message
+issued in direct response to another message", nor "to label [...] other reports of message
+(non)receipt or (non)delivery"; auto-replied "SHOULD be used on messages sent in direct
+response to another message by an automatic process". A failure report is about one
+message, "generated and sent almost immediately after the Mail Receiver detects a DMARC
+failure" (RFC 7489 §7.3) - the DMARC, the DKIM and the SPF failure report alike. The
+aggregate report, sent once a day about all of them, is auto-generated, as it should be.
+Tests: `A_failure_report_is_auto_replied` - fo=0, d, s; guard:
+`The_aggregate_report_is_auto_generated`.
+
 ## TLS reporting
 
 RFC 8460 as `TlsRptReportService` reports (`TlsRptTests`, through the service directly;
@@ -4301,6 +4335,17 @@ Tests: `The_returned_header_has_every_Received_field`,
 `A_folded_field_is_returned_with_its_white_space`.
 
 Fixed: `EMail.Parse` keeps the raw header lines, and `CreateReadReceipt` returns them.
+
+### K-11
+**Open.** **A recipient named twice was sent two MDNs** (`SMTPSession.cs:1005`: a RCPT adds
+its recipient as it comes, a second time too; `MailStorage/MdnGeneratingMailStorage.cs:181`:
+one MDN for each recipient of the envelope). RFC 8098 §2.1: "A user agent MUST NOT issue more
+than one MDN on behalf of each particular recipient. That is, once an MDN has been issued on
+behalf of a recipient, no further MDNs may be issued on behalf of that recipient by the same
+user agent". A message to `<alice@hermod.test>` in two RCPT commands - RFC 5321 forbids it
+nowhere -, asking for a receipt to its own reverse-path, is answered with two MDNs for alice.
+Test: `A_recipient_named_twice_gives_one_MDN`; `Two_local_recipients_give_two_MDNs_one_for_each`
+stays the guard.
 
 ## PGP/MIME and the Public Suffix List
 

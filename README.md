@@ -13,7 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-26, Hermod `83b63bb0`):** 1232 tests, **all pass**. A twenty-fourth round tested binary data on the wire - a line of more than 998
+**State (2026-11-26, Hermod `83b63bb0`):** 1241 tests, 1234 pass, 7 fail on 3 open
+findings. A twenty-fifth round tested the reports Hermod sends in answer to a message - 9
+tests, 3 findings: a DMARC failure report was sent in answer to an ARF report - a failure
+report or an abuse report that itself failed DMARC ([R-13](FINDINGS.md#r-13)); the failure
+report was labelled Auto-Submitted: auto-generated, which RFC 3834 forbids for a direct
+response ([R-14](FINDINGS.md#r-14)); and a recipient named in two RCPT commands was sent two
+MDNs ([K-11](FINDINGS.md#k-11)).
+A twenty-fourth round tested binary data on the wire - a line of more than 998
 octets, a NUL - and BODY=BINARYMIME over BDAT (RFC 3030 §3) - 14 tests, 4 findings: the
 submission client sent binary data declared BODY=8BITMIME to a server that offers BINARYMIME
 ([C-25](FINDINGS.md#c-25)), and to a server without BINARYMIME at all
@@ -408,7 +415,8 @@ vectors, and the four Linux tools.
 | RFC 2046 §4.1.4, §5.2.4 a text and a message of an unknown subtype; §5.2.1, RFC 6532 §3.7 message/rfc822 and message/global; RFC 2045 §2.7 to §2.9, §6.2 7bit, 8bit, binary | 18 | 0 | ~~E-26~~ to ~~E-29~~ fixed |
 | RFC 5321 §4.5.4.1 the sending strategy: the delay before a destination that failed is tried again, the retry interval, the parameters of the retry algorithm, one copy for one domain (§2.4, RFC 5890 §2.3.2.1) | 12 | 0 | ~~O-28~~ to ~~O-31~~ fixed |
 | RFC 3030 §3 BINARYMIME, RFC 6152 §3, RFC 2045 §2.7 to §2.9: binary data - a line of more than 998 octets, a NUL - from the submission client and the relay | 14 | 0 | ~~C-25~~, ~~C-26~~, ~~O-32~~, ~~O-33~~ fixed |
-| **Total** | **1232** | **0** | |
+| RFC 6650 §6, RFC 3834 §5.2, RFC 8098 §2.1: the reports sent in answer to a message - none to an ARF report, the Auto-Submitted of a failure report, the MDNs for a recipient named twice | 9 | 7 | R-13, R-14, K-11 |
+| **Total** | **1241** | **7** | |
 
 ## External test partners
 
