@@ -105,7 +105,10 @@ line of more than 998 octets, a NUL (RFC 2045 §2.7 to §2.9) - and BODY=BINARYM
 numbers refer to `e7ab2253`. The twenty-fifth (R-13, R-14, K-11) tests the reports Hermod
 sends in answer to a message: a DMARC failure report in answer to an ARF report (RFC 6650
 §6), what Auto-Submitted says of a failure report (RFC 3834 §5.2), and the MDNs for a
-recipient named twice (RFC 8098 §2.1); its line numbers refer to `83b63bb0`.
+recipient named twice (RFC 8098 §2.1); its line numbers refer to `83b63bb0`. The
+twenty-sixth (D-16, D-17) tests what the relay's reports say of the next hop: the
+Diagnostic-Code of a multi-line reply (RFC 3461 §9.2), and the Remote-MTA of a next hop
+known by its address (§9.3); its line numbers refer to `0aec4e4a`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -113,7 +116,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [D-16](#d-16) | low | reports | A multi-line reply of the next hop lost its reply codes in Diagnostic-Code, and made a line of more than 998 characters | 6 |
+| [D-17](#d-17) | low | reports | The Remote-MTA of a next hop known by its address was no domain-literal: "dns; 127.0.0.1" | 2 |
 
 ### Closed
 
@@ -2308,6 +2314,41 @@ STARTTLS. Test: `The_bounce_of_a_REQUIRETLS_message_requires_TLS`.
 
 Fixed: every report on such a message - bounce, delay, relayed - is queued with
 RequireTls, and goes with REQUIRETLS where the next hop offers it (O-26).
+
+### D-16
+**Open.** **A multi-line reply of the next hop lost its reply codes in Diagnostic-Code,
+and made a line of more than 998 characters** (`SMTPConnection.cs:59`, `:65`: the text of a
+reply is the text of its lines without their codes, joined by a space, and "code text" one
+line; `SMTPOutboundClient.cs:908`: so a recipient's outcome keeps it; `DsnGenerator.cs:390`:
+the Diagnostic-Code is put on one line). RFC 3461 §9.2, the "smtp" diagnostic-type:
+diagnostic-code = *( 3*DIGIT "-" *text ) 3*DIGIT SPACE *text - "For a single-line SMTP reply
+to an SMTP command, the diagnostic-code SHOULD be an exact transcription of the reply. For
+multi-line SMTP replies, it is necessary to insert a SPACE before each line after the
+first", the example "550-mailbox unavailable" folded onto " 550 user has moved with no
+forwarding address". The reply `550-5.1.1 mailbox unavailable` / `550 5.1.1 user has moved
+with no forwarding address` is written `smtp; 550 5.1.1 mailbox unavailable 5.1.1 user has
+moved with no forwarding address` - one reply line that the next hop never sent, in the
+bounce, the delayed and the relayed DSN alike. And on one line: three reply lines of 500
+octets, each within RFC 5321 §4.5.3.1.5 ("The maximum total length of a reply line including
+the reply code and the <CRLF> is 512 octets"), make a line of 1511 characters in the bounce -
+RFC 5322 §2.1.1: "Each line of characters MUST be no more than 998 characters". Tests:
+`A_multi_line_reply_is_transcribed_line_by_line` - the bounce, of a reply to RCPT, to MAIL,
+to the end of the data, the delayed DSN, the relayed DSN;
+`A_reply_of_three_long_lines_makes_no_line_longer_than_998_characters`; guard:
+`A_single_line_reply_is_transcribed_exactly`.
+
+### D-17
+**Open.** **The Remote-MTA of a next hop known by its address was no domain-literal**
+(`DsnGenerator.cs:317`: `Remote-MTA: dns;` and the next hop as the relay was given it -
+`SMTPOutboundClient.cs:186`, a smart host as configured). RFC 3461 §6.3 (h): "the Remote-MTA
+field MUST be supplied for each of those recipients. The mta-name-type subfields of those
+Remote-MTA fields will be "dns""; §9.3: "MTA names of type "dns" SHOULD be valid Internet
+domain names. If such domain names are not available, a domain-literal containing the
+internet protocol address is acceptable", domain-literal = "[" 1*3DIGIT 3("." 1*3DIGIT) "]".
+A smart host given as 127.0.0.1 is written `Remote-MTA: dns; 127.0.0.1`, a domain name it is
+not; `dns; [127.0.0.1]` says what it is. Tests:
+`The_Remote_MTA_of_a_next_hop_given_as_an_address_is_a_domain_literal` - the bounce, the
+relayed DSN.
 
 ---
 
