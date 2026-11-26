@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `cb9c13c1`**
-(Styx `a6b9f9fb`), which closes every finding of all twenty rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `45315aa7`**
+(Styx `a6b9f9fb`), which closes every finding of all twenty-one rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -97,12 +97,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [E-22](#e-22) | low | answers | The subject of a reply to a list's post had two "Re: ": "Re: [dev] Re: Hello" | 2 |
-| [E-23](#e-23) | low | answers | White space inside the angle brackets of List-Post lost the list: the reply went to the sender | 2 |
-| [E-24](#e-24) | low | answers | List-Post was read for the first mailto anywhere in it: in a comment, after what RFC 2369 says to ignore | 3 |
-| [E-25](#e-25) | low | message format | The older builder wrote List-Post's mailto URL with the address as it is: "?", "#", "%", "/" not percent-encoded | 4 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -327,6 +322,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [E-19](#e-19) | low | MIME | A text marked inline with a file name was taken for an attachment: the message had no body | 1 | [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) |
 | [E-20](#e-20) | low | MIME | A Content-ID was written whether it was a msg-id or not: no @, a space, a non-ASCII character as "?" | 3 | [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) |
 | [E-21](#e-21) | low | MIME | A multipart/related was written without its type parameter | 1 | [Vanaheimr/Hermod#317](https://github.com/Vanaheimr/Hermod/pull/317) |
+| [E-22](#e-22) | low | answers | The subject of a reply to a list's post had two "Re: ": "Re: [dev] Re: Hello" | 2 | [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) |
+| [E-23](#e-23) | low | answers | White space inside the angle brackets of List-Post lost the list: the reply went to the sender | 2 | [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) |
+| [E-24](#e-24) | low | answers | List-Post was read for the first mailto anywhere in it: in a comment, after what RFC 2369 says to ignore | 3 | [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) |
+| [E-25](#e-25) | low | message format | The older builder wrote List-Post's mailto URL with the address as it is: "?", "#", "%", "/" not percent-encoded | 4 | [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) |
 | [I-5](#i-5) | low | DMARC reader | A date_range outside years 1 to 9999 threw `ArgumentOutOfRangeException` | 2 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-6](#i-6) | low | DSN | A next hop's status code with leading zeros went into the DSN as it was | 3 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-7](#i-7) | low | TLS-RPT ingest | The preamble of the multipart was read as a report part | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -339,7 +338,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 495 tests for these are part of the merge gate now; the observations the first
+The 506 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3634,7 +3633,7 @@ Fixed: a multipart/related given no type has the media type of its root - the pa
 names, the first without; a type given is kept.
 
 ### E-22
-**Open.** **The subject of a reply to a list's post had two "Re: "**
+**Closed** in [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) (`5395acc9`). **The subject of a reply to a list's post had two "Re: "**
 (`EMail/Mime/MailReplies.cs:71`: the prefixes taken away are those at the beginning of the
 subject; `:92`, `:98`: "Re: " before what is left). RFC 5322 §3.6.5: the subject of a reply
 "MAY start with the string "Re: " [...] followed by the contents of the "Subject:" field
@@ -3646,8 +3645,12 @@ it still. Tests: `The_subject_of_a_reply_has_one_Re` - "[dev] Re: Hello", "Re: [
 Hello"; guards: `The_subject_of_a_reply_is_Re_and_the_original` - "[dev] Hello", "Re: Re:
 Hello".
 
+Fixed: the prefixes are taken away where a list's tag stands among them too, and the tag is
+kept, once, before the subject: the reply to "[dev] Re: Hello" is "Re: [dev] Hello", and
+the reply to that the same. Brackets that are no list's tag - "[PATCH 1/3]" - stay.
+
 ### E-23
-**Open.** **White space inside the angle brackets of List-Post lost the list**
+**Closed** in [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) (`5395acc9`). **White space inside the angle brackets of List-Post lost the list**
 (`EMail/Mime/MailReplies.cs:74`: `<mailto:` without white space, the address up to `>` or
 `?`; `:161`: an address with a space in it is none). RFC 2369 §2: "The contents of the list
 header fields mostly consist of angle-bracket ('<', '>') enclosed URLs, with internal
@@ -3658,8 +3661,11 @@ mailto:list@example.org >`, names no list: the reply to the list goes to the sen
 Tests: `White_space_inside_the_angle_brackets_of_List_Post_is_ignored` - folded inside the
 URL, around it; guard: `List_Post_names_the_list_its_mailto_URL_names`.
 
+Fixed: white space inside the angle brackets is taken away before the URL is read, so a
+folded List-Post names its list.
+
 ### E-24
-**Open.** **List-Post was read for the first mailto anywhere in it**
+**Closed** in [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) (`5395acc9`). **List-Post was read for the first mailto anywhere in it**
 (`EMail/Mime/MailReplies.cs:74`, `:159`: the first `<mailto:` in the field, in a comment
 or after what is to be ignored). RFC 2369 §2: "client applications MUST follow the
 following guidelines for handling the contents of the header fields": a field that,
@@ -3675,8 +3681,13 @@ which the field does not name. Tests: `List_Post_is_read_as_RFC_2369_says` - tho
 guards: `List_Post_names_the_list_its_mailto_URL_names` - a mailto URL, one after another
 and a comma, a comment after it, NO.
 
+Fixed: List-Post is read as RFC 2369 §2 has it - leading comments skipped, nested ones
+too; a field beginning with anything else but `<` names no list; after a URL, only a comma
+leads to the next - and the first mailto URL among them names the list, through
+`MailtoUri`.
+
 ### E-25
-**Open.** **The older builder wrote List-Post's mailto URL with the address as it is**
+**Closed** in [Vanaheimr/Hermod#318](https://github.com/Vanaheimr/Hermod/pull/318) (`5395acc9`). **The older builder wrote List-Post's mailto URL with the address as it is**
 (`EMail/Builder.cs:458`: `<mailto:` + the address + `>`). RFC 2369 §2: the list header
 fields hold URLs; RFC 6068 §2: "A number of characters that can appear in <addr-spec> MUST
 be percent-encoded: these are the characters that cannot appear in a URI according to
@@ -3687,6 +3698,9 @@ URL whose address is "dev", the rest a header field; `list#1@` begins a fragment
 a percent-encoding that is none, and `dev/announce@` a path. Hermod has `MailtoUri.Of` for
 this since #316. Tests: `List_Post_names_the_lists_address` - a slash, a question mark, a
 number sign, a percent sign; guard: `List_Post_of_an_address_of_the_usual_kind`.
+
+Fixed: the older builder writes `MailtoUri.Of` the address - "/", "?", "#" and "%"
+percent-encoded - so the URL names the list's address.
 
 ## Reports that arrive
 

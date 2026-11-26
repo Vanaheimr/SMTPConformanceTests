@@ -13,13 +13,13 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-25, Hermod `cb9c13c1`):** 1188 tests, 1177 pass, 11 fail on 4 open
-findings. A twenty-first round tested what an answer takes from the message it answers and
+**State (2026-11-26, Hermod `45315aa7`):** 1188 tests, **all pass**. A twenty-first round tested what an answer takes from the message it answers and
 the list it came through - 18 tests, 4 findings: the subject of a reply to a list's post had
 two "Re: " ([E-22](FINDINGS.md#e-22)); white space inside the angle brackets of List-Post
 lost the list ([E-23](FINDINGS.md#e-23)); List-Post was read for the first mailto anywhere
 in it, a comment's too ([E-24](FINDINGS.md#e-24)); and the older builder wrote List-Post's
-mailto URL with "?", "#", "%" and "/" as they are ([E-25](FINDINGS.md#e-25)).
+mailto URL with "?", "#", "%" and "/" as they are ([E-25](FINDINGS.md#e-25)). All four
+fixed in [#318](https://github.com/Vanaheimr/Hermod/pull/318).
 A twentieth round tested the parts an HTML mail refers to, and what a part is
 for - 15 tests, 5 findings: a Content-ID with a comment was not read as a msg-id, so the
 part a cid: URL names, and the root of a multipart/related, were not found
@@ -382,8 +382,8 @@ vectors, and the four Linux tools.
 | RFC 5322 §2.2, §3.6, §3.6.4, RFC 5321 §4.4 the server's default mail store | 10 | 0 | ~~S-48~~ to ~~S-50~~ fixed |
 | RFC 7489 §6.2, §6.4, RFC 8460 §3, RFC 6068 §2 the report URIs; RFC 6591 §4, RFC 5965 §3.5 the fields of the DMARC failure report | 17 | 0 | ~~R-8~~ to ~~R-12~~, ~~T-5~~, ~~T-6~~ fixed |
 | RFC 2045 §7, RFC 2392 Content-ID and cid:; RFC 2387 multipart/related; RFC 2183 Content-Disposition - written and read | 15 | 0 | ~~E-17~~ to ~~E-21~~ fixed |
-| RFC 5322 §3.6.5 the subject of a reply; RFC 2369 §2, §3.4 List-Post, read and written; RFC 6068 §2 its mailto URL | 18 | 11 | E-22 to E-25 |
-| **Total** | **1188** | **11** | |
+| RFC 5322 §3.6.5 the subject of a reply; RFC 2369 §2, §3.4 List-Post, read and written; RFC 6068 §2 its mailto URL | 18 | 0 | ~~E-22~~ to ~~E-25~~ fixed |
+| **Total** | **1188** | **0** | |
 
 ## External test partners
 

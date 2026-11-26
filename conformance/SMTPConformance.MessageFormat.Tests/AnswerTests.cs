@@ -30,7 +30,6 @@ public sealed class AnswerTests
 
         TestCaseData Case(String Subject)
             => new TestCaseData(Subject).SetName($"The subject of a reply has one Re: - \"{Subject}\"")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "E-22");
 
         yield return Case("[dev] Re: Hello");
@@ -68,7 +67,6 @@ public sealed class AnswerTests
 
         TestCaseData Case(String Name, String ListPost)
             => new TestCaseData(ListPost).SetName($"White space inside the angle brackets of List-Post is ignored: {Name}")
-                                         .SetCategory(TestCategories.KnownIssue)
                                          .SetProperty("Finding", "E-23");
 
         yield return Case("folded inside the URL", "<mailto:list@\r\n example.org>");
@@ -87,7 +85,6 @@ public sealed class AnswerTests
 
         TestCaseData Case(String Name, String ListPost, String? Address)
             => new TestCaseData(ListPost, Address).SetName($"List-Post is read as RFC 2369 says: {Name}")
-                                                  .SetCategory(TestCategories.KnownIssue)
                                                   .SetProperty("Finding", "E-24");
 
         yield return Case("a URL in a comment before the field's is none",           "(not <mailto:wrong@example.org>) <mailto:list@example.org>",       "list@example.org");
@@ -138,7 +135,6 @@ public sealed class AnswerTests
 
         TestCaseData Case(String Name, String Address)
             => new TestCaseData(Address).SetName($"List-Post names the list's address: {Name}")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "E-25");
 
         yield return Case("a slash in it",           "dev/announce@lists.example.org");
