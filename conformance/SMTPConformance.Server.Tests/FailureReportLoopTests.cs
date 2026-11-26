@@ -116,7 +116,6 @@ public sealed class FailureReportLoopTests : HermodServerTestBase
 
         TestCaseData Case(String Name, String ContentType, String FeedbackType)
             => new TestCaseData(ContentType, FeedbackType).SetName($"No failure report in answer to an ARF report: {Name}")
-                                                          .SetCategory(TestCategories.KnownIssue)
                                                           .SetProperty("Finding", "R-13");
 
         yield return Case("a DMARC failure report (Feedback-Type: auth-failure)",

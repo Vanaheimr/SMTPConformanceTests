@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `83b63bb0`**
-(Styx `6dc4bb30`), which closes every finding of all twenty-four rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `0aec4e4a`**
+(Styx `6dc4bb30`), which closes every finding of all twenty-five rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -113,11 +113,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [R-13](#r-13) | medium | DMARC reports | A failure report was sent in answer to an ARF report | 3 |
-| [R-14](#r-14) | low | DMARC reports | A failure report was labelled Auto-Submitted: auto-generated | 3 |
-| [K-11](#k-11) | low | MDN | A recipient named twice was sent two MDNs | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -275,6 +271,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [R-10](#r-10) | medium | DMARC reports | A line break in the SPF record made a field of the failure report of its own: "Identity-Alignment: dkim, spf" | 3 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
 | [R-11](#r-11) | low | DMARC reports | Original-Mail-From was no reverse-path: the address without its angle brackets | 1 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
 | [R-12](#r-12) | low | DMARC reports | An IPv6 Source-IP was no IPv6 address literal: no "IPv6:" | 1 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
+| [R-13](#r-13) | medium | DMARC reports | A failure report was sent in answer to an ARF report | 3 | [Vanaheimr/Hermod#332](https://github.com/Vanaheimr/Hermod/pull/332) |
+| [R-14](#r-14) | low | DMARC reports | A failure report was labelled Auto-Submitted: auto-generated | 3 | [Vanaheimr/Hermod#332](https://github.com/Vanaheimr/Hermod/pull/332) |
 | [T-1](#t-1) | medium | TLS-RPT | Two records, a record not beginning with `v=TLSRPTv1;`, or `v=tlsrptv1` still named destinations | 3 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
 | [T-2](#t-2) | low | TLS-RPT | No policy-string in the JSON | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
 | [T-3](#t-3) | medium | TLS-RPT | Under an MTA-STS policy in testing mode, a certificate that failed the policy was reported as a success | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
@@ -366,11 +364,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [K-8](#k-8) | low | MDN | `CreateReadReceipt` defaulted to automatic-action/MDN-sent-automatically | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
 | [K-9](#k-9) | low | MDN | The delivering server wrote no Original-Recipient header field from ORCPT | 1 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272), [#274](https://github.com/Vanaheimr/Hermod/pull/274) |
 | [K-10](#k-10) | low | MDN | The returned header lost all but the first of repeated fields and the white space of folded ones | 2 | [Vanaheimr/Hermod#272](https://github.com/Vanaheimr/Hermod/pull/272) |
+| [K-11](#k-11) | low | MDN | A recipient named twice was sent two MDNs | 1 | [Vanaheimr/Hermod#332](https://github.com/Vanaheimr/Hermod/pull/332) |
 | [G-4](#g-4) | low | PGP/MIME | A broken signature part threw out of `VerifyPgpSignature` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 536 tests for these are part of the merge gate now; the observations the first
+The 543 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3174,7 +3173,7 @@ Fixed: Source-IP is an address literal: "IPv6:" before an IPv6 address, an IPv4 
 mapped into IPv6 the IPv4 address, and a scope dropped.
 
 ### R-13
-**Open.** **A failure report was sent in answer to an ARF report** (`SMTPSession.cs:1353`:
+**Closed** in [Vanaheimr/Hermod#332](https://github.com/Vanaheimr/Hermod/pull/332) (`b5141d6c`). **A failure report was sent in answer to an ARF report** (`SMTPSession.cs:1353`:
 every message DMARC evaluated under a policy with ruf= goes to the reporter;
 `Reporting/DmarcReportService.cs:260` to `:271`: fo= and the hourly budget decide, not what
 the message is). RFC 6650 §6, for reports "of messages that fail particular message
@@ -3188,8 +3187,13 @@ and forth. Tests: `No_failure_report_is_sent_in_answer_to_an_ARF_report` - a DMA
 report, an abuse report, the media type in capitals with report-type quoted; guard:
 `A_DSN_that_fails_DMARC_is_reported`.
 
+Fixed: `ArfReport.IsArfMessage` says whether a message is an ARF report - multipart/report,
+report-type "feedback-report", case-insensitive -, and `SendForensicAsync` asks it before
+anything else: no DMARC, DKIM or SPF failure report in answer to one, and nothing taken from
+the budget. A DSN, an MDN, a message that is no report are reported as before.
+
 ### R-14
-**Open.** **A failure report was labelled Auto-Submitted: auto-generated**
+**Closed** in [Vanaheimr/Hermod#332](https://github.com/Vanaheimr/Hermod/pull/332) (`b5141d6c`). **A failure report was labelled Auto-Submitted: auto-generated**
 (`Reporting/ArfReport.cs:69`). RFC 3834 §5.2: auto-generated "MUST NOT be used on a message
 issued in direct response to another message", nor "to label [...] other reports of message
 (non)receipt or (non)delivery"; auto-replied "SHOULD be used on messages sent in direct
@@ -3199,6 +3203,9 @@ failure" (RFC 7489 §7.3) - the DMARC, the DKIM and the SPF failure report alike
 aggregate report, sent once a day about all of them, is auto-generated, as it should be.
 Tests: `A_failure_report_is_auto_replied` - fo=0, d, s; guard:
 `The_aggregate_report_is_auto_generated`.
+
+Fixed: the failure report - DMARC, DKIM and SPF - says `Auto-Submitted: auto-replied`; the
+aggregate report stays auto-generated.
 
 ## TLS reporting
 
@@ -4337,7 +4344,7 @@ Tests: `The_returned_header_has_every_Received_field`,
 Fixed: `EMail.Parse` keeps the raw header lines, and `CreateReadReceipt` returns them.
 
 ### K-11
-**Open.** **A recipient named twice was sent two MDNs** (`SMTPSession.cs:1005`: a RCPT adds
+**Closed** in [Vanaheimr/Hermod#332](https://github.com/Vanaheimr/Hermod/pull/332) (`b5141d6c`). **A recipient named twice was sent two MDNs** (`SMTPSession.cs:1005`: a RCPT adds
 its recipient as it comes, a second time too; `MailStorage/MdnGeneratingMailStorage.cs:181`:
 one MDN for each recipient of the envelope). RFC 8098 §2.1: "A user agent MUST NOT issue more
 than one MDN on behalf of each particular recipient. That is, once an MDN has been issued on
@@ -4346,6 +4353,10 @@ user agent". A message to `<alice@hermod.test>` in two RCPT commands - RFC 5321 
 nowhere -, asking for a receipt to its own reverse-path, is answered with two MDNs for alice.
 Test: `A_recipient_named_twice_gives_one_MDN`; `Two_local_recipients_give_two_MDNs_one_for_each`
 stays the guard.
+
+Fixed: `MdnGeneratingMailStorage` skips a recipient it has already reported for, compared as
+RFC 8098 §2.1 compares addresses - the local-part case-sensitive and without its quotes, the
+domain case-insensitive.
 
 ## PGP/MIME and the Public Suffix List
 

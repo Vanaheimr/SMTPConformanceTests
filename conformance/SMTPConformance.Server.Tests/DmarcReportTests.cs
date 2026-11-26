@@ -517,7 +517,6 @@ public sealed class DmarcReportTests
     [TestCase("d", TestName = "A DKIM failure report is labelled auto-replied, not auto-generated (fo=d)")]
     [TestCase("s", TestName = "An SPF failure report is labelled auto-replied, not auto-generated (fo=s)")]
     [Description("RFC 3834 §5.2: auto-generated \"MUST NOT be used on a message issued in direct response to another message\", and \"MUST NOT be used to label ... other reports of message (non)receipt or (non)delivery\"; auto-replied \"SHOULD be used on messages sent in direct response to another message by an automatic process\" - a failure report is about one message, \"generated and sent almost immediately after the Mail Receiver detects a DMARC failure\" (RFC 7489 §7.3)")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "R-14")]
     public async Task A_failure_report_is_auto_replied(String Fo)
     {

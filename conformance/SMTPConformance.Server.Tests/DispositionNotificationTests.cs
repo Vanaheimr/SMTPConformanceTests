@@ -248,7 +248,6 @@ public sealed class DispositionNotificationTests : HermodServerTestBase
 
 
     [Test(Description = "RFC 8098 §2.1: \"A user agent MUST NOT issue more than one MDN on behalf of each particular recipient. That is, once an MDN has been issued on behalf of a recipient, no further MDNs may be issued on behalf of that recipient\" - a recipient the client names twice (RCPT TO twice, the same path: RFC 5321 forbids it nowhere) is one recipient, with one MDN")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "K-11")]
     public async Task A_recipient_named_twice_gives_one_MDN()
     {
