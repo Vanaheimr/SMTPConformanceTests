@@ -112,7 +112,10 @@ known by its address (§9.3); its line numbers refer to `0aec4e4a`. The twenty-s
 (S-51, S-52) tests the sizes of RFC 5321 §4.5.3.1 on the server - a domain of 255 octets, a
 path of 256, a reply line of 512 - and what it makes of a name or a path longer than they
 allow: the header lines it writes of it (RFC 5322 §2.1.1), and the reply that repeats it;
-its line numbers refer to `0aa5a6e6`.
+its line numbers refer to `0aa5a6e6`. The twenty-eighth (S-53 to S-55) tests the BDAT
+command as RFC 3030 §2 writes it, and the commands between two chunks of one message: an
+argument outside its grammar, a size the server cannot read, a RCPT after the first chunk;
+its line numbers refer to `69096a60`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -120,7 +123,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [S-54](#s-54) | medium | BDAT | A BDAT whose size could not be read was answered with 501, and its chunk read as commands | 3 |
+| [S-53](#s-53) | low | BDAT | A BDAT with an argument outside the grammar was taken: an end-marker other than LAST, an argument after it, a size with a sign | 3 |
+| [S-55](#s-55) | low | BDAT | A RCPT after the first chunk of a message was taken, and the message went to its recipient too | 1 |
 
 ### Closed
 
@@ -1225,6 +1232,56 @@ line of 1027 octets to EHLO, of 1033 to HELO. Tests:
 Fixed: an EHLO or HELO argument of more than 255 octets is answered with 501 - no enhanced
 status code, as RFC 2034 §4 has it for HELO and EHLO - and greets nobody; one of 255 octets
 is greeted on a line of less than 512.
+
+### S-53
+**Open.** **A BDAT with an argument outside the grammar was taken** (`SMTPSession.cs:1182`:
+the arguments are split at white space; `:1183`: the size is read by `Int64.TryParse`, which
+takes a sign; `:1189`: the second argument is LAST or else nothing, and a third is not looked
+at). RFC 3030 §2: `bdat-cmd ::= "BDAT" SP chunk-size [ SP end-marker ] CR LF`, `chunk-size ::=
+1*DIGIT`, `end-marker ::= "LAST"`; RFC 5321 §4.2.2: "501 Syntax error in parameters or
+arguments". `BDAT 12 FOO` is a chunk that is not the last - 250, "12 bytes received,
+continue" -, `BDAT 12 LAST X` the last one, and the message is delivered; so is `BDAT +12
+LAST`. The client meant something the server does not know, and the server delivered what it
+guessed. Postfix answers all three with `521 5.5.4 Syntax: BDAT count [LAST]` and closes the
+connection. Tests: `A_BDAT_outside_the_grammar_is_a_syntax_error` - an end-marker that is not
+LAST, an argument after LAST, a chunk-size with a sign; one reply, 501 - or 421 or 521 and
+the connection closed -, and nothing to the chunk, which is two NOOPs; guard:
+`A_BDAT_the_grammar_allows_is_taken` - `bdat 18 last` (RFC 5321 §2.4: "Verbs and argument
+values [...] are not case sensitive") and a chunk-size with leading zeros.
+
+### S-54
+**Open.** **A BDAT whose size could not be read was answered with 501, and its chunk read as
+commands** (`SMTPSession.cs:1183`: no size, a negative one or one that is not an `Int64`, and
+the server answers `501 5.5.4 Syntax: BDAT size [LAST]` and reads the next line as a command).
+RFC 3030 §2: "The message data is sent immediately after the trailing <CR> <LF> of the BDAT
+command line", and "If a failure occurs after a BDAT command is received, the receiver-SMTP
+MUST accept and discard the associated message data before sending the appropriate 5XX or
+4XX code". A client that sends `BDAT LAST 12`, `BDAT -12 LAST` or `BDAT
+99999999999999999999 LAST` - a size of 20 digits, which the grammar allows (`1*DIGIT`) -
+sends the chunk right after it; the server that cannot tell where the chunk ends reads its
+octets as commands, and a chunk of "NOOP" lines is answered `501`, `250`, `250`. What the
+message holds is taken for SMTP: S-2 once more, for the BDAT whose chunk the server cannot
+find. Postfix answers `521 5.5.4 Syntax: BDAT count [LAST]` and closes the connection.
+Tests: `The_chunk_of_a_BDAT_whose_size_is_not_read_is_no_command` - LAST where the size goes, a
+negative size, a size of 20 digits: no reply to the chunk's NOOPs, one reply at most.
+
+### S-55
+**Open.** **A RCPT after the first chunk of a message was taken, and the message went to its
+recipient too** (`SMTPSession.cs:876`: RCPT asks for MAIL first, and for nothing else; the
+chunks received, `_inBdatSequence`, do not count). RFC 5321 §4.1.4: "a mail transaction
+consists of a transaction beginning command, one or more RCPT commands, and a DATA command,
+in that order", "If the commands in a transaction are out of order to the degree that they
+cannot be processed by the server, a 503 failure reply MUST be returned"; RFC 3030 §2: "After
+all MAIL and RCPT responses are collected and processed, the message is sent using a series of
+BDAT commands". After a first BDAT and its 250, `RCPT TO:<bob@hermod.test>` is 250, and the
+message the next `BDAT ... LAST` ends goes to alice and to bob - a recipient named after part
+of the message was sent, which DATA cannot have. Postfix answers `503 5.5.1 Error: RCPT after
+BDAT`. Test: `A_RCPT_between_two_chunks_is_503` - 503, and the message is not bob's; guards:
+`A_MAIL_between_two_chunks_is_503`, `A_NOOP_between_two_chunks_changes_nothing` (§4.1.4: "The
+NOOP, HELP, EXPN, VRFY, and RSET commands can be used at any time"),
+`A_RSET_between_two_chunks_clears_them` (RFC 3030 §2: RSET "clears all segments sent during
+that transaction"), `An_EHLO_between_two_chunks_aborts_the_message` (§4.1.4: "exactly as if a
+RSET command had been issued").
 
 ---
 
