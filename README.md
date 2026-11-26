@@ -13,14 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-26, Hermod `69096a60`):** 1270 tests, 1263 pass, 7 fail on 3 open
-findings. A twenty-eighth round tested the BDAT command (RFC 3030 §2) as its grammar has it,
+**State (2026-11-27, Hermod `75f0dca0`):** 1270 tests, **all pass**. A twenty-eighth round tested the BDAT command (RFC 3030 §2) as its grammar has it,
 and the commands between two chunks of one message - 13 tests, 3 findings: a BDAT whose size
 could not be read - LAST where the size goes, a negative size, one of 20 digits - was answered
 with 501, and its chunk read as commands ([S-54](FINDINGS.md#s-54)); a BDAT with an argument
 outside the grammar - an end-marker other than LAST, an argument after it, a size with a
 sign - was taken as a chunk ([S-53](FINDINGS.md#s-53)); and a RCPT after the first chunk was
-taken, and the message went to its recipient too ([S-55](FINDINGS.md#s-55)).
+taken, and the message went to its recipient too ([S-55](FINDINGS.md#s-55)). All three fixed
+in [#338](https://github.com/Vanaheimr/Hermod/pull/338).
 A twenty-seventh round tested the sizes of RFC 5321 §4.5.3.1 on the server - 7
 tests, 2 findings: an EHLO name or a path longer than RFC 5321 allows was taken, and written
 into a Received, Return-Path or Final-Recipient line of more than 998 characters
@@ -438,8 +438,8 @@ vectors, and the four Linux tools.
 | RFC 6650 §6, RFC 3834 §5.2, RFC 8098 §2.1: the reports sent in answer to a message - none to an ARF report, the Auto-Submitted of a failure report, the MDNs for a recipient named twice | 9 | 0 | ~~R-13~~, ~~R-14~~, ~~K-11~~ fixed |
 | RFC 3461 §6.3 (h), (i), §9.2, §9.3, RFC 5322 §2.1.1: what the relay's reports say of the next hop - the Diagnostic-Code of a multi-line reply, the Remote-MTA of a next hop known by its address | 9 | 0 | ~~D-16~~, ~~D-17~~ fixed |
 | RFC 5321 §4.5.3.1, RFC 5322 §2.1.1: the sizes of a domain, a path and a reply line on the server - an EHLO name or a path longer than they allow, in the header lines of the message and the DSN, and in the reply | 7 | 0 | ~~S-51~~, ~~S-52~~ fixed |
-| RFC 3030 §2 the BDAT command: its grammar, a size the server cannot read; RFC 5321 §4.1.4 the commands between two chunks - RCPT, MAIL, NOOP, RSET, EHLO | 13 | 7 | S-53, S-54, S-55 |
-| **Total** | **1270** | **7** | |
+| RFC 3030 §2 the BDAT command: its grammar, a size the server cannot read; RFC 5321 §4.1.4 the commands between two chunks - RCPT, MAIL, NOOP, RSET, EHLO | 13 | 0 | ~~S-53~~, ~~S-54~~, ~~S-55~~ fixed |
+| **Total** | **1270** | **0** | |
 
 ## External test partners
 

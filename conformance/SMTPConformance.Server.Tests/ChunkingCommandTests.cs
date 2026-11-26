@@ -65,7 +65,6 @@ public sealed class ChunkingCommandTests : HermodServerTestBase
 
         static TestCaseData Case(String Command, String Name)
             => new TestCaseData(Command).SetName($"A BDAT outside the grammar is a syntax error: {Name}")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "S-53");
 
         yield return Case("BDAT 12 FOO",     "an end-marker that is not LAST");
@@ -129,7 +128,6 @@ public sealed class ChunkingCommandTests : HermodServerTestBase
 
         static TestCaseData Case(String Command, String Name)
             => new TestCaseData(Command).SetName($"The chunk of a BDAT whose size is not read is no command: {Name}")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "S-54");
 
         yield return Case("BDAT LAST 12",                      "LAST where the size goes");
@@ -160,7 +158,6 @@ public sealed class ChunkingCommandTests : HermodServerTestBase
     #region S-55: RCPT between two chunks
 
     [Test(Description = "RFC 5321 §4.1.4: \"a mail transaction consists of a transaction beginning command, one or more RCPT commands, and a DATA command, in that order\" - RFC 3030 §2: \"After all MAIL and RCPT responses are collected and processed, the message is sent using a series of BDAT commands\" -, and \"If the commands in a transaction are out of order to the degree that they cannot be processed by the server, a 503 failure reply MUST be returned\": a RCPT after the first chunk of the message is 503, as Postfix has it (\"503 5.5.1 Error: RCPT after BDAT\"), and the message does not go to its recipient")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "S-55")]
     public async Task A_RCPT_between_two_chunks_is_503()
     {
