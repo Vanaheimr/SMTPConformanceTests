@@ -99,7 +99,10 @@ again, and how many copies it sends - the sending strategy of RFC 5321 §4.5.4.1
 before a destination that failed is tried again, the retry interval, the parameters of the
 retry algorithm, and one copy for the recipients of one domain - as `QueueProcessor` and
 `RetryCalculator` retry and the server queues what it relays; its line numbers refer to
-`0a93a6fb`.
+`0a93a6fb`. The twenty-fourth (C-25, C-26, O-32, O-33) tests binary data on the wire - a
+line of more than 998 octets, a NUL (RFC 2045 §2.7 to §2.9) - and BODY=BINARYMIME over BDAT
+(RFC 3030 §3), as `SMTPSubmissionClient` and `SMTPOutboundClient` send a message; its line
+numbers refer to `e7ab2253`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -107,7 +110,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [C-25](#c-25) | low | client | Binary data went as BODY=8BITMIME to a server that offers BINARYMIME | 2 |
+| [C-26](#c-26) | medium | client | Binary data - a line of more than 998 octets, a NUL - went to a server without BINARYMIME | 4 |
+| [O-32](#o-32) | medium | outbound | The relay sent binary data to a next hop without BINARYMIME | 4 |
+| [O-33](#o-33) | low | outbound | The relay sent binary data as DATA to a next hop that offers BINARYMIME | 1 |
 
 ### Closed
 
@@ -1529,6 +1537,34 @@ Fixed: `DsnParameters.Notify` is nullable - null is no NOTIFY, the server's defa
 NEVER with each recipient, so the queue's own meaning of a message-wide Never, none given,
 stays.
 
+### C-25
+**Open.** **Binary data went as BODY=8BITMIME to a server that offers BINARYMIME**
+(`SMTPSubmissionClient/SMTPSubmissionClient.cs:1426`: a server that offers 8BITMIME is given
+BODY=8BITMIME, whatever the message; `:1428`: BODY=BINARYMIME only to one that does not).
+RFC 3030 §3: binary data is BODY=BINARYMIME - "The BINARYMIME service extension can only be
+used with the "CHUNKING" service extension" -, and a server that takes it "agrees to preserve
+all bits in each octet passed using the BDAT command"; RFC 6152 §3: 8BITMIME "DOES NOT
+provide a means of transferring an object with the BINARY content-transfer-encoding". A
+message with Content-Transfer-Encoding: binary - a line of 1200 octets, a NUL - goes as BDAT,
+but declared 8-bit text: the server is never told that every octet is to be kept as it is.
+Tests: `Binary_data_goes_as_BODY_BINARYMIME` - a line of 1200 octets, a NUL; guard:
+`Eight_bit_text_goes_to_a_server_with_BINARYMIME`.
+
+### C-26
+**Open.** **Binary data went to a server without BINARYMIME**
+(`SMTPSubmissionClient/SMTPSubmissionClient.cs:1374` to `:1376`: only octets above 127 are
+looked for - not the length of a line, not a NUL; `:1570`: DATA, `:1548`: BDAT, either way).
+RFC 3030 §3: to a server that does not offer BINARYMIME "the sender-SMTP MUST NOT, under any
+circumstances, send binary data" - it converts the message, or "may treat this as a permanent
+error"; RFC 2045 §2.7 and §2.8: 7bit and 8bit data are "relatively short lines with 998 octets or
+less between CRLF line separation sequences", and no NULs; §2.9: binary data is "data where
+any sequence of octets whatsoever is allowed". A line of 1200 octets, or a NUL, goes to a server that offers 8BITMIME
+and no BINARYMIME, declared BODY=8BITMIME. A server that keeps to its 1000 octets a line (RFC
+5321 §4.5.3.1.6) refuses the message or breaks the line; a NUL ends a C string. Tests:
+`Binary_data_is_not_sent_to_a_server_without_BINARYMIME` - 8BITMIME alone, CHUNKING without
+BINARYMIME, each with a line of 1200 octets and with a NUL; guard:
+`A_line_of_998_octets_is_no_binary_data`.
+
 ---
 
 ## Outbound client (`SMTPOutboundClient`)
@@ -2038,6 +2074,32 @@ U-labels and A-labels; guards: the same domain written alike, and
 
 Fixed: the server and `MailSender` group the recipients by `Idna.Key` - A-labels, lower
 case, no trailing dot - and the queued message targets that name.
+
+### O-32
+**Open.** **The relay sent binary data to a next hop without BINARYMIME**
+(`SMTPOutboundClient.cs:830`, `:837`: only octets above 127 are looked for - not the length
+of a line, not a NUL; `:913`, `:922`: every message goes as DATA). RFC 3030 §3: to a server
+that does not offer BINARYMIME "the sender-SMTP MUST NOT, under any circumstances, send binary
+data" - it converts the message, or "may treat this as a permanent error"; RFC 2045 §2.7 and §2.8: 7bit and 8bit data are "relatively short lines with 998 octets or
+less between CRLF line separation sequences", and no NULs; §2.9: binary data is "data where
+any sequence of octets whatsoever is allowed".
+A message with Content-Transfer-Encoding: binary that an application gave `MailSender` - a
+line of 1200 octets, a NUL - goes on as DATA, without any BODY= even, since none of its octets
+is above 127. The server takes a message sent as BDAT as its octets (`SMTPSession.cs:1215`),
+so binary data a client sent it goes on the same way. Tests:
+`Binary_data_is_not_relayed_to_a_next_hop_without_BINARYMIME` - 8BITMIME alone, CHUNKING
+without BINARYMIME, each with a line of 1200 octets and with a NUL; guard:
+`A_line_of_998_octets_is_relayed`.
+
+### O-33
+**Open.** **The relay sent binary data as DATA to a next hop that offers BINARYMIME**
+(`SMTPOutboundClient.cs:913`: the relay knows no BDAT; `:852`: BODY=8BITMIME is the one body
+type it gives). RFC 3030 §3: "BINARYMIME cannot be used with the DATA command", and binary
+data is BODY=BINARYMIME; RFC 6152 §3: 8BITMIME "DOES NOT provide a means of transferring an
+object with the BINARY content-transfer-encoding". A next hop that offers CHUNKING and
+BINARYMIME is sent a line of 1200 octets as DATA, declared nothing. Test:
+`Binary_data_goes_to_a_next_hop_with_BINARYMIME_as_BODY_BINARYMIME_only` - as BDAT with
+BODY=BINARYMIME, or not at all.
 
 ---
 

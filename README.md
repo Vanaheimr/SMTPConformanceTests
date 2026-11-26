@@ -13,7 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-26, Hermod `e7ab2253`):** 1218 tests, **all pass**. A twenty-third round tested when the relay tries again, and how many copies it
+**State (2026-11-26, Hermod `e7ab2253`):** 1232 tests, 1221 pass, 11 fail on 4 open
+findings. A twenty-fourth round tested binary data on the wire - a line of more than 998
+octets, a NUL - and BODY=BINARYMIME over BDAT (RFC 3030 §3) - 14 tests, 4 findings: the
+submission client sent binary data declared BODY=8BITMIME to a server that offers BINARYMIME
+([C-25](FINDINGS.md#c-25)), and to a server without BINARYMIME at all
+([C-26](FINDINGS.md#c-26)); the relay sent it to a next hop without BINARYMIME
+([O-32](FINDINGS.md#o-32)), and as DATA to one that offers it ([O-33](FINDINGS.md#o-33)).
+A twenty-third round tested when the relay tries again, and how many copies it
 sends (RFC 5321 §4.5.4.1) - 12 tests, 4 findings: a next hop that refused the session for now
 was tried again at once for the next message to it ([O-28](FINDINGS.md#o-28)); the retry
 intervals and the give-up time could not be configured ([O-29](FINDINGS.md#o-29)); a message
@@ -400,7 +407,8 @@ vectors, and the four Linux tools.
 | RFC 5322 §3.6.5 the subject of a reply; RFC 2369 §2, §3.4 List-Post, read and written; RFC 6068 §2 its mailto URL | 18 | 0 | ~~E-22~~ to ~~E-25~~ fixed |
 | RFC 2046 §4.1.4, §5.2.4 a text and a message of an unknown subtype; §5.2.1, RFC 6532 §3.7 message/rfc822 and message/global; RFC 2045 §2.7 to §2.9, §6.2 7bit, 8bit, binary | 18 | 0 | ~~E-26~~ to ~~E-29~~ fixed |
 | RFC 5321 §4.5.4.1 the sending strategy: the delay before a destination that failed is tried again, the retry interval, the parameters of the retry algorithm, one copy for one domain (§2.4, RFC 5890 §2.3.2.1) | 12 | 0 | ~~O-28~~ to ~~O-31~~ fixed |
-| **Total** | **1218** | **0** | |
+| RFC 3030 §3 BINARYMIME, RFC 6152 §3, RFC 2045 §2.7 to §2.9: binary data - a line of more than 998 octets, a NUL - from the submission client and the relay | 14 | 11 | C-25, C-26, O-32, O-33 |
+| **Total** | **1232** | **11** | |
 
 ## External test partners
 
