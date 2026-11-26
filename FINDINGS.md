@@ -89,7 +89,12 @@ them; its line numbers refer to `67cf52e5`. The twenty-first (E-22 to E-25) test
 an answer takes from the message it answers and the list it came through: the subject of a
 reply (RFC 5322 §3.6.5), List-Post as `MailReplies` reads it and the older builder writes
 it (RFC 2369 §2, §3.4), and the mailto URL in it (RFC 6068 §2); its line numbers refer to
-`cb9c13c1`.
+`cb9c13c1`. The twenty-second (E-26 to E-29) tests what a part is when the reader does not
+know its subtype, and the message a message carries: a text (RFC 2046 §4.1.4) and a message
+(§5.2.4) of a subtype the reader does not know, message/global for an attached message with
+UTF-8 in its header (RFC 6532 §3.7), and what 7bit and 8bit promise of its octets (RFC 2045
+§2.7, §2.8, §6.2) - as `MimeMessage` reads them and `MimeAttachedMessage` writes them; its
+line numbers refer to `45315aa7`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -97,7 +102,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [E-26](#e-26) | low | MIME | A text of a subtype the reader does not know was an attachment: a text/markdown mail had no body | 3 |
+| [E-27](#e-27) | low | MIME | A message part of a subtype the reader does not know was lost: neither the text nor an attachment | 3 |
+| [E-28](#e-28) | low | MIME | An attached message with UTF-8 in its header was written message/rfc822, not message/global | 3 |
+| [E-29](#e-29) | low | MIME | An attached message with a line over 998 octets or a NUL was written 7bit or 8bit, not binary | 3 |
 
 ### Closed
 
@@ -3701,6 +3711,61 @@ number sign, a percent sign; guard: `List_Post_of_an_address_of_the_usual_kind`.
 
 Fixed: the older builder writes `MailtoUri.Of` the address - "/", "?", "#" and "%"
 percent-encoded - so the URL names the list's address.
+
+### E-26
+**Open.** **A text of a subtype the reader does not know was an attachment**
+(`EMail/Mime/MimeMessage.cs:157`: text/plain and text/html are the texts to show; `:164`,
+`:165`: every other type is an attachment; `:738`, `:741`: only text/plain and text/html are
+the body). RFC 2046 §4.1.4: "Unrecognized subtypes of "text" should be treated as subtype
+"plain" as long as the MIME implementation knows how to handle the charset." A mail that is
+text/markdown, or text/x-log, in UTF-8 or US-ASCII has no body: its text is listed as an
+attachment, the only one; the first part of a multipart/mixed alike. Tests:
+`A_text_of_an_unknown_subtype_is_text` - text/markdown and text/x-log the message,
+text/markdown the first part of a multipart/mixed; guard:
+`A_text_marked_attachment_is_listed_whatever_its_subtype` - a text/calendar marked
+attachment, with a file name.
+
+### E-27
+**Open.** **A message part of a subtype the reader does not know was lost**
+(`EMail/Mime/MimeMessage.cs:161`: every message/* but rfc822 and global is no attachment -
+"the report parts of a bounce or a read receipt" - and no text either). RFC 2046 §5.2.4:
+"MIME implementations must in general treat unrecognized subtypes of "message" as being
+equivalent to "application/octet-stream"" - which the reader lists as an attachment. A message/http, a
+message/sipfrag (RFC 3420), a message/x-example in a multipart/mixed is neither the text nor
+an attachment: the reader shows no trace of it. Tests:
+`A_message_part_of_an_unknown_subtype_is_an_attachment` - those three; guards:
+`A_forwarded_message_is_an_attachment`, `The_report_parts_of_a_bounce_are_no_attachments` -
+message/delivery-status and text/rfc822-headers of a multipart/report.
+
+### E-28
+**Open.** **An attached message with UTF-8 in its header was written message/rfc822**
+(`EMail/Mime/MimeEntity.cs:468`, `:486`: `MimeAttachedMessage` is message/rfc822 whatever
+it carries). RFC 6532 §3.7: a message is a "message/global message" if "it contains 8-bit
+UTF-8 header values", and message/global is the media type for one - "otherwise identical
+to that of a message/rfc822 part"; RFC 2046 §5.2.1: message/rfc822 "indicates that the body
+contains an encapsulated message, with the syntax of an RFC 822 message", whose header is
+US-ASCII (RFC 5322 §2.2). A forwarded message with "Grüße" in its subject, or "Jürgen Müller"
+or `jürgen@bücher.example` in From, is attached as message/rfc822: a reader that is no
+SMTPUTF8 reader is promised a header it can read. Tests:
+`An_attached_message_with_UTF_8_in_its_header_is_message_global` - the subject, the name of
+From, its address; guards: `An_attached_message_with_an_ASCII_header_is_message_rfc822` - a
+UTF-8 body; `A_message_global_part_is_read_as_its_message`.
+
+### E-29
+**Open.** **An attached message with a line over 998 octets or a NUL was written 7bit or 8bit**
+(`EMail/Mime/MimeEntity.cs:473` to `:487`: 7bit when no octet is above 127 and none is NUL,
+8bit otherwise - the lengths of the lines never looked at). RFC 2045 §2.7 and §2.8: 7bit and
+8bit data are "relatively short lines with 998 octets or less between CRLF line separation
+sequences", and "no NULs are allowed"; §2.9: binary data is data "where any sequence of
+octets whatsoever is allowed"; §6.2: "7bit", "8bit", and "binary" "all mean that the
+identity (i.e. NO) encoding transformation has been performed. As such, they serve simply
+as indicators of the domain of the body data" - and RFC 2046 §5.2.1: "No encoding other
+than "7bit", "8bit", or "binary" is permitted for the body of a "message/rfc822" entity". A message with a line of 1000 US-ASCII octets is written 7bit;
+one of 1000 octets with "Grüße" in it 8bit, and one with a NUL 8bit too: what is no 7bit and
+no 8bit data is said to be, and a relay that keeps to the 1000 octets of a line (RFC 5321
+§4.5.3.1.6) breaks it. Tests: `An_attached_message_that_is_no_7bit_and_no_8bit_data_is_binary`
+- a line of 1000 US-ASCII octets, of 1000 octets 8-bit, a NUL; guard:
+`An_attached_message_of_short_US_ASCII_lines_is_7bit` - a line of 998.
 
 ## Reports that arrive
 
