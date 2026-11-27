@@ -206,6 +206,60 @@ public sealed class ArcValidationTests : HermodServerTestBase
 
     #endregion
 
+    #region A-6: the ARC-Message-Signature read as a DKIM-Signature
+
+    private static String WithWhiteSpace(String Marker)
+        => Message(Marker).Replace("Hello through a list.\r\n", "Hello  through a list.  \r\nBye.\r\n");
+
+    [Test(Description = "RFC 8617 §4.1.2: the AMS \"is syntactically and semantically identical to a DKIM-Signature header field\"; RFC 6376 §3.5, c=: \"If no canonicalization algorithm is specified, the Signer MUST use \"simple/simple\"\" - an AMS without c=, made simple/simple, passes")]
+    [Category(TestCategories.KnownIssue)]
+    [Property("Finding", "A-6")]
+    public async Task An_AMS_without_c_is_simple_simple()
+    {
+        var marker = Marker();
+        await AssertArc(Sealed(WithWhiteSpace(marker), new TestArcSealOptions { AmsCanonicalization = null }), marker, "pass");
+    }
+
+    [Test(Description = "RFC 8617 §4.1.2; RFC 6376 §3.5, c=: \"If only one algorithm is named, that algorithm is used for the header and \"simple\" is used for the body. For example, \"c=relaxed\" is treated the same as \"c=relaxed/simple\"\" - an AMS with c=relaxed over a body with white space that simple canonicalization keeps passes")]
+    [Category(TestCategories.KnownIssue)]
+    [Property("Finding", "A-6")]
+    public async Task An_AMS_with_c_relaxed_hashes_the_body_simple()
+    {
+        var marker = Marker();
+        await AssertArc(Sealed(WithWhiteSpace(marker), new TestArcSealOptions { AmsCanonicalization = "relaxed" }), marker, "pass");
+    }
+
+    [Test(Description = "RFC 8617 §5.2 step 4; RFC 6376 §3.4.3, §3.5: with c=relaxed the body of the AMS is canonicalized simple, so white space put into it after sealing makes the chain fail, where relaxed body canonicalization would have hidden it")]
+    [Category(TestCategories.KnownIssue)]
+    [Property("Finding", "A-6")]
+    public async Task White_space_added_to_a_body_sealed_with_c_relaxed_fails()
+    {
+        var marker = Marker();
+        var sealed_ = Sealed(Message(marker), new TestArcSealOptions { AmsCanonicalization = "relaxed" });
+        await AssertArc(sealed_.Replace("Hello through a list.\r\n", "Hello   through a list.  \r\n"), marker, "fail");
+    }
+
+    [Test(Description = "RFC 8617 §4.1.2; RFC 6376 §3.5, bh=: \"Whitespace is ignored in this value and MUST be ignored when reassembling the original signature\" - an AMS whose bh= is folded passes")]
+    [Category(TestCategories.KnownIssue)]
+    [Property("Finding", "A-6")]
+    public async Task An_AMS_with_bh_folded_passes()
+    {
+        var marker = Marker();
+        await AssertArc(Sealed(Message(marker), new TestArcSealOptions { AmsTags = tags => Regex.Replace(tags, @"bh=(.{20})(.+)$", "bh=$1\r\n\t$2") }), marker, "pass");
+    }
+
+    [TestCase("relaxed/simple")]
+    [TestCase("simple/simple")]
+    [Description("RFC 8617 §4.1.2; RFC 6376 §3.5, c=: both canonicalizations named - an AMS with c=relaxed/simple or c=simple/simple over a body with white space passes (a guard for A-6)")]
+    [Property("Finding", "A-6")]
+    public async Task An_AMS_with_both_canonicalizations_named_passes(String Canonicalization)
+    {
+        var marker = Marker();
+        await AssertArc(Sealed(WithWhiteSpace(marker), new TestArcSealOptions { AmsCanonicalization = Canonicalization }), marker, "pass");
+    }
+
+    #endregion
+
 }
 
 

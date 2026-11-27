@@ -122,7 +122,11 @@ the header fields RFC 5322 requires, a Message-ID, and an envelope of fully qual
 domains; its line numbers refer to `75f0dca0`. The thirtieth (V-26 to V-28) tests the tags
 of a DKIM-Signature and of a key record as the verifier of inbound mail reads them (RFC 6376
 §3.2, §3.5, §3.6.1): the canonicalization a c= tag of one name stands for, a tag named twice,
-the version tag of a key record; its line numbers refer to `69e68e20`.
+the version tag of a key record; its line numbers refer to `69e68e20`. The thirty-first
+(V-29, V-30, A-6, P-4, P-5) tests white space as DKIM has it (RFC 6376 §2.8, §3.4, §3.5), on
+both sides and in ARC (RFC 8617 §4.1.2): what the relaxed canonicalization deletes - WSP, and
+nothing else -, white space in bh=, and the c= tag of an ARC-Message-Signature and of the
+signer's configuration; its line numbers refer to `ac089d71`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -130,7 +134,13 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [V-29](#v-29) | medium | DKIM | The relaxed canonicalization took octets 0xA0 and 0x85, and a form feed, for white space: a valid signature over a line in Polish, Russian or French that ends in ą, х or à failed | 7 |
+| [V-30](#v-30) | low | DKIM | A bh= with white space in it - folded, as §3.5 allows - did not verify | 2 |
+| [A-6](#a-6) | low | ARC | The ARC-Message-Signature was not read as a DKIM-Signature: no c= was relaxed/relaxed, c=relaxed was relaxed/relaxed, a bh= with white space failed | 4 |
+| [P-4](#p-4) | medium | DKIM signing | The signer and the ARC sealer took the same octets and characters for white space: a relayed message in Polish, Russian or French was signed so that it failed at every verifier | 8 |
+| [P-5](#p-5) | low | DKIM signing | A signer configured with c=relaxed hashed the body relaxed: the signature it wrote failed at every verifier | 1 |
 
 ### Closed
 
@@ -3201,6 +3211,39 @@ tags (§3.2: tag-spec = [FWS] tag-name [FWS] "=" [FWS] tag-value [FWS]).
 Fixed: a key record with a v= that is not its first tag, or with a tag named twice, is not
 used; one without v= is, as before.
 
+The thirty-first round's verifier tests (`DkimWhiteSpaceTests`) sign with the suite's own
+signer over the UTF-8 octets of the message, as every other signer does, and verify with
+`DNSVerifier.VerifyDkimAsync`. Covered without a finding: spaces and tabs at the end of a line
+are deleted and runs of them are one space, so a signature still verifies after its white
+space was changed; a bh= with white space that hashes another body does not verify.
+
+### V-29
+**Open.** **The relaxed canonicalization took octets 0xA0 and 0x85, and a form feed, for white
+space** (`DNSVerifications/DkimCanonicalization.cs:149`, `.TrimEnd()` of each
+line of the body; `:126`, `.Trim()` of a header field value). The message is read one character
+per octet (`MessageOctets.ToText`), and .NET's `Trim` takes every character for white space
+that Unicode does - among them U+00A0 NO-BREAK SPACE and U+0085 NEXT LINE, the octets 0xA0 and
+0x85, and the form feed. RFC 6376 §3.4.4, relaxed body: "Ignore all
+whitespace at the end of lines"; §3.4.2, relaxed header: "Delete all WSP characters at the end
+of each unfolded header field value"; and §2.8: "WSP = SP / HTAB" - a space or a tab, nothing
+else. 0xA0 is the last octet of à (C3 A0) and of the NO-BREAK SPACE (C2 A0), 0x85 that of ą
+(C4 85) and х (D1 85): a line of a mail in French, Polish or Russian that ends in one of them
+loses that octet before it is hashed, where the signer hashed it - a valid signature with
+c=relaxed/relaxed, what most signers use, fails, and DMARC with it. So does one over a line that
+ends in a form feed, or a Subject in UTF-8 (RFC 6532) that ends in ą or à. Tests:
+`A_relaxed_body_whose_line_ends_in_no_WSP_verifies` - à, ą, х, a NO-BREAK SPACE, a form feed;
+`A_relaxed_header_field_that_ends_in_no_WSP_verifies` - ą, à; guard:
+`White_space_that_is_WSP_is_deleted_at_the_end_of_a_line`.
+
+### V-30
+**Open.** **A bh= with white space in it did not verify** (`DNSVerifier.cs:1164`,
+`computedBodyHash != bodyHash`: the value of the tag is compared as it is, white space and
+all). RFC 6376 §3.5, bh=: "Whitespace is ignored in this value and MUST be ignored when
+reassembling the original signature", base64string = ALPHADIGITPS *([FWS] ALPHADIGITPS) (§2.4)
+- a signer may fold a long bh= as it folds b=, which the verifier already reads without its
+white space. Tests: `A_bh_with_white_space_verifies` - folded after 20 characters, a space in it
+and around it; guard: `A_bh_with_white_space_of_another_body_does_not_verify`.
+
 ## ARC
 
 RFC 8617 as `ArcValidator` checks the chain of every unauthenticated message and the
@@ -3271,6 +3314,23 @@ ARC-Message-Signature, and ARC-Seal) MUST NOT be included". Test:
 `The_AMS_signs_no_ARC_header_field`.
 
 Fixed: ARC header fields are never in the AMS h=, whatever the configuration lists.
+
+### A-6
+**Open.** **The ARC-Message-Signature was not read as a DKIM-Signature**
+(`Arc/ArcValidator.cs:125`, `GetValueOrDefault("c", "relaxed/relaxed")`; `:126`, a c= of one
+name taken for both; `:131`, `computed != bodyHash`). RFC 8617 §4.1.2: the AMS "is
+syntactically and semantically identical to a DKIM-Signature header field", and RFC 6376 §3.5
+reads its tags: "If no canonicalization algorithm is specified, the Signer MUST use
+"simple/simple""; "If only one algorithm is named, that algorithm is used for the header and
+"simple" is used for the body"; bh=: "Whitespace is ignored in this value". An AMS without c=,
+made simple/simple, fails; one with c=relaxed over a body with two spaces in a line fails, and
+white space put into the body after sealing goes unnoticed; one with a folded bh= fails - the
+same as V-26 and V-30, in the validator of ARC. Tests: `An_AMS_without_c_is_simple_simple`,
+`An_AMS_with_c_relaxed_hashes_the_body_simple`,
+`White_space_added_to_a_body_sealed_with_c_relaxed_fails`, `An_AMS_with_bh_folded_passes`;
+guard: `An_AMS_with_both_canonicalizations_named_passes` - c=relaxed/simple, c=simple/simple.
+The suite's sealer, `TestArc`, writes the AMS with c= as given, or without it, and its tags as a
+test changes them.
 
 ## DMARC reports
 
@@ -3744,6 +3804,39 @@ Hermod's own `TXT.PresentationOf` does that. Test:
 `The_generated_key_record_names_the_generated_key` is the guard.
 
 Fixed: the record is written with `TXT.PresentationOf`, in strings of at most 255 octets.
+
+The thirty-first round's signer tests (`OutboundClientTests.DkimCanonicalization.cs`) send a
+message signed by `DkimSigner` both ways it leaves: directly, as text, and relayed from the
+queue as its octets - the way the server relays what it received - and verify it with the
+suite's own verifier. Covered without a finding: a line of UTF-8 text whose last octet is no
+white space of any kind (ü, C3 BC), and spaces and tabs at the end of lines, both ways; a
+signer configured with c=relaxed/simple, relaxed/relaxed or simple/simple.
+
+### P-4
+**Open.** **The signer and the ARC sealer took the same octets and characters for white space**
+(`DNSVerifications/DkimCanonicalization.cs:149` and `:126`, as in V-29). `DkimSigner.SignOctets`
+- the relay's way, for every message it received - reads the message one character per octet:
+of à, ą and х the last octet goes, and the body hash is that of another body than every
+verifier computes. `SignMessage`, for a message given as text, and `ArcSealer`, take the
+NO-BREAK SPACE and the form feed at the end of a line for white space. RFC 6376 §3.4.4, §2.8:
+"WSP = SP / HTAB". A mail in French, Polish or Russian relayed through Hermod leaves with a
+signature that fails at every verifier that keeps to §3.4.4 - DMARC with it, and the
+domain's own p=reject turns against it. Tests:
+`A_body_whose_line_ends_in_no_WSP_is_signed_so_that_it_verifies` - à, ą, х relayed; a NO-BREAK
+SPACE and a form feed relayed and sent; `A_sealed_body_whose_line_ends_in_no_WSP_validates`;
+guards: `A_body_of_UTF_8_text_is_signed_so_that_it_verifies`,
+`A_body_with_WSP_at_the_end_of_its_lines_is_signed_so_that_it_verifies`.
+
+### P-5
+**Open.** **A signer configured with c=relaxed hashed the body relaxed**
+(`DNSVerifications/DkimSigner.cs:126`, `slash.Length > 1 ? slash[1] : headerCanon`). It writes
+`c=relaxed` as configured, and RFC 6376 §3.5 reads that as relaxed/simple: "If only one
+algorithm is named, that algorithm is used for the header and "simple" is used for the body".
+Over a body that the two canonicalizations make differ - two spaces in a line, one at its end -
+the signature fails at every verifier, Hermod's own since V-26 among them. Test:
+`A_signer_configured_with_c_relaxed_hashes_the_body_simple`; guard:
+`A_signer_configured_with_both_canonicalizations_named_signs_so_that_it_verifies` -
+relaxed/simple, relaxed/relaxed, simple/simple.
 
 ## MIME and the message format
 

@@ -40,6 +40,21 @@ public sealed record TestArcSealOptions
 
     public String[]  SignedHeaders   { get; init; } = [ "from", "to", "subject", "date", "message-id" ];
 
+    /// <summary>
+    /// The c= tag of the ARC-Message-Signature, as written - "relaxed/relaxed" by default; null
+    /// leaves it out. The AMS is canonicalized as RFC 6376 §3.5 reads the tag, for the AMS "is
+    /// syntactically and semantically identical to a DKIM-Signature header field" (RFC 8617
+    /// §4.1.2): no c= is simple/simple, one name is that name for the header and "simple" for
+    /// the body.
+    /// </summary>
+    public String?   AmsCanonicalization { get; init; } = "relaxed/relaxed";
+
+    /// <summary>
+    /// The tags of the ARC-Message-Signature before b=, changed as given and then signed as they
+    /// are - a bh= folded onto two lines, say.
+    /// </summary>
+    public Func<String, String>? AmsTags { get; init; }
+
 }
 
 
@@ -79,10 +94,16 @@ public static partial class TestArc
         var aar        = $" i={instance}; {o.AuthServId}; {o.AuthResults}";
 
         // §4.1.2: the AMS is a DKIM signature without v=, over no ARC header field.
-        var bh         = Convert.ToBase64String(TestDkimKey.Hash(Encoding.UTF8.GetBytes(TestDkimKey.RelaxedBody(body)), sha1));
-        var amsTags    = $"i={instance}; a={o.Algorithm}; c=relaxed/relaxed; d={Key.Domain}; s={Key.Selector}; t={t}; h={String.Join(":", o.SignedHeaders)}; bh={bh}";
-        var amsInput   = TestDkimKey.SelectedHeaders(fields, o.SignedHeaders) +
-                         TestDkimKey.RelaxedHeader(AMS, Place(amsTags, "", o.SignatureFirst));
+        var canon      = (o.AmsCanonicalization ?? "simple/simple").Split('/');
+        var relaxedHdr = canon[0] == "relaxed";
+        var relaxedBdy = canon.Length > 1 && canon[1] == "relaxed";
+        var bh         = Convert.ToBase64String(TestDkimKey.Hash(Encoding.UTF8.GetBytes(relaxedBdy ? TestDkimKey.RelaxedBody(body) : TestDkimKey.SimpleBody(body)), sha1));
+        var amsTags    = (o.AmsTags ?? (tags => tags))(
+                             $"i={instance}; a={o.Algorithm}; " + (o.AmsCanonicalization is null ? "" : $"c={o.AmsCanonicalization}; ") +
+                             $"d={Key.Domain}; s={Key.Selector}; t={t}; h={String.Join(":", o.SignedHeaders)}; bh={bh}");
+        var amsEmpty   = Place(amsTags, "", o.SignatureFirst);
+        var amsInput   = TestDkimKey.SelectedHeaders(fields, o.SignedHeaders, relaxedHdr) +
+                         (relaxedHdr ? TestDkimKey.RelaxedHeader(AMS, amsEmpty) : TestDkimKey.SimpleHeader(AMS, amsEmpty));
         var ams        = Place(amsTags, Convert.ToBase64String(Key.SignData(amsInput, sha1)), o.SignatureFirst);
 
         // §4.1.3: the AS signs the ARC sets 1..i in increasing order, each as AAR, AMS, AS,

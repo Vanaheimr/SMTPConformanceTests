@@ -155,11 +155,11 @@ public sealed partial class TestDkimKey : IDisposable
     }
 
     /// <summary>
-    /// The relaxed, CRLF-terminated header fields a signature's h= list names (RFC 6376
-    /// §5.4.2): each name picks the last instance not yet used, from the bottom up; a name
-    /// with no instance left adds nothing.
+    /// The relaxed - or, if asked, the simple - CRLF-terminated header fields a signature's h=
+    /// list names (RFC 6376 §5.4.2): each name picks the last instance not yet used, from the
+    /// bottom up; a name with no instance left adds nothing.
     /// </summary>
-    internal static String SelectedHeaders(List<(String Name, String Value)> Fields, IEnumerable<String> Names)
+    internal static String SelectedHeaders(List<(String Name, String Value)> Fields, IEnumerable<String> Names, Boolean Relaxed = true)
     {
 
         var used  = new HashSet<Int32>();
@@ -172,7 +172,7 @@ public sealed partial class TestDkimKey : IDisposable
                 if (!used.Contains(i) && Fields[i].Name.Trim().Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     used.Add(i);
-                    input.Append(RelaxedHeader(Fields[i].Name, Fields[i].Value)).Append("\r\n");
+                    input.Append(Relaxed ? RelaxedHeader(Fields[i].Name, Fields[i].Value) : SimpleHeader(Fields[i].Name, Fields[i].Value)).Append("\r\n");
                     break;
                 }
             }
@@ -218,6 +218,13 @@ public sealed partial class TestDkimKey : IDisposable
     /// </summary>
     internal static String RelaxedHeader(String Name, String Value)
         => Name.Trim().ToLowerInvariant() + ":" + Whitespace().Replace(Value.Replace("\r\n", ""), " ").Trim(' ');
+
+    /// <summary>
+    /// RFC 6376 §3.4.1: "The "simple" header canonicalization algorithm does not change header
+    /// fields in any way" - name, colon and value as they are, folding and all.
+    /// </summary>
+    internal static String SimpleHeader(String Name, String Value)
+        => Name + ":" + Value;
 
     /// <summary>
     /// RFC 6376 §3.4.4: whitespace runs to one space, none at line ends, no empty lines at the
