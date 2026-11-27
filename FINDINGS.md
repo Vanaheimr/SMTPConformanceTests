@@ -130,7 +130,10 @@ signer's configuration; its line numbers refer to `ac089d71`. The thirty-second 
 V-32) tests the results of a DKIM signature that neither passes nor fails its verification
 (RFC 6376 §6.1.1, §6.1.2, RFC 8601 §2.7.1) - a key that could not be retrieved, a signature
 that could not be evaluated - and what DMARC makes of them (RFC 7489 §6.6.2); its line numbers
-refer to `1105a05e`.
+refer to `1105a05e`. The thirty-third (P-6, A-7) tests the header fields the DKIM signer and the
+ARC sealer sign (RFC 6376 §5.4, §5.4.2, RFC 8617 §4.1.2): From among them whatever the
+configuration names, a field named once more than it occurs, a field that occurs twice, a field
+the message lacks; its line numbers refer to `31854e6b`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -138,7 +141,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [A-7](#a-7) | low | ARC | The sealer's AMS signed From only when the configuration named it: without it, an AMS that does not sign the author | 2 |
+| [P-6](#p-6) | low | DKIM signing | The signer signed From only when the configuration named it: without it, a signature every verifier ignores | 2 |
 
 ### Closed
 
@@ -3399,6 +3405,17 @@ Fixed: the validator reads the c= of an AMS as the DKIM verifier reads it
 (`DkimCanonicalization.ParseMethods`) - none is simple/simple, one name is that name and simple
 - and compares its bh= without white space.
 
+### A-7
+**Open.** **The sealer's AMS signed From only when the configuration named it**
+(`Arc/ArcSealer.cs:120`, `_config.SignedHeaders.Split(':')`: the names configured, of those the
+message has, and no other). RFC 8617 §4.1.2: the AMS "is syntactically and semantically
+identical to a DKIM-Signature header field", and RFC 6376 §5.4: "The From header field MUST be
+signed (that is, included in the "h=" tag of the resulting DKIM-Signature header field)". A
+sealer configured with "to:subject", or with nothing, sealed an AMS that says nothing of the
+author. Test:
+`A_sealer_configured_without_From_signs_From_all_the_same` - to:subject, nothing configured;
+guard: `The_AMS_of_the_default_configuration_signs_From`.
+
 ## DMARC reports
 
 RFC 7489 §7 as `DmarcReportService` writes the aggregate report and the failure report
@@ -3910,6 +3927,29 @@ relaxed/simple, relaxed/relaxed, simple/simple.
 
 Fixed: the signer reads its configured c= as every verifier reads the c= it writes
 (`DkimCanonicalization.ParseMethods`): "relaxed" is relaxed/simple.
+
+The thirty-third round's signer tests (`OutboundClientTests.DkimHeaders.cs`) send a message
+signed by `DkimSigner` through the scripted smart host and read the h= it arrived with, and
+verify it with the suite's own verifier. Covered without a finding: the default configuration
+signs From, To, Subject, Date and Message-ID; a name listed once more than the message has
+instances of it signs their absence, and a Subject added on top breaks the signature (§5.4); two
+Comments fields, named twice, are signed from the bottom up, and the two exchanged break it
+(§5.4.2); a configured field the message lacks is no obstacle.
+
+### P-6
+**Open.** **The signer signed From only when the configuration named it**
+(`DNSVerifications/DkimSigner.cs:132`, `config.SignedHeaders.Split(':')`: the names configured,
+of those the message has, and no other). RFC 6376 §5.4: "The From header field MUST be signed
+(that is, included in the "h=" tag of the resulting DKIM-Signature header field)"; §6.1.1: "If
+the "h=" tag does not include the From header field, the Verifier MUST ignore the
+DKIM-Signature header field and return PERMFAIL (From field not signed)". A signer configured
+with "to:subject", or with nothing, wrote h=to:subject or an empty h= - a signature no verifier
+takes, Hermod's own among them (V-13), and DMARC fails on it. Test:
+`A_signer_configured_without_From_signs_From_all_the_same` - to:subject, nothing configured;
+guards: `The_default_configuration_signs_From`,
+`A_field_named_once_more_than_it_occurs_signs_its_absence`,
+`Two_instances_of_a_field_are_signed_from_the_bottom_up`,
+`A_configured_field_the_message_lacks_is_no_obstacle`.
 
 ## MIME and the message format
 
