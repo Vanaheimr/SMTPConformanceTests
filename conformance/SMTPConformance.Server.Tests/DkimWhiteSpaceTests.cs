@@ -60,7 +60,6 @@ public sealed class DkimWhiteSpaceTests
 
         static TestCaseData Case(String Name, String Line)
             => new TestCaseData(Line).SetName($"A relaxed body whose line ends in {Name} verifies")
-                                     .SetCategory(TestCategories.KnownIssue)
                                      .SetProperty("Finding", "V-29");
 
         // The last octet of each is one .NET takes for white space when read one char per octet:
@@ -94,7 +93,6 @@ public sealed class DkimWhiteSpaceTests
 
         static TestCaseData Case(String Name, String Subject)
             => new TestCaseData(Subject).SetName($"A relaxed header field that ends in {Name} verifies")
-                                        .SetCategory(TestCategories.KnownIssue)
                                         .SetProperty("Finding", "V-29");
 
         yield return Case("ą, C4 85 (Polish)",  "Spotkanie z tobą");
@@ -149,7 +147,6 @@ public sealed class DkimWhiteSpaceTests
 
         static TestCaseData Case(String Name, String Replacement)
             => new TestCaseData(Replacement).SetName($"A bh= with white space verifies: {Name}")
-                                            .SetCategory(TestCategories.KnownIssue)
                                             .SetProperty("Finding", "V-30");
 
         yield return Case("folded after 20 characters", "bh=$1\r\n\t$2");

@@ -13,8 +13,7 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-27, Hermod `ac089d71`):** 1323 tests, 1301 pass, 22 fail on 5 open
-findings. A thirty-first round tested white space as DKIM has it (RFC 6376 §2.8, §3.4, §3.5),
+**State (2026-11-27, Hermod `1105a05e`):** 1323 tests, **all pass**. A thirty-first round tested white space as DKIM has it (RFC 6376 §2.8, §3.4, §3.5),
 in the verifier, the signer and ARC - 31 tests, 5 findings: the relaxed canonicalization took
 the octets 0xA0 and 0x85 and a form feed for white space, so a valid signature over a line in
 Polish, Russian or French that ends in ą, х or à failed ([V-29](FINDINGS.md#v-29)), and the
@@ -22,7 +21,8 @@ signer made the same mistake, so such a mail relayed through Hermod left with a 
 fails everywhere ([P-4](FINDINGS.md#p-4)); a bh= with white space in it did not verify
 ([V-30](FINDINGS.md#v-30)); the ARC-Message-Signature was not read as a DKIM-Signature - no c=
 was relaxed/relaxed, c=relaxed was relaxed/relaxed ([A-6](FINDINGS.md#a-6)); and a signer
-configured with c=relaxed hashed the body relaxed ([P-5](FINDINGS.md#p-5)).
+configured with c=relaxed hashed the body relaxed ([P-5](FINDINGS.md#p-5)). All five fixed in
+[#346](https://github.com/Vanaheimr/Hermod/pull/346).
 A thirtieth round tested the tags of a DKIM-Signature and of a key record as the
 verifier of inbound mail reads them (RFC 6376 §3.2, §3.5, §3.6.1) - 13 tests, 3 findings:
 c=relaxed was read as relaxed/relaxed, not relaxed/simple, so a valid signature over a body
@@ -468,8 +468,8 @@ vectors, and the four Linux tools.
 | RFC 3030 §2 the BDAT command: its grammar, a size the server cannot read; RFC 5321 §4.1.4 the commands between two chunks - RCPT, MAIL, NOOP, RSET, EHLO | 13 | 0 | ~~S-53~~, ~~S-54~~, ~~S-55~~ fixed |
 | RFC 6409 §4.2, §8, §8.3, RFC 5322 §3.6, RFC 5321 §6.4: the message the server relays or delivers as the Message Submission Agent - Date, From, Message-ID, a fully qualified envelope; nothing added to mail from another server | 9 | 0 | ~~S-56~~, ~~S-57~~, ~~S-58~~ fixed |
 | RFC 6376 §3.2, §3.5, §3.6.1: the tags of a DKIM-Signature and of a key record as the verifier reads them - c= of one name, a tag named twice, the version of a key record | 13 | 0 | ~~V-26~~, ~~V-27~~, ~~V-28~~ fixed |
-| RFC 6376 §2.8, §3.4.2, §3.4.4, §3.5, RFC 8617 §4.1.2: white space in DKIM and ARC - WSP and nothing else in the relaxed canonicalization, white space in bh=, the c= of an AMS and of the signer; the verifier, the signer, the ARC validator and sealer | 31 | 22 | V-29, V-30, A-6, P-4, P-5 |
-| **Total** | **1323** | **22** | |
+| RFC 6376 §2.8, §3.4.2, §3.4.4, §3.5, RFC 8617 §4.1.2: white space in DKIM and ARC - WSP and nothing else in the relaxed canonicalization, white space in bh=, the c= of an AMS and of the signer; the verifier, the signer, the ARC validator and sealer | 31 | 0 | ~~V-29~~, ~~V-30~~, ~~A-6~~, ~~P-4~~, ~~P-5~~ fixed |
+| **Total** | **1323** | **0** | |
 
 ## External test partners
 

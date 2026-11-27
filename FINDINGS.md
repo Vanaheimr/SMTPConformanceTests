@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `ac089d71`**
-(Styx `6dc4bb30`), which closes every finding of all thirty rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `1105a05e`**
+(Styx `6dc4bb30`), which closes every finding of all thirty-one rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -134,13 +134,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [V-29](#v-29) | medium | DKIM | The relaxed canonicalization took octets 0xA0 and 0x85, and a form feed, for white space: a valid signature over a line in Polish, Russian or French that ends in ą, х or à failed | 7 |
-| [V-30](#v-30) | low | DKIM | A bh= with white space in it - folded, as §3.5 allows - did not verify | 2 |
-| [A-6](#a-6) | low | ARC | The ARC-Message-Signature was not read as a DKIM-Signature: no c= was relaxed/relaxed, c=relaxed was relaxed/relaxed, a bh= with white space failed | 4 |
-| [P-4](#p-4) | medium | DKIM signing | The signer and the ARC sealer took the same octets and characters for white space: a relayed message in Polish, Russian or French was signed so that it failed at every verifier | 8 |
-| [P-5](#p-5) | low | DKIM signing | A signer configured with c=relaxed hashed the body relaxed: the signature it wrote failed at every verifier | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -296,6 +290,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [P-1](#p-1) | low | outbound | `PublicAddressesOnly` took the IPv4 documentation ranges (RFC 5737) for public | 3 | [Vanaheimr/Hermod#257](https://github.com/Vanaheimr/Hermod/pull/257) |
 | [P-2](#p-2) | low | DKIM signing | `DkimSigner` signed with, and the key generators made, RSA keys of fewer than 1024 bits | 2 | [Vanaheimr/Hermod#281](https://github.com/Vanaheimr/Hermod/pull/281) |
 | [P-3](#p-3) | low | DKIM signing | `DkimKeyGenerator` wrote the key record as one character-string of 410 characters | 1 | [Vanaheimr/Hermod#281](https://github.com/Vanaheimr/Hermod/pull/281) |
+| [P-4](#p-4) | medium | DKIM signing | The signer and the ARC sealer took the same octets and characters for white space: a relayed message in Polish, Russian or French was signed so that it failed at every verifier | 8 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
+| [P-5](#p-5) | low | DKIM signing | A signer configured with c=relaxed hashed the body relaxed: the signature it wrote failed at every verifier | 1 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
 | [R-1](#r-1) | medium | DMARC reports | The aggregate XML lacked sp, fo, envelope_from and the SPF scope, which Appendix C requires | 4 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
 | [R-2](#r-2) | medium | DMARC reports | The size limit of a report URI (`!10m`) was cut off and ignored | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
 | [R-3](#r-3) | low | DMARC reports | The Report-ID of the subject was no msg-id | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
@@ -329,6 +325,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [A-3](#a-3) | low | ARC | A tag twice in an ARC tag-list: the last one counted (`cv=fail; cv=pass` passed) | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [A-4](#a-4) | low | ARC | The sealer sealed a chain whose last seal said cv=fail once more | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [A-5](#a-5) | low | ARC | The sealer's AMS signed the ARC header fields it was configured to | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
+| [A-6](#a-6) | low | ARC | The ARC-Message-Signature was not read as a DKIM-Signature: no c= was relaxed/relaxed, c=relaxed was relaxed/relaxed, a bh= with white space failed | 4 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
 | [V-3](#v-3) | medium | DKIM, ARC | rsa-sha1 signatures verified | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [V-4](#v-4) | medium | DKIM, ARC | A signature whose b= tag came first never verified | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [V-5](#v-5) | medium | SPF | A DNS error - SERVFAIL, a timeout - was taken for no record or no match: `none`, or `fail` under `-all`, never `temperror` | 6 | [Vanaheimr/Hermod#277](https://github.com/Vanaheimr/Hermod/pull/277) |
@@ -355,6 +352,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [V-26](#v-26) | medium | DKIM | c=relaxed was read as relaxed/relaxed, not relaxed/simple: a valid signature failed, and white space put into a signed body went unnoticed | 2 | [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) |
 | [V-27](#v-27) | medium | DKIM | A DKIM-Signature with a tag named twice was taken, the last value of it applied - d= twice, the author's domain first, verified for the second | 3 | [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) |
 | [V-28](#v-28) | low | DKIM | A key record with v=DKIM1 after another tag, or with a tag named twice, was used | 2 | [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) |
+| [V-29](#v-29) | medium | DKIM | The relaxed canonicalization took octets 0xA0 and 0x85, and a form feed, for white space: a valid signature over a line in Polish, Russian or French that ends in ą, х or à failed | 7 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
+| [V-30](#v-30) | low | DKIM | A bh= with white space in it - folded, as §3.5 allows - did not verify | 2 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
 | [E-1](#e-1) | **high** | message format | A comment after the address named the mailbox: `From: mallory@evil.example (<ceo@company.example>)` read as ceo@company.example, and was DKIM-signed for company.example | 7 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
 | [I-1](#i-1) | **high** | TLS-RPT ingest | A gzip bomb was inflated whole, in memory and onto disk, before the reply to DATA | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-2](#i-2) | **high** | DMARC reader | Deeply nested XML overflowed the stack and ended the process | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -409,7 +408,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 578 tests for these are part of the merge gate now; the observations the first
+The 600 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3161,6 +3160,9 @@ to A-labels before further processing." Tests:
 `Strict_alignment_compares_an_author_domain_in_U_labels_by_its_A_labels`;
 `The_organizational_policy_applies_to_an_author_domain_in_U_labels` is the guard.
 
+Fixed: `VerifyDmarcAsync` takes the From domain in A-labels from the start, and alignment
+compares A-labels on both sides.
+
 ### V-26
 **Closed** in [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) (`24b28a2c`). **c=relaxed was read as relaxed/relaxed, not relaxed/simple** (`DNSVerifier.cs:1270`:
 a c= tag of one name is taken for both, header and body). RFC 6376 §3.5, c=: "If only one
@@ -3218,7 +3220,7 @@ are deleted and runs of them are one space, so a signature still verifies after 
 space was changed; a bh= with white space that hashes another body does not verify.
 
 ### V-29
-**Open.** **The relaxed canonicalization took octets 0xA0 and 0x85, and a form feed, for white
+**Closed** in [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) (`1105a05e`). **The relaxed canonicalization took octets 0xA0 and 0x85, and a form feed, for white
 space** (`DNSVerifications/DkimCanonicalization.cs:149`, `.TrimEnd()` of each
 line of the body; `:126`, `.Trim()` of a header field value). The message is read one character
 per octet (`MessageOctets.ToText`), and .NET's `Trim` takes every character for white space
@@ -3235,14 +3237,20 @@ ends in a form feed, or a Subject in UTF-8 (RFC 6532) that ends in ą or à. Tes
 `A_relaxed_header_field_that_ends_in_no_WSP_verifies` - ą, à; guard:
 `White_space_that_is_WSP_is_deleted_at_the_end_of_a_line`.
 
+Fixed: the relaxed canonicalization of the body and of a header field value deletes spaces and
+tabs, and nothing else.
+
 ### V-30
-**Open.** **A bh= with white space in it did not verify** (`DNSVerifier.cs:1164`,
+**Closed** in [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) (`1105a05e`). **A bh= with white space in it did not verify** (`DNSVerifier.cs:1164`,
 `computedBodyHash != bodyHash`: the value of the tag is compared as it is, white space and
 all). RFC 6376 §3.5, bh=: "Whitespace is ignored in this value and MUST be ignored when
 reassembling the original signature", base64string = ALPHADIGITPS *([FWS] ALPHADIGITPS) (§2.4)
 - a signer may fold a long bh= as it folds b=, which the verifier already reads without its
 white space. Tests: `A_bh_with_white_space_verifies` - folded after 20 characters, a space in it
 and around it; guard: `A_bh_with_white_space_of_another_body_does_not_verify`.
+
+Fixed: bh= is compared with the body hash without its white space
+(`DkimCanonicalization.SameBase64`).
 
 ## ARC
 
@@ -3254,9 +3262,6 @@ the suite's own ARC implementation (`TestArc`), which `ArcToolingTests` checks. 
 without a finding: one and two sets pass; a changed body, a gap in the instances, an
 instance twice, cv=pass at instance 1 and cv=fail fail; Hermod's first seal and a seal on
 a passing chain validate, with cv=none and cv=pass, no v= in the AMS, no h= in the AS.
-
-Fixed: `VerifyDmarcAsync` takes the From domain in A-labels from the start, and alignment
-compares A-labels on both sides.
 
 ### A-1
 **Closed** in [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) (`63fcf3cd`).
@@ -3316,7 +3321,7 @@ ARC-Message-Signature, and ARC-Seal) MUST NOT be included". Test:
 Fixed: ARC header fields are never in the AMS h=, whatever the configuration lists.
 
 ### A-6
-**Open.** **The ARC-Message-Signature was not read as a DKIM-Signature**
+**Closed** in [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) (`1105a05e`). **The ARC-Message-Signature was not read as a DKIM-Signature**
 (`Arc/ArcValidator.cs:125`, `GetValueOrDefault("c", "relaxed/relaxed")`; `:126`, a c= of one
 name taken for both; `:131`, `computed != bodyHash`). RFC 8617 §4.1.2: the AMS "is
 syntactically and semantically identical to a DKIM-Signature header field", and RFC 6376 §3.5
@@ -3331,6 +3336,10 @@ same as V-26 and V-30, in the validator of ARC. Tests: `An_AMS_without_c_is_simp
 guard: `An_AMS_with_both_canonicalizations_named_passes` - c=relaxed/simple, c=simple/simple.
 The suite's sealer, `TestArc`, writes the AMS with c= as given, or without it, and its tags as a
 test changes them.
+
+Fixed: the validator reads the c= of an AMS as the DKIM verifier reads it
+(`DkimCanonicalization.ParseMethods`) - none is simple/simple, one name is that name and simple
+- and compares its bh= without white space.
 
 ## DMARC reports
 
@@ -3813,7 +3822,7 @@ white space of any kind (ü, C3 BC), and spaces and tabs at the end of lines, bo
 signer configured with c=relaxed/simple, relaxed/relaxed or simple/simple.
 
 ### P-4
-**Open.** **The signer and the ARC sealer took the same octets and characters for white space**
+**Closed** in [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) (`1105a05e`). **The signer and the ARC sealer took the same octets and characters for white space**
 (`DNSVerifications/DkimCanonicalization.cs:149` and `:126`, as in V-29). `DkimSigner.SignOctets`
 - the relay's way, for every message it received - reads the message one character per octet:
 of à, ą and х the last octet goes, and the body hash is that of another body than every
@@ -3827,8 +3836,11 @@ SPACE and a form feed relayed and sent; `A_sealed_body_whose_line_ends_in_no_WSP
 guards: `A_body_of_UTF_8_text_is_signed_so_that_it_verifies`,
 `A_body_with_WSP_at_the_end_of_its_lines_is_signed_so_that_it_verifies`.
 
+Fixed: with V-29 - the signer and the sealer share the canonicalization, which deletes spaces
+and tabs, and nothing else.
+
 ### P-5
-**Open.** **A signer configured with c=relaxed hashed the body relaxed**
+**Closed** in [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) (`1105a05e`). **A signer configured with c=relaxed hashed the body relaxed**
 (`DNSVerifications/DkimSigner.cs:126`, `slash.Length > 1 ? slash[1] : headerCanon`). It writes
 `c=relaxed` as configured, and RFC 6376 §3.5 reads that as relaxed/simple: "If only one
 algorithm is named, that algorithm is used for the header and "simple" is used for the body".
@@ -3837,6 +3849,9 @@ the signature fails at every verifier, Hermod's own since V-26 among them. Test:
 `A_signer_configured_with_c_relaxed_hashes_the_body_simple`; guard:
 `A_signer_configured_with_both_canonicalizations_named_signs_so_that_it_verifies` -
 relaxed/simple, relaxed/relaxed, simple/simple.
+
+Fixed: the signer reads its configured c= as every verifier reads the c= it writes
+(`DkimCanonicalization.ParseMethods`): "relaxed" is relaxed/simple.
 
 ## MIME and the message format
 

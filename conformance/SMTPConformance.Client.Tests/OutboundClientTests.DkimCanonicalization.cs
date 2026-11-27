@@ -82,7 +82,6 @@ public sealed partial class OutboundClientTests
 
         static TestCaseData Case(String Name, String Line, Boolean Relayed)
             => new TestCaseData(Line, Relayed).SetName($"A body whose line ends in {Name} is signed so that it verifies: {(Relayed ? "relayed from the queue, as octets" : "sent directly, as text")}")
-                                              .SetCategory(TestCategories.KnownIssue)
                                               .SetProperty("Finding", "P-4");
 
         // Relayed, the message is signed as its octets, and the last octet of a UTF-8 character,
@@ -150,7 +149,6 @@ public sealed partial class OutboundClientTests
 
 
     [Test(Description = "RFC 8617 §4.1.2, RFC 6376 §3.4.4: the ARC sealer canonicalizes the body of its AMS relaxed - a line that ends in a form feed or a NO-BREAK SPACE keeps it, and the sealed message validates with the suite's validator")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "P-4")]
     public void A_sealed_body_whose_line_ends_in_no_WSP_validates()
     {
@@ -179,7 +177,6 @@ public sealed partial class OutboundClientTests
     #region P-5: c= of one name
 
     [Test(Description = "RFC 6376 §3.5, c=: \"If only one algorithm is named, that algorithm is used for the header and \"simple\" is used for the body. For example, \"c=relaxed\" is treated the same as \"c=relaxed/simple\"\" - a signer configured with c=relaxed writes c=relaxed and hashes the body simple: over a body with white space that relaxed canonicalization would change, the signature verifies with the suite's own verifier")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "P-5")]
     public async Task A_signer_configured_with_c_relaxed_hashes_the_body_simple()
     {
