@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `1105a05e`**
-(Styx `6dc4bb30`), which closes every finding of all thirty-one rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `31854e6b`**
+(Styx `6dc4bb30`), which closes every finding of all thirty-two rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -138,10 +138,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [V-31](#v-31) | medium | DKIM | A DNS error at the lookup of the key was "no key": dkim=fail, not temperror, and p=reject refused the author's own signed mail while the DNS was down | 4 |
-| [V-32](#v-32) | low | DKIM | A signature that could not be evaluated - a required tag missing, v=2, no key record, a key record with a syntax error - was dkim=fail, not permerror | 6 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -361,6 +358,8 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [V-28](#v-28) | low | DKIM | A key record with v=DKIM1 after another tag, or with a tag named twice, was used | 2 | [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) |
 | [V-29](#v-29) | medium | DKIM | The relaxed canonicalization took octets 0xA0 and 0x85, and a form feed, for white space: a valid signature over a line in Polish, Russian or French that ends in ą, х or à failed | 7 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
 | [V-30](#v-30) | low | DKIM | A bh= with white space in it - folded, as §3.5 allows - did not verify | 2 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
+| [V-31](#v-31) | medium | DKIM | A DNS error at the lookup of the key was "no key": dkim=fail, not temperror, and p=reject refused the author's own signed mail while the DNS was down | 4 | [Vanaheimr/Hermod#349](https://github.com/Vanaheimr/Hermod/pull/349) |
+| [V-32](#v-32) | low | DKIM | A signature that could not be evaluated - a required tag missing, v=2, no key record, a key record with a syntax error - was dkim=fail, not permerror | 6 | [Vanaheimr/Hermod#349](https://github.com/Vanaheimr/Hermod/pull/349) |
 | [E-1](#e-1) | **high** | message format | A comment after the address named the mailbox: `From: mallory@evil.example (<ceo@company.example>)` read as ceo@company.example, and was DKIM-signed for company.example | 7 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
 | [I-1](#i-1) | **high** | TLS-RPT ingest | A gzip bomb was inflated whole, in memory and onto disk, before the reply to DATA | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-2](#i-2) | **high** | DMARC reader | Deeply nested XML overflowed the stack and ended the process | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -415,7 +414,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 600 tests for these are part of the merge gate now; the observations the first
+The 610 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3268,7 +3267,7 @@ keep DMARC from passing; a signature over a changed body or Subject fails, and s
 revoked key (§6.1.2: "MUST treat this as a failed signature check").
 
 ### V-31
-**Open.** **A DNS error at the lookup of the key was "no key"** (`DNSVerifier.cs:1705` and
+**Closed** in [Vanaheimr/Hermod#349](https://github.com/Vanaheimr/Hermod/pull/349) (`31854e6b`). **A DNS error at the lookup of the key was "no key"** (`DNSVerifier.cs:1705` and
 `:1706`, the lookup's exception taken for no record; `:1684` and on, the response code of the
 answer never looked at; `:1111`, `DkimResult.Fail`). RFC 6376 §6.1.2: "If the query for the
 public key fails to respond, the Verifier MAY seek a later verification attempt by returning
@@ -3286,8 +3285,12 @@ guards: `A_key_that_does_not_exist_is_no_temporary_error` - NXDOMAIN, no TXT rec
 `A_key_that_does_not_exist_applies_p_reject`,
 `A_DNS_error_at_the_key_with_SPF_aligned_passes_DMARC`.
 
+Fixed: the lookup of the key tells a failure - an exception, a timeout, a response code other
+than NOERROR and NXDOMAIN - from a key that is not there; a failure is `DkimResult.TempError`,
+and DMARC on it is temperror, its policy not applied.
+
 ### V-32
-**Open.** **A signature that could not be evaluated was dkim=fail** (`DNSVerifier.cs:1069`, a
+**Closed** in [Vanaheimr/Hermod#349](https://github.com/Vanaheimr/Hermod/pull/349) (`31854e6b`). **A signature that could not be evaluated was dkim=fail** (`DNSVerifier.cs:1069`, a
 required tag missing; `:1076`, a version other than 1; `:1111`, no key record; `:1120`, a key
 record with a tag named twice - each `DkimResult.Fail`). RFC 8601 §2.7.1: "fail: The message
 was signed and the signature or signatures were acceptable to the ADMD, but they failed the
@@ -3302,6 +3305,10 @@ know, was never given. Tests:
 (NXDOMAIN, no TXT), a key record with a tag twice; `A_signature_without_a_key_is_reported_as_permerror`;
 guards: `A_signature_that_does_not_verify_fails` - the body changed, the Subject changed;
 `A_signature_of_a_revoked_key_fails`.
+
+Fixed: a signature with an invalid tag-list, a required tag missing or another version, and one
+whose key does not exist or whose key record is invalid, is `DkimResult.PermError`; a revoked
+key, and the checks that refuse a signature for what it says, stay `DkimResult.Fail`.
 
 ## ARC
 

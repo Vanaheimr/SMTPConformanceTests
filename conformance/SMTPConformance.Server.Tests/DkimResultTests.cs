@@ -51,7 +51,6 @@ public sealed class DkimResultTests
 
         static TestCaseData Case(String Name, Action<StubDnsClient, String> Error)
             => new TestCaseData(Error).SetName($"A DNS error at the key is a temporary error: {Name}")
-                                      .SetCategory(TestCategories.KnownIssue)
                                       .SetProperty("Finding", "V-31");
 
         yield return Case("the lookup fails with SERVFAIL",  (dns, name) => dns.Fail (name, DNSResourceRecordTypes.TXT));
@@ -104,7 +103,6 @@ public sealed class DkimResultTests
 
         static TestCaseData Case(String Name, Func<String, String>? Tags, String? TagsBeforeKey, DNSResponseCodes? KeyLookup = null)
             => new TestCaseData(Tags, TagsBeforeKey, KeyLookup).SetName($"A signature that cannot be evaluated is a permanent error: {Name}")
-                                                               .SetCategory(TestCategories.KnownIssue)
                                                                .SetProperty("Finding", "V-32");
 
         // §6.1.1: "PERMFAIL (signature missing required tag)", "PERMFAIL (incompatible version)".
@@ -250,7 +248,6 @@ public sealed class DkimResultDeliveryTests : HermodServerTestBase
 
         static TestCaseData Case(String Name, String Label, Action<StubDnsClient, String> Error)
             => new TestCaseData(Label, Error).SetName($"A DNS error at the author's key does not apply p=reject: {Name}")
-                                             .SetCategory(TestCategories.KnownIssue)
                                              .SetProperty("Finding", "V-31");
 
         yield return Case("the lookup fails with SERVFAIL",  "servfail",  (dns, name) => dns.Fail (name, DNSResourceRecordTypes.TXT));
@@ -325,7 +322,6 @@ public sealed class DkimResultDeliveryTests : HermodServerTestBase
     #region V-32: a signature without a key
 
     [Test(Description = "RFC 8601 §2.7.1: \"permerror: The message could not be verified due to some error that is unrecoverable\" - a signature whose key record does not exist (RFC 6376 §6.1.2, \"PERMFAIL (no key for signature)\") is dkim=permerror in Authentication-Results, not dkim=fail")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "V-32")]
     public async Task A_signature_without_a_key_is_reported_as_permerror()
     {

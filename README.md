@@ -13,14 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-27, Hermod `1105a05e`):** 1340 tests, 1330 pass, 10 fail on 2 open
-findings. A thirty-second round tested the results of a DKIM signature that neither passes nor
+**State (2026-11-27, Hermod `31854e6b`):** 1340 tests, **all pass**. A thirty-second round tested the results of a DKIM signature that neither passes nor
 fails its verification (RFC 6376 §6.1.1, §6.1.2, RFC 8601 §2.7.1) and what DMARC makes of them
 (RFC 7489 §6.6.2) - 17 tests, 2 findings: a DNS error at the lookup of the key was "no key", so
 the signature failed instead of giving temperror, and p=reject refused the author's own signed
 mail while the DNS was down ([V-31](FINDINGS.md#v-31)); and a signature that could not be
 evaluated - a required tag missing, no key record - was dkim=fail, not permerror
-([V-32](FINDINGS.md#v-32)).
+([V-32](FINDINGS.md#v-32)). Both fixed in
+[#349](https://github.com/Vanaheimr/Hermod/pull/349).
 A thirty-first round tested white space as DKIM has it (RFC 6376 §2.8, §3.4, §3.5),
 in the verifier, the signer and ARC - 31 tests, 5 findings: the relaxed canonicalization took
 the octets 0xA0 and 0x85 and a form feed for white space, so a valid signature over a line in
@@ -477,8 +477,8 @@ vectors, and the four Linux tools.
 | RFC 6409 §4.2, §8, §8.3, RFC 5322 §3.6, RFC 5321 §6.4: the message the server relays or delivers as the Message Submission Agent - Date, From, Message-ID, a fully qualified envelope; nothing added to mail from another server | 9 | 0 | ~~S-56~~, ~~S-57~~, ~~S-58~~ fixed |
 | RFC 6376 §3.2, §3.5, §3.6.1: the tags of a DKIM-Signature and of a key record as the verifier reads them - c= of one name, a tag named twice, the version of a key record | 13 | 0 | ~~V-26~~, ~~V-27~~, ~~V-28~~ fixed |
 | RFC 6376 §2.8, §3.4.2, §3.4.4, §3.5, RFC 8617 §4.1.2: white space in DKIM and ARC - WSP and nothing else in the relaxed canonicalization, white space in bh=, the c= of an AMS and of the signer; the verifier, the signer, the ARC validator and sealer | 31 | 0 | ~~V-29~~, ~~V-30~~, ~~A-6~~, ~~P-4~~, ~~P-5~~ fixed |
-| RFC 6376 §6.1.1, §6.1.2, RFC 8601 §2.7.1, RFC 7489 §6.6.2: the DKIM results temperror and permerror - a DNS error at the key, a signature that cannot be evaluated - and the DMARC policy on a temporary error | 17 | 10 | V-31, V-32 |
-| **Total** | **1340** | **10** | |
+| RFC 6376 §6.1.1, §6.1.2, RFC 8601 §2.7.1, RFC 7489 §6.6.2: the DKIM results temperror and permerror - a DNS error at the key, a signature that cannot be evaluated - and the DMARC policy on a temporary error | 17 | 0 | ~~V-31~~, ~~V-32~~ fixed |
+| **Total** | **1340** | **0** | |
 
 ## External test partners
 
