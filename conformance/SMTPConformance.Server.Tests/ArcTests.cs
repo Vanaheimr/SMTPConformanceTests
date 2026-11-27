@@ -402,7 +402,6 @@ public sealed class ArcSealerTests
     [TestCase("to:subject", TestName = "A sealer configured without From signs From in the AMS all the same: to:subject")]
     [TestCase("",           TestName = "A sealer configured without From signs From in the AMS all the same: nothing configured")]
     [Description("RFC 8617 §4.1.2: the AMS \"is syntactically and semantically identical to a DKIM-Signature header field\", and RFC 6376 §5.4: \"The From header field MUST be signed (that is, included in the \"h=\" tag of the resulting DKIM-Signature header field)\" - whatever the configuration names")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "A-7")]
     public void A_sealer_configured_without_From_signs_From_all_the_same(String SignedHeaders)
     {

@@ -30,7 +30,6 @@ public sealed partial class OutboundClientTests
     [TestCase("to:subject", TestName = "A signer configured without From signs From all the same: to:subject")]
     [TestCase("",           TestName = "A signer configured without From signs From all the same: nothing configured")]
     [Description("RFC 6376 §5.4: \"The From header field MUST be signed (that is, included in the \"h=\" tag of the resulting DKIM-Signature header field)\"; §6.1.1: a verifier MUST ignore a signature whose h= does not include From - one without it is a signature no verifier takes, Hermod's own among them (V-13)")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "P-6")]
     public async Task A_signer_configured_without_From_signs_From_all_the_same(String SignedHeaders)
     {

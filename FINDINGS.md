@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `31854e6b`**
-(Styx `6dc4bb30`), which closes every finding of all thirty-two rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `b0386737`**
+(Styx `6dc4bb30`), which closes every finding of all thirty-three rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -141,10 +141,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [A-7](#a-7) | low | ARC | The sealer's AMS signed From only when the configuration named it: without it, an AMS that does not sign the author | 2 |
-| [P-6](#p-6) | low | DKIM signing | The signer signed From only when the configuration named it: without it, a signature every verifier ignores | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -302,6 +299,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [P-3](#p-3) | low | DKIM signing | `DkimKeyGenerator` wrote the key record as one character-string of 410 characters | 1 | [Vanaheimr/Hermod#281](https://github.com/Vanaheimr/Hermod/pull/281) |
 | [P-4](#p-4) | medium | DKIM signing | The signer and the ARC sealer took the same octets and characters for white space: a relayed message in Polish, Russian or French was signed so that it failed at every verifier | 8 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
 | [P-5](#p-5) | low | DKIM signing | A signer configured with c=relaxed hashed the body relaxed: the signature it wrote failed at every verifier | 1 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
+| [P-6](#p-6) | low | DKIM signing | The signer signed From only when the configuration named it: without it, a signature every verifier ignores | 2 | [Vanaheimr/Hermod#352](https://github.com/Vanaheimr/Hermod/pull/352) |
 | [R-1](#r-1) | medium | DMARC reports | The aggregate XML lacked sp, fo, envelope_from and the SPF scope, which Appendix C requires | 4 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
 | [R-2](#r-2) | medium | DMARC reports | The size limit of a report URI (`!10m`) was cut off and ignored | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
 | [R-3](#r-3) | low | DMARC reports | The Report-ID of the subject was no msg-id | 1 | [Vanaheimr/Hermod#261](https://github.com/Vanaheimr/Hermod/pull/261) |
@@ -336,6 +334,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [A-4](#a-4) | low | ARC | The sealer sealed a chain whose last seal said cv=fail once more | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [A-5](#a-5) | low | ARC | The sealer's AMS signed the ARC header fields it was configured to | 1 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [A-6](#a-6) | low | ARC | The ARC-Message-Signature was not read as a DKIM-Signature: no c= was relaxed/relaxed, c=relaxed was relaxed/relaxed, a bh= with white space failed | 4 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
+| [A-7](#a-7) | low | ARC | The sealer's AMS signed From only when the configuration named it: without it, an AMS that does not sign the author | 2 | [Vanaheimr/Hermod#352](https://github.com/Vanaheimr/Hermod/pull/352) |
 | [V-3](#v-3) | medium | DKIM, ARC | rsa-sha1 signatures verified | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [V-4](#v-4) | medium | DKIM, ARC | A signature whose b= tag came first never verified | 2 | [Vanaheimr/Hermod#260](https://github.com/Vanaheimr/Hermod/pull/260) |
 | [V-5](#v-5) | medium | SPF | A DNS error - SERVFAIL, a timeout - was taken for no record or no match: `none`, or `fail` under `-all`, never `temperror` | 6 | [Vanaheimr/Hermod#277](https://github.com/Vanaheimr/Hermod/pull/277) |
@@ -420,7 +419,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 610 tests for these are part of the merge gate now; the observations the first
+The 614 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3406,7 +3405,7 @@ Fixed: the validator reads the c= of an AMS as the DKIM verifier reads it
 - and compares its bh= without white space.
 
 ### A-7
-**Open.** **The sealer's AMS signed From only when the configuration named it**
+**Closed** in [Vanaheimr/Hermod#352](https://github.com/Vanaheimr/Hermod/pull/352) (`b0386737`). **The sealer's AMS signed From only when the configuration named it**
 (`Arc/ArcSealer.cs:120`, `_config.SignedHeaders.Split(':')`: the names configured, of those the
 message has, and no other). RFC 8617 §4.1.2: the AMS "is syntactically and semantically
 identical to a DKIM-Signature header field", and RFC 6376 §5.4: "The From header field MUST be
@@ -3415,6 +3414,9 @@ sealer configured with "to:subject", or with nothing, sealed an AMS that says no
 author. Test:
 `A_sealer_configured_without_From_signs_From_all_the_same` - to:subject, nothing configured;
 guard: `The_AMS_of_the_default_configuration_signs_From`.
+
+Fixed: the sealer puts From first in the h= of its AMS when the configuration does not name it;
+a configuration that names it keeps its order.
 
 ## DMARC reports
 
@@ -3937,7 +3939,7 @@ Comments fields, named twice, are signed from the bottom up, and the two exchang
 (§5.4.2); a configured field the message lacks is no obstacle.
 
 ### P-6
-**Open.** **The signer signed From only when the configuration named it**
+**Closed** in [Vanaheimr/Hermod#352](https://github.com/Vanaheimr/Hermod/pull/352) (`b0386737`). **The signer signed From only when the configuration named it**
 (`DNSVerifications/DkimSigner.cs:132`, `config.SignedHeaders.Split(':')`: the names configured,
 of those the message has, and no other). RFC 6376 §5.4: "The From header field MUST be signed
 (that is, included in the "h=" tag of the resulting DKIM-Signature header field)"; §6.1.1: "If
@@ -3950,6 +3952,9 @@ guards: `The_default_configuration_signs_From`,
 `A_field_named_once_more_than_it_occurs_signs_its_absence`,
 `Two_instances_of_a_field_are_signed_from_the_bottom_up`,
 `A_configured_field_the_message_lacks_is_no_obstacle`.
+
+Fixed: the signer puts From first in h= when the configuration does not name it; a
+configuration that names it keeps its order, and a message without From has its absence signed.
 
 ## MIME and the message format
 
