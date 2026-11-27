@@ -111,7 +111,6 @@ public sealed class SubmissionMessageTests : HermodServerTestBase
 
         static TestCaseData Case(String Name, String Header, String RcptTo)
             => new TestCaseData(Header, RcptTo).SetName($"A submitted message goes on as RFC 5322 has it: {Name}")
-                                               .SetCategory(TestCategories.KnownIssue)
                                                .SetProperty("Finding", "S-56");
 
         yield return Case("no Date, relayed",           From,                   "bob@remote.example");
@@ -147,7 +146,6 @@ public sealed class SubmissionMessageTests : HermodServerTestBase
     #region S-57: a Message-ID for the message that lacks one
 
     [Test(Description = "RFC 6409 §8.3: \"The MSA SHOULD add or replace the 'Message-ID' field, if it lacks it, or it is not valid syntax\"; RFC 5322 §3.6.4: \"every message SHOULD have a \\\"Message-ID:\\\" field\", msg-id = [CFWS] \"<\" id-left \"@\" id-right \">\" [CFWS] - a submitted message without one goes on with one")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "S-57")]
     public async Task A_submitted_message_without_a_Message_ID_gets_one()
     {
@@ -200,7 +198,6 @@ public sealed class SubmissionMessageTests : HermodServerTestBase
 
         static TestCaseData Case(String Name, String MailFrom, String RcptTo)
             => new TestCaseData(MailFrom, RcptTo).SetName($"The envelope of a submission is fully qualified: {Name}")
-                                                 .SetCategory(TestCategories.KnownIssue)
                                                  .SetProperty("Finding", "S-58");
 
         yield return Case("a recipient at a single-label domain",  "alice@hermod.test",  "bob@intranet");

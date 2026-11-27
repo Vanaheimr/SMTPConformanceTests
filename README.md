@@ -13,14 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-27, Hermod `75f0dca0`):** 1279 tests, 1272 pass, 7 fail on 3 open
-findings. A twenty-ninth round tested what RFC 6409 asks of the server as the Message
+**State (2026-11-27, Hermod `69e68e20`):** 1279 tests, **all pass**. A twenty-ninth round tested what RFC 6409 asks of the server as the Message
 Submission Agent, when it relays or delivers a signed-in client's message itself - 9 tests, 3
 findings: a submitted message without Date or From, or with a From that names no domain, went
 on as it was, where §8 says it "MUST conform to the requirements of [MESSAGE-FORMAT]"
 ([S-56](FINDINGS.md#s-56)); one without a Message-ID got none (§8.3, [S-57](FINDINGS.md#s-57));
 and a single-label domain in MAIL or RCPT was taken, the message queued for "intranet"
-(§4.2, [S-58](FINDINGS.md#s-58)).
+(§4.2, [S-58](FINDINGS.md#s-58)). All three fixed in
+[#340](https://github.com/Vanaheimr/Hermod/pull/340).
 A twenty-eighth round tested the BDAT command (RFC 3030 §2) as its grammar has it,
 and the commands between two chunks of one message - 13 tests, 3 findings: a BDAT whose size
 could not be read - LAST where the size goes, a negative size, one of 20 digits - was answered
@@ -447,8 +447,8 @@ vectors, and the four Linux tools.
 | RFC 3461 §6.3 (h), (i), §9.2, §9.3, RFC 5322 §2.1.1: what the relay's reports say of the next hop - the Diagnostic-Code of a multi-line reply, the Remote-MTA of a next hop known by its address | 9 | 0 | ~~D-16~~, ~~D-17~~ fixed |
 | RFC 5321 §4.5.3.1, RFC 5322 §2.1.1: the sizes of a domain, a path and a reply line on the server - an EHLO name or a path longer than they allow, in the header lines of the message and the DSN, and in the reply | 7 | 0 | ~~S-51~~, ~~S-52~~ fixed |
 | RFC 3030 §2 the BDAT command: its grammar, a size the server cannot read; RFC 5321 §4.1.4 the commands between two chunks - RCPT, MAIL, NOOP, RSET, EHLO | 13 | 0 | ~~S-53~~, ~~S-54~~, ~~S-55~~ fixed |
-| RFC 6409 §4.2, §8, §8.3, RFC 5322 §3.6, RFC 5321 §6.4: the message the server relays or delivers as the Message Submission Agent - Date, From, Message-ID, a fully qualified envelope; nothing added to mail from another server | 9 | 7 | S-56, S-57, S-58 |
-| **Total** | **1279** | **7** | |
+| RFC 6409 §4.2, §8, §8.3, RFC 5322 §3.6, RFC 5321 §6.4: the message the server relays or delivers as the Message Submission Agent - Date, From, Message-ID, a fully qualified envelope; nothing added to mail from another server | 9 | 0 | ~~S-56~~, ~~S-57~~, ~~S-58~~ fixed |
+| **Total** | **1279** | **0** | |
 
 ## External test partners
 

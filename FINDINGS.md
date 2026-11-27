@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `75f0dca0`**
-(Styx `6dc4bb30`), which closes every finding of all twenty-eight rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `69e68e20`**
+(Styx `6dc4bb30`), which closes every finding of all twenty-nine rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -127,11 +127,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [S-56](#s-56) | medium | submission | A submitted message without Date or From, or with a From that names no domain, was relayed and delivered as it was | 4 |
-| [S-57](#s-57) | low | submission | A submitted message without a Message-ID went on without one | 1 |
-| [S-58](#s-58) | low | submission | A single-label domain in the envelope of a submission was taken, and the message queued for it | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -201,6 +197,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [S-53](#s-53) | low | BDAT | A BDAT with an argument outside the grammar was taken: an end-marker other than LAST, an argument after it, a size with a sign | 3 | [Vanaheimr/Hermod#338](https://github.com/Vanaheimr/Hermod/pull/338) |
 | [S-54](#s-54) | medium | BDAT | A BDAT whose size could not be read was answered with 501, and its chunk read as commands | 3 | [Vanaheimr/Hermod#338](https://github.com/Vanaheimr/Hermod/pull/338) |
 | [S-55](#s-55) | low | BDAT | A RCPT after the first chunk of a message was taken, and the message went to its recipient too | 1 | [Vanaheimr/Hermod#338](https://github.com/Vanaheimr/Hermod/pull/338) |
+| [S-56](#s-56) | medium | submission | A submitted message without Date or From, or with a From that names no domain, was relayed and delivered as it was | 4 | [Vanaheimr/Hermod#340](https://github.com/Vanaheimr/Hermod/pull/340) |
+| [S-57](#s-57) | low | submission | A submitted message without a Message-ID went on without one | 1 | [Vanaheimr/Hermod#340](https://github.com/Vanaheimr/Hermod/pull/340) |
+| [S-58](#s-58) | low | submission | A single-label domain in the envelope of a submission was taken, and the message queued for it | 2 | [Vanaheimr/Hermod#340](https://github.com/Vanaheimr/Hermod/pull/340) |
 | [C-10](#c-10) | low | client | PIPELINING and CHUNKING were never used | 2 | [Vanaheimr/Hermod#127](https://github.com/Vanaheimr/Hermod/pull/127) |
 | [O-1](#o-1) | **high** | outbound | Every reply but EHLO's was read as one line: a multi-line reply shifted all that followed | 5 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
 | [O-2](#o-2) | **high** | outbound | A recipient the next hop refused disappeared: no bounce, no retry | 2 | [Vanaheimr/Hermod#130](https://github.com/Vanaheimr/Hermod/pull/130) |
@@ -394,7 +393,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 564 tests for these are part of the merge gate now; the observations the first
+The 571 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -1302,7 +1301,7 @@ Fixed: a RCPT after a chunk is `503 5.5.1 RCPT after BDAT`, and the transaction 
 the recipients named before.
 
 ### S-56
-**Open.** **A submitted message without Date or From, or with a From that names no domain, was
+**Closed** in [Vanaheimr/Hermod#340](https://github.com/Vanaheimr/Hermod/pull/340) (`1a466316`). **A submitted message without Date or From, or with a From that names no domain, was
 relayed and delivered as it was** (`SMTPSession.cs:1508`: the message is the trace fields and
 the octets that arrived, nothing else; `:1601`, `:1639`: so it is stored, so it is queued).
 RFC 6409 §8: "Any message forwarded or delivered by the MSA MUST conform to the requirements
@@ -1321,8 +1320,13 @@ fully qualified addresses in it; guard: `A_message_from_another_server_is_delive
 (§6.4: "These changes MUST NOT be applied by an SMTP server that provides an intermediate
 relay function").
 
+Fixed: for a client signed in and no application, a message without From, or with an address
+in it that is no mailbox at a fully qualified domain, is `554 5.6.0` at the end of data; one
+without Date gets one, the time it is taken, below the trace fields. Mail from other servers
+is not touched.
+
 ### S-57
-**Open.** **A submitted message without a Message-ID went on without one** (`SMTPSession.cs:1508`,
+**Closed** in [Vanaheimr/Hermod#340](https://github.com/Vanaheimr/Hermod/pull/340) (`1a466316`). **A submitted message without a Message-ID went on without one** (`SMTPSession.cs:1508`,
 as S-56). RFC 6409 §8.3: "The MSA SHOULD add or replace the 'Message-ID' field, if it lacks
 it, or it is not valid syntax"; RFC 5322 §3.6.4: "every message SHOULD have a "Message-ID:"
 field"; RFC 5321 §6.4: "Addition of a message-id field when none appears". The receivers of
@@ -1333,8 +1337,11 @@ one of valid syntax, and the Date the client gave, go on as they are;
 `A_message_from_another_server_is_delivered_as_it_came` - no Message-ID added to mail that is
 no submission.
 
+Fixed: a submitted message without Message-ID gets `<uuid@hostname>`, below the trace fields;
+one the client gave is kept.
+
 ### S-58
-**Open.** **A single-label domain in the envelope of a submission was taken, and the message
+**Closed** in [Vanaheimr/Hermod#340](https://github.com/Vanaheimr/Hermod/pull/340) (`1a466316`). **A single-label domain in the envelope of a submission was taken, and the message
 queued for it** (`SMTPSession.cs:764`, `:937`: a reverse-path and a forward-path are taken
 whatever their domain; `:972`: a recipient not local is relayed). RFC 6409 §4.2: "The MSA
 MUST ensure that all domains in the SMTP envelope are fully qualified", "Reply code 554 is to
@@ -1344,6 +1351,10 @@ domain "intranet"; `MAIL FROM:<alice@intranet>` is 250, and the message is relay
 reverse-path - for the next hop to bounce it to a domain that is none. Tests:
 `The_envelope_of_a_submission_is_fully_qualified` - a recipient at a single-label domain, a
 sender at one: refused, or relayed with an envelope of fully qualified domains.
+
+Fixed: for a client signed in and no application, a reverse-path at a domain of one label is
+`554 5.1.8`, a forward-path `554 5.1.2`; an address literal is fully qualified, and
+`RCPT TO:<postmaster>` is this server's postmaster, as before.
 
 ---
 
