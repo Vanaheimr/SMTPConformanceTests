@@ -119,7 +119,10 @@ its line numbers refer to `69096a60`. The twenty-ninth (S-56 to S-58) tests what
 asks of the server as the Message Submission Agent - a client signed in on the submission
 port, its message relayed or delivered by the server itself, not handed to an application:
 the header fields RFC 5322 requires, a Message-ID, and an envelope of fully qualified
-domains; its line numbers refer to `75f0dca0`.
+domains; its line numbers refer to `75f0dca0`. The thirtieth (V-26 to V-28) tests the tags
+of a DKIM-Signature and of a key record as the verifier of inbound mail reads them (RFC 6376
+§3.2, §3.5, §3.6.1): the canonicalization a c= tag of one name stands for, a tag named twice,
+the version tag of a key record; its line numbers refer to `69e68e20`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -127,7 +130,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [V-26](#v-26) | medium | DKIM | c=relaxed was read as relaxed/relaxed, not relaxed/simple: a valid signature failed, and white space put into a signed body went unnoticed | 2 |
+| [V-27](#v-27) | medium | DKIM | A DKIM-Signature with a tag named twice was taken, the last value of it applied - d= twice, the author's domain first, verified for the second | 3 |
+| [V-28](#v-28) | low | DKIM | A key record with v=DKIM1 after another tag, or with a tag named twice, was used | 2 |
 
 ### Closed
 
@@ -3144,6 +3151,47 @@ to A-labels before further processing." Tests:
 `The_policy_of_an_author_domain_in_U_labels_is_the_record_of_its_A_labels`,
 `Strict_alignment_compares_an_author_domain_in_U_labels_by_its_A_labels`;
 `The_organizational_policy_applies_to_an_author_domain_in_U_labels` is the guard.
+
+### V-26
+**Open.** **c=relaxed was read as relaxed/relaxed, not relaxed/simple** (`DNSVerifier.cs:1270`:
+a c= tag of one name is taken for both, header and body). RFC 6376 §3.5, c=: "If only one
+algorithm is named, that algorithm is used for the header and "simple" is used for the body.
+For example, "c=relaxed" is treated the same as "c=relaxed/simple"". The body hash of such a
+signature is computed over the body relaxed (§3.4.4: white space runs to one space, none at
+the ends of lines), where the signer hashed it simple (§3.4.3: as it is, but for the empty
+lines at its end). Both ways it goes wrong: a valid signature with c=relaxed over a body with
+two spaces in a line, or one at its end, fails - and DMARC with it; and white space put into a
+signed body after signing - "Pay 10 EUR." made "Pay 10   EUR.  " - is not noticed, the
+signature verifies. Tests: `A_signature_with_c_relaxed_hashes_the_body_simple`,
+`White_space_added_to_a_body_signed_with_c_relaxed_breaks_the_signature`; guard:
+`A_signature_with_both_canonicalizations_named_verifies` - c=relaxed/simple and
+c=relaxed/relaxed.
+
+### V-27
+**Open.** **A DKIM-Signature with a tag named twice was taken, the last value of it applied**
+(`DNSVerifier.cs:1208`, `:1221`: the tags go into a dictionary, a later one over an earlier).
+RFC 6376 §3.2: "Tags with duplicate names MUST NOT occur within a single tag-list; if a tag
+name does occur more than once, the entire tag-list is invalid". A signature of signer.test
+that names `d=author.test; d=signer.test` verifies, for signer.test - and a reader of the
+field that takes the first d= takes it for the author's own signature; the same parse gives
+the d= that Authentication-Results and DMARC are told. A signature with v= or s= twice
+verifies as well. Tests: `A_DKIM_Signature_with_d_twice_is_invalid`,
+`A_DKIM_Signature_with_a_tag_named_twice_is_invalid` - v= twice, s= twice, the same value both
+times.
+
+### V-28
+**Open.** **A key record with v=DKIM1 after another tag, or with a tag named twice, was used**
+(`DNSVerifier.cs:1690`: a record that does not begin with v= is a key record, whatever it says
+after; `:1250`, `:1261`: its tags go into a dictionary, a later one over an earlier). RFC 6376
+§3.6.1, v=: "If specified, this tag MUST be set to "DKIM1" (without the quotes). This tag MUST
+be the first tag in the record"; §3.2: a tag-list with a tag named twice "is invalid"; §6.1.2:
+"If the result returned from the query does not adhere to the format defined in this
+specification, the Verifier MUST ignore the key record and return PERMFAIL (key syntax error)".
+`k=rsa; v=DKIM1; p=...` and `v=DKIM1; k=rsa; k=rsa; p=...` verify a signature. Tests:
+`A_key_record_not_to_be_used_is_not_used` - v=DKIM1 not the first tag, a tag named twice;
+guards: the same test for a record beginning with v=DKIM2, which is discarded already, and
+`A_key_record_as_RFC_6376_has_it_is_used` - v=DKIM1 first, no v=, white space around the
+tags (§3.2: tag-spec = [FWS] tag-name [FWS] "=" [FWS] tag-value [FWS]).
 
 ## ARC
 

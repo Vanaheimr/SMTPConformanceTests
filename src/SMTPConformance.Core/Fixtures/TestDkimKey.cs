@@ -7,8 +7,9 @@ using org.GraphDefined.Vanaheimr.Hermod.DNS;
 namespace SMTPConformance.Core.Fixtures;
 
 /// <summary>
-/// A DKIM signer of the suite's own (RFC 6376, rsa-sha256, relaxed/relaxed), so that what
-/// Hermod verifies was not signed by Hermod. One key, one domain, one selector.
+/// A DKIM signer of the suite's own (RFC 6376, rsa-sha256, relaxed/relaxed - or a relaxed
+/// header and a simple body), so that what Hermod verifies was not signed by Hermod. One key,
+/// one domain, one selector.
 /// </summary>
 public sealed partial class TestDkimKey : IDisposable
 {
@@ -90,7 +91,26 @@ public sealed partial class TestDkimKey : IDisposable
     public String Sign(String Message, Func<String, String> Tags, params String[] SignedHeaders)
         => Sign(Message, "rsa-sha256", false, Tags, SignedHeaders);
 
-    private String Sign(String Message, String Algorithm, Boolean SignatureFirst, Func<String, String> Tags, String[] SignedHeaders)
+    /// <summary>
+    /// As above, with the c= tag written as given - "relaxed", "relaxed/simple" or
+    /// "relaxed/relaxed" - and the body canonicalized as it says: RFC 6376 §3.5, "If only one
+    /// algorithm is named, that algorithm is used for the header and "simple" is used for the
+    /// body". The header is always relaxed.
+    /// </summary>
+    public String SignCanonicalized(String Message, String Canonicalization, params String[] SignedHeaders)
+    {
+
+        var names = Canonicalization.Split('/');
+
+        if (names[0] != "relaxed" || names.Length > 2 || names.Length == 2 && names[1] is not ("relaxed" or "simple"))
+            throw new ArgumentException($"The suite's signer canonicalizes a relaxed header only, not c={Canonicalization}.", nameof(Canonicalization));
+
+        return Sign(Message, "rsa-sha256", false, tags => tags, SignedHeaders, Canonicalization, names.Length == 2 ? names[1] : "simple");
+
+    }
+
+    private String Sign(String Message, String Algorithm, Boolean SignatureFirst, Func<String, String> Tags, String[] SignedHeaders,
+                        String Canonicalization = "relaxed/relaxed", String BodyCanonicalization = "relaxed")
     {
 
         if (SignedHeaders.Length == 0)
@@ -99,8 +119,8 @@ public sealed partial class TestDkimKey : IDisposable
         var (header, body) = Split(Message);
         var sha1     = Algorithm == "rsa-sha1";
 
-        var bodyHash = Convert.ToBase64String(Hash(Encoding.UTF8.GetBytes(RelaxedBody(body)), sha1));
-        var rest     = Tags($"v=1; a={Algorithm}; c=relaxed/relaxed; d={Domain}; s={Selector}; " +
+        var bodyHash = Convert.ToBase64String(Hash(Encoding.UTF8.GetBytes(BodyCanonicalization == "simple" ? SimpleBody(body) : RelaxedBody(body)), sha1));
+        var rest     = Tags($"v=1; a={Algorithm}; c={Canonicalization}; d={Domain}; s={Selector}; " +
                             $"t={DateTimeOffset.UtcNow.ToUnixTimeSeconds()}; h={String.Join(":", SignedHeaders)}; bh={bodyHash}");
         var empty    = SignatureFirst ? "b=; " + rest : rest + "; b=";
 
@@ -214,6 +234,20 @@ public sealed partial class TestDkimKey : IDisposable
             lines.RemoveAt(lines.Count - 1);
 
         return lines.Count == 0 ? "" : String.Join("\r\n", lines) + "\r\n";
+
+    }
+
+    /// <summary>
+    /// RFC 6376 §3.4.3: the body as it is, but for the empty lines at its end - "If there is no
+    /// body or no trailing CRLF on the message body, a CRLF is added".
+    /// </summary>
+    internal static String SimpleBody(String Body)
+    {
+
+        while (Body.EndsWith("\r\n\r\n", StringComparison.Ordinal))
+            Body = Body[..^2];
+
+        return Body.EndsWith("\r\n", StringComparison.Ordinal) ? Body : Body + "\r\n";
 
     }
 
