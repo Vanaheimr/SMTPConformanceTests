@@ -80,7 +80,6 @@ public sealed class DkimTagValueTests
 
     [TestCaseSource(nameof(TimestampsOfAnUnexpectedValue))]
     [Description("RFC 6376 §3.5: sig-t-tag and sig-x-tag are 1*12DIGIT, and \"The value of the \"x=\" tag MUST be greater than the value of the \"t=\" tag if both are present\"; §6.1.1: \"any inconsistency or unexpected values MUST cause the header field to be completely ignored and the Verifier to return PERMFAIL (signature syntax error)\"")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_t_or_x_of_an_unexpected_value_is_a_permanent_error(Func<String, String> Tags)
     {
 
@@ -123,7 +122,6 @@ public sealed class DkimTagValueTests
 
     [TestCaseSource(nameof(BodyLengthsOfAnUnexpectedValue))]
     [Description("RFC 6376 §3.5: sig-l-tag is 1*76DIGIT, and l= \"MUST NOT be larger than the actual number of octets in the canonicalized message body\"; §6.1.1: \"any inconsistency or unexpected values MUST cause the header field to be completely ignored and the Verifier to return PERMFAIL (signature syntax error)\"")]
-    [Category(TestCategories.KnownIssue)]
     public async Task An_l_of_an_unexpected_value_is_a_permanent_error(String Value)
     {
 
@@ -167,7 +165,6 @@ public sealed class DkimTagValueTests
 
     [TestCaseSource(nameof(QueryMethodsTheVerifierDoesNotKnow))]
     [Description("RFC 6376 §3.5, q=: \"Currently, the only valid value is \"dns/txt\"\"; \"The only option defined for the \"dns\" query type is \"txt\", which MUST be included\"; \"Unrecognized query mechanisms MUST be ignored\" - a signature that names no query method the verifier knows tells it no way to its key, and §6.1.1: \"unexpected values MUST cause the header field to be completely ignored and the Verifier to return PERMFAIL (signature syntax error)\"")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_q_without_a_query_method_the_verifier_knows_is_a_permanent_error(String Value)
     {
 

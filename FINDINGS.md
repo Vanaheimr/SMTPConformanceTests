@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `b0386737`**
-(Styx `6dc4bb30`), which closes every finding of all thirty-three rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `7ade4cd9`**
+(Styx `6dc4bb30`), which closes every finding of all thirty-four rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -143,11 +143,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [V-33](#v-33) | low | DKIM | A t= or x= of an unexpected value - not a number, an x= not after t= - verified as pass, not permerror | 6 |
-| [V-34](#v-34) | low | DKIM | An l= of an unexpected value - not a number, larger than the body - verified as pass, not permerror | 3 |
-| [V-35](#v-35) | low | DKIM | A q= without a query method the verifier knows - empty, dns without txt, a method of no one - verified as pass, not permerror | 3 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -371,6 +367,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [V-30](#v-30) | low | DKIM | A bh= with white space in it - folded, as §3.5 allows - did not verify | 2 | [Vanaheimr/Hermod#346](https://github.com/Vanaheimr/Hermod/pull/346) |
 | [V-31](#v-31) | medium | DKIM | A DNS error at the lookup of the key was "no key": dkim=fail, not temperror, and p=reject refused the author's own signed mail while the DNS was down | 4 | [Vanaheimr/Hermod#349](https://github.com/Vanaheimr/Hermod/pull/349) |
 | [V-32](#v-32) | low | DKIM | A signature that could not be evaluated - a required tag missing, v=2, no key record, a key record with a syntax error - was dkim=fail, not permerror | 6 | [Vanaheimr/Hermod#349](https://github.com/Vanaheimr/Hermod/pull/349) |
+| [V-33](#v-33) | low | DKIM | A t= or x= of an unexpected value - not a number, an x= not after t= - verified as pass, not permerror | 6 | [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) |
+| [V-34](#v-34) | low | DKIM | An l= of an unexpected value - not a number, larger than the body - verified as pass, not permerror | 3 | [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) |
+| [V-35](#v-35) | low | DKIM | A q= without a query method the verifier knows - empty, dns without txt, a method of no one - verified as pass, not permerror | 3 | [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) |
 | [E-1](#e-1) | **high** | message format | A comment after the address named the mailbox: `From: mallory@evil.example (<ceo@company.example>)` read as ceo@company.example, and was DKIM-signed for company.example | 7 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
 | [I-1](#i-1) | **high** | TLS-RPT ingest | A gzip bomb was inflated whole, in memory and onto disk, before the reply to DATA | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-2](#i-2) | **high** | DMARC reader | Deeply nested XML overflowed the stack and ended the process | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -425,7 +424,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 614 tests for these are part of the merge gate now; the observations the first
+The 626 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3331,7 +3330,7 @@ reads v=, a=, b=, bh=, d=, h= and s= (`DNSVerifier.cs:1066` to `:1072`), i= (`:1
 the length of the body passes, and so do q=dns/txt and an unknown method before it.
 
 ### V-33
-**Open.** **A t= or x= of an unexpected value verified as pass** (`DNSVerifier.cs:1066` and on:
+**Closed** in [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) (`7ade4cd9`). **A t= or x= of an unexpected value verified as pass** (`DNSVerifier.cs:1066` and on:
 neither tag is read). RFC 6376 §3.5: `sig-t-tag = %x74 [FWS] "=" [FWS] 1*12DIGIT`, and x= the
 same; "The value of the "x=" tag MUST be greater than the value of the "t=" tag if both are
 present." A signature with t=yesterday, an empty t=, t=-5, x=tomorrow, an x= the same as its
@@ -3339,8 +3338,11 @@ t= or an hour before it was dkim=pass, though §6.1.1 ends it with PERMFAIL (sig
 error). Test: `A_t_or_x_of_an_unexpected_value_is_a_permanent_error` - the six; guard:
 `A_signature_that_expires_after_its_timestamp_passes`.
 
+Fixed: t= and x= are digits - more than 12 of them taken for infinite, as §3.5 allows - and x=
+is after t=; anything else is `DkimResult.PermError`.
+
 ### V-34
-**Open.** **An l= of an unexpected value verified as pass** (`DNSVerifier.cs:1066` and on: l= is
+**Closed** in [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) (`7ade4cd9`). **An l= of an unexpected value verified as pass** (`DNSVerifier.cs:1066` and on: l= is
 not read, and the body is hashed whole). RFC 6376 §3.5: `sig-l-tag = %x6c [FWS] "=" [FWS]
 1*76DIGIT`, and l= "MUST NOT be larger than the actual number of octets in the canonicalized
 message body". A signature with l=abc, l=-1, or l=1000 over a body of 8 octets was dkim=pass,
@@ -3348,8 +3350,12 @@ though §6.1.1 ends it with PERMFAIL (signature syntax error). Test:
 `An_l_of_an_unexpected_value_is_a_permanent_error` - the three; guard:
 `A_signature_whose_l_is_the_length_of_the_body_passes`.
 
+Fixed: l= is digits and no larger than the canonicalized body, or `DkimResult.PermError`; the
+body hash is over the first l= octets (§3.7), and octets after them are unsigned content, the
+signature `DkimResult.Fail` (§6.1.3).
+
 ### V-35
-**Open.** **A q= without a query method the verifier knows verified as pass**
+**Closed** in [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) (`7ade4cd9`). **A q= without a query method the verifier knows verified as pass**
 (`DNSVerifier.cs:1066` and on: q= is not read, and the key is looked up in the DNS whatever it
 says). RFC 6376 §3.5, q=: "Currently, the only valid value is "dns/txt""; "The only option
 defined for the "dns" query type is "txt", which MUST be included"; "Unrecognized query
@@ -3358,6 +3364,9 @@ its key that the verifier knows, and was dkim=pass, though §6.1.1 ends it with 
 (signature syntax error). Test:
 `A_q_without_a_query_method_the_verifier_knows_is_a_permanent_error` - the three; guard:
 `A_q_with_dns_txt_passes` - q=dns/txt, an unknown method before it.
+
+Fixed: q= is a list of methods none of which is empty, dns only as dns/txt, unknown methods
+ignored, and dns/txt among them; anything else is `DkimResult.PermError`.
 
 ## ARC
 
