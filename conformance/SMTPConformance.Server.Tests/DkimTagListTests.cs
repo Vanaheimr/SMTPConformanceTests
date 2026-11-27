@@ -57,7 +57,6 @@ public sealed class DkimTagListTests
     #region V-26: c= with one name
 
     [Test(Description = "RFC 6376 §3.5, c=: \"If only one algorithm is named, that algorithm is used for the header and \"simple\" is used for the body. For example, \"c=relaxed\" is treated the same as \"c=relaxed/simple\"\" - a signature with c=relaxed over a body with white space that simple canonicalization keeps (§3.4.3) verifies")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "V-26")]
     public async Task A_signature_with_c_relaxed_hashes_the_body_simple()
     {
@@ -74,7 +73,6 @@ public sealed class DkimTagListTests
 
 
     [Test(Description = "RFC 6376 §3.4.3, §3.5: with c=relaxed the body is canonicalized simple - \"The \"simple\" body canonicalization algorithm ignores all empty lines at the end of the message body\", and nothing else - so white space put into the body after signing breaks the signature, where relaxed body canonicalization (§3.4.4) would have hidden it")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "V-26")]
     public async Task White_space_added_to_a_body_signed_with_c_relaxed_breaks_the_signature()
     {
@@ -125,7 +123,6 @@ public sealed class DkimTagListTests
     #region V-27: a tag named twice in a DKIM-Signature
 
     [Test(Description = "RFC 6376 §3.2: \"Tags with duplicate names MUST NOT occur within a single tag-list; if a tag name does occur more than once, the entire tag-list is invalid\" - a DKIM-Signature that names d= twice, the author's domain first and the signer's own after it, is no signature: not a pass for either domain, whatever the key of the second says")]
-    [Category(TestCategories.KnownIssue)]
     [Property("Finding", "V-27")]
     public async Task A_DKIM_Signature_with_d_twice_is_invalid()
     {
@@ -148,7 +145,6 @@ public sealed class DkimTagListTests
 
         static TestCaseData Case(String Name, String Tag)
             => new TestCaseData(Tag).SetName($"A DKIM-Signature with a tag named twice is invalid: {Name}")
-                                    .SetCategory(TestCategories.KnownIssue)
                                     .SetProperty("Finding", "V-27");
 
         yield return Case("v= twice",  "v=1");
@@ -178,17 +174,15 @@ public sealed class DkimTagListTests
     private static IEnumerable<TestCaseData> KeyRecordsNotToBeUsed()
     {
 
-        static TestCaseData Case(String Name, String TagsBeforeKey, Boolean Open = true)
-        {
-            var data = new TestCaseData(TagsBeforeKey).SetName($"A key record is not used: {Name}").SetProperty("Finding", "V-28");
-            return Open ? data.SetCategory(TestCategories.KnownIssue) : data;
-        }
+        static TestCaseData Case(String Name, String TagsBeforeKey)
+            => new TestCaseData(TagsBeforeKey).SetName($"A key record is not used: {Name}")
+                                              .SetProperty("Finding", "V-28");
 
         yield return Case("v=DKIM1 not the first tag",     "k=rsa; v=DKIM1; ");
         yield return Case("a tag named twice",             "v=DKIM1; k=rsa; k=rsa; ");
 
-        // A guard: a record beginning with another version is discarded already.
-        yield return Case("v=DKIM2",                       "v=DKIM2; k=rsa; ", Open: false);
+        // A record beginning with another version was discarded before V-28 as well.
+        yield return Case("v=DKIM2",                       "v=DKIM2; k=rsa; ");
 
     }
 

@@ -13,15 +13,15 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-27, Hermod `69e68e20`):** 1292 tests, 1285 pass, 7 fail on 3 open
-findings. A thirtieth round tested the tags of a DKIM-Signature and of a key record as the
+**State (2026-11-27, Hermod `ac089d71`):** 1292 tests, **all pass**. A thirtieth round tested the tags of a DKIM-Signature and of a key record as the
 verifier of inbound mail reads them (RFC 6376 §3.2, §3.5, §3.6.1) - 13 tests, 3 findings:
 c=relaxed was read as relaxed/relaxed, not relaxed/simple, so a valid signature over a body
 with two spaces in a line failed, and white space put into a signed body went unnoticed
 ([V-26](FINDINGS.md#v-26)); a DKIM-Signature with a tag named twice was taken, the last value
 applied - `d=author.test; d=signer.test` verified for signer.test ([V-27](FINDINGS.md#v-27));
 and a key record with v=DKIM1 after another tag, or with a tag named twice, was used
-([V-28](FINDINGS.md#v-28)).
+([V-28](FINDINGS.md#v-28)). All three fixed in
+[#343](https://github.com/Vanaheimr/Hermod/pull/343).
 A twenty-ninth round tested what RFC 6409 asks of the server as the Message
 Submission Agent, when it relays or delivers a signed-in client's message itself - 9 tests, 3
 findings: a submitted message without Date or From, or with a From that names no domain, went
@@ -457,8 +457,8 @@ vectors, and the four Linux tools.
 | RFC 5321 §4.5.3.1, RFC 5322 §2.1.1: the sizes of a domain, a path and a reply line on the server - an EHLO name or a path longer than they allow, in the header lines of the message and the DSN, and in the reply | 7 | 0 | ~~S-51~~, ~~S-52~~ fixed |
 | RFC 3030 §2 the BDAT command: its grammar, a size the server cannot read; RFC 5321 §4.1.4 the commands between two chunks - RCPT, MAIL, NOOP, RSET, EHLO | 13 | 0 | ~~S-53~~, ~~S-54~~, ~~S-55~~ fixed |
 | RFC 6409 §4.2, §8, §8.3, RFC 5322 §3.6, RFC 5321 §6.4: the message the server relays or delivers as the Message Submission Agent - Date, From, Message-ID, a fully qualified envelope; nothing added to mail from another server | 9 | 0 | ~~S-56~~, ~~S-57~~, ~~S-58~~ fixed |
-| RFC 6376 §3.2, §3.5, §3.6.1: the tags of a DKIM-Signature and of a key record as the verifier reads them - c= of one name, a tag named twice, the version of a key record | 13 | 7 | V-26, V-27, V-28 |
-| **Total** | **1292** | **7** | |
+| RFC 6376 §3.2, §3.5, §3.6.1: the tags of a DKIM-Signature and of a key record as the verifier reads them - c= of one name, a tag named twice, the version of a key record | 13 | 0 | ~~V-26~~, ~~V-27~~, ~~V-28~~ fixed |
+| **Total** | **1292** | **0** | |
 
 ## External test partners
 

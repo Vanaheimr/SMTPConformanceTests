@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `69e68e20`**
-(Styx `6dc4bb30`), which closes every finding of all twenty-nine rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `ac089d71`**
+(Styx `6dc4bb30`), which closes every finding of all thirty rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -130,11 +130,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [V-26](#v-26) | medium | DKIM | c=relaxed was read as relaxed/relaxed, not relaxed/simple: a valid signature failed, and white space put into a signed body went unnoticed | 2 |
-| [V-27](#v-27) | medium | DKIM | A DKIM-Signature with a tag named twice was taken, the last value of it applied - d= twice, the author's domain first, verified for the second | 3 |
-| [V-28](#v-28) | low | DKIM | A key record with v=DKIM1 after another tag, or with a tag named twice, was used | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -346,6 +342,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [V-23](#v-23) | medium | SPF | A sender domain in U-labels was looked up in U-labels: no record was found, "-all" was "none" | 3 | [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295) |
 | [V-24](#v-24) | medium | DKIM verifier | A signature with d= in U-labels was checked against a key looked up under a mis-decoded name | 1 | [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295) |
 | [V-25](#v-25) | medium | DMARC | The policy of an author domain in U-labels was looked up in U-labels: the domain's own p=reject was never found | 2 | [Vanaheimr/Hermod#295](https://github.com/Vanaheimr/Hermod/pull/295) |
+| [V-26](#v-26) | medium | DKIM | c=relaxed was read as relaxed/relaxed, not relaxed/simple: a valid signature failed, and white space put into a signed body went unnoticed | 2 | [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) |
+| [V-27](#v-27) | medium | DKIM | A DKIM-Signature with a tag named twice was taken, the last value of it applied - d= twice, the author's domain first, verified for the second | 3 | [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) |
+| [V-28](#v-28) | low | DKIM | A key record with v=DKIM1 after another tag, or with a tag named twice, was used | 2 | [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) |
 | [E-1](#e-1) | **high** | message format | A comment after the address named the mailbox: `From: mallory@evil.example (<ceo@company.example>)` read as ceo@company.example, and was DKIM-signed for company.example | 7 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
 | [I-1](#i-1) | **high** | TLS-RPT ingest | A gzip bomb was inflated whole, in memory and onto disk, before the reply to DATA | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-2](#i-2) | **high** | DMARC reader | Deeply nested XML overflowed the stack and ended the process | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -400,7 +399,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 571 tests for these are part of the merge gate now; the observations the first
+The 578 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3153,7 +3152,7 @@ to A-labels before further processing." Tests:
 `The_organizational_policy_applies_to_an_author_domain_in_U_labels` is the guard.
 
 ### V-26
-**Open.** **c=relaxed was read as relaxed/relaxed, not relaxed/simple** (`DNSVerifier.cs:1270`:
+**Closed** in [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) (`24b28a2c`). **c=relaxed was read as relaxed/relaxed, not relaxed/simple** (`DNSVerifier.cs:1270`:
 a c= tag of one name is taken for both, header and body). RFC 6376 §3.5, c=: "If only one
 algorithm is named, that algorithm is used for the header and "simple" is used for the body.
 For example, "c=relaxed" is treated the same as "c=relaxed/simple"". The body hash of such a
@@ -3167,8 +3166,10 @@ signature verifies. Tests: `A_signature_with_c_relaxed_hashes_the_body_simple`,
 `A_signature_with_both_canonicalizations_named_verifies` - c=relaxed/simple and
 c=relaxed/relaxed.
 
+Fixed: a c= tag of one name is that name for the header and "simple" for the body.
+
 ### V-27
-**Open.** **A DKIM-Signature with a tag named twice was taken, the last value of it applied**
+**Closed** in [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) (`24b28a2c`). **A DKIM-Signature with a tag named twice was taken, the last value of it applied**
 (`DNSVerifier.cs:1208`, `:1221`: the tags go into a dictionary, a later one over an earlier).
 RFC 6376 §3.2: "Tags with duplicate names MUST NOT occur within a single tag-list; if a tag
 name does occur more than once, the entire tag-list is invalid". A signature of signer.test
@@ -3179,8 +3180,12 @@ verifies as well. Tests: `A_DKIM_Signature_with_d_twice_is_invalid`,
 `A_DKIM_Signature_with_a_tag_named_twice_is_invalid` - v= twice, s= twice, the same value both
 times.
 
+Fixed: a DKIM-Signature that names a tag twice fails, and so does a key record; the names of
+tags are case-sensitive (§3.2: "Tags MUST be interpreted in a case-sensitive manner"), so "D="
+is a tag of no meaning, not "d=".
+
 ### V-28
-**Open.** **A key record with v=DKIM1 after another tag, or with a tag named twice, was used**
+**Closed** in [Vanaheimr/Hermod#343](https://github.com/Vanaheimr/Hermod/pull/343) (`24b28a2c`). **A key record with v=DKIM1 after another tag, or with a tag named twice, was used**
 (`DNSVerifier.cs:1690`: a record that does not begin with v= is a key record, whatever it says
 after; `:1250`, `:1261`: its tags go into a dictionary, a later one over an earlier). RFC 6376
 §3.6.1, v=: "If specified, this tag MUST be set to "DKIM1" (without the quotes). This tag MUST
@@ -3192,6 +3197,9 @@ specification, the Verifier MUST ignore the key record and return PERMFAIL (key 
 guards: the same test for a record beginning with v=DKIM2, which is discarded already, and
 `A_key_record_as_RFC_6376_has_it_is_used` - v=DKIM1 first, no v=, white space around the
 tags (§3.2: tag-spec = [FWS] tag-name [FWS] "=" [FWS] tag-value [FWS]).
+
+Fixed: a key record with a v= that is not its first tag, or with a tag named twice, is not
+used; one without v= is, as before.
 
 ## ARC
 
