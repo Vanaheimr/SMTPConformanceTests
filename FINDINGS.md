@@ -126,7 +126,11 @@ the version tag of a key record; its line numbers refer to `69e68e20`. The thirt
 (V-29, V-30, A-6, P-4, P-5) tests white space as DKIM has it (RFC 6376 §2.8, §3.4, §3.5), on
 both sides and in ARC (RFC 8617 §4.1.2): what the relaxed canonicalization deletes - WSP, and
 nothing else -, white space in bh=, and the c= tag of an ARC-Message-Signature and of the
-signer's configuration; its line numbers refer to `ac089d71`.
+signer's configuration; its line numbers refer to `ac089d71`. The thirty-second (V-31,
+V-32) tests the results of a DKIM signature that neither passes nor fails its verification
+(RFC 6376 §6.1.1, §6.1.2, RFC 8601 §2.7.1) - a key that could not be retrieved, a signature
+that could not be evaluated - and what DMARC makes of them (RFC 7489 §6.6.2); its line numbers
+refer to `1105a05e`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -134,7 +138,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [V-31](#v-31) | medium | DKIM | A DNS error at the lookup of the key was "no key": dkim=fail, not temperror, and p=reject refused the author's own signed mail while the DNS was down | 4 |
+| [V-32](#v-32) | low | DKIM | A signature that could not be evaluated - a required tag missing, v=2, no key record, a key record with a syntax error - was dkim=fail, not permerror | 6 |
 
 ### Closed
 
@@ -3251,6 +3258,50 @@ and around it; guard: `A_bh_with_white_space_of_another_body_does_not_verify`.
 
 Fixed: bh= is compared with the body hash without its white space
 (`DkimCanonicalization.SameBase64`).
+
+The thirty-second round's tests (`DkimResultTests`, `DkimResultDeliveryTests`) sign with the
+suite's own signer and verify with `DNSVerifier.VerifyDkimAsync`, and deliver to the server
+under a DMARC policy of p=reject. Covered without a finding: a key that does not exist -
+NXDOMAIN, or no TXT record - is no temporary error, and with nothing else for the author
+p=reject refuses the message; with SPF aligned and passing, a DNS error at the key does not
+keep DMARC from passing; a signature over a changed body or Subject fails, and so does one of a
+revoked key (§6.1.2: "MUST treat this as a failed signature check").
+
+### V-31
+**Open.** **A DNS error at the lookup of the key was "no key"** (`DNSVerifier.cs:1705` and
+`:1706`, the lookup's exception taken for no record; `:1684` and on, the response code of the
+answer never looked at; `:1111`, `DkimResult.Fail`). RFC 6376 §6.1.2: "If the query for the
+public key fails to respond, the Verifier MAY seek a later verification attempt by returning
+TEMPFAIL (key unavailable)"; RFC 8601 §2.7.1, temperror: "The message could not be verified due
+to some error that is likely transient in nature, such as a temporary inability to retrieve a
+public key". A SERVFAIL or a timeout at the author's key made the signature fail, as if it had
+been verified and had not held; with nothing else for the author, DMARC failed, and p=reject
+refused the message - though RFC 7489 §6.6.2 says: "If neither passes and one or both of them
+fail due to a temporary error, the Receiver evaluating the message is unable to conclude that
+the DMARC mechanism had a permanent failure; they therefore cannot apply the advertised DMARC
+policy". Hermod's DMARC evaluation has that case (`:1431`), but no signature ever came to it
+as `DkimResult.TempError`. Tests: `A_DNS_error_at_the_key_is_a_temporary_error`,
+`A_DNS_error_at_the_authors_key_does_not_apply_p_reject` - SERVFAIL and a timeout each;
+guards: `A_key_that_does_not_exist_is_no_temporary_error` - NXDOMAIN, no TXT record;
+`A_key_that_does_not_exist_applies_p_reject`,
+`A_DNS_error_at_the_key_with_SPF_aligned_passes_DMARC`.
+
+### V-32
+**Open.** **A signature that could not be evaluated was dkim=fail** (`DNSVerifier.cs:1069`, a
+required tag missing; `:1076`, a version other than 1; `:1111`, no key record; `:1120`, a key
+record with a tag named twice - each `DkimResult.Fail`). RFC 8601 §2.7.1: "fail: The message
+was signed and the signature or signatures were acceptable to the ADMD, but they failed the
+verification test(s)"; "permerror: The message could not be verified due to some error that is
+unrecoverable, such as a required header field being absent. A later attempt is unlikely to
+produce a final result." RFC 6376 §6.1.1 and §6.1.2 end these with PERMFAIL before there is
+anything to verify - "signature missing required tag", "incompatible version", "no key for
+signature", "key syntax error". Authentication-Results said dkim=fail of a signature whose key
+was never published; `DkimResult.PermError`, which the header field and the DMARC reports
+know, was never given. Tests:
+`A_signature_that_cannot_be_evaluated_is_a_permanent_error` - no bh=, v=2, no key record
+(NXDOMAIN, no TXT), a key record with a tag twice; `A_signature_without_a_key_is_reported_as_permerror`;
+guards: `A_signature_that_does_not_verify_fails` - the body changed, the Subject changed;
+`A_signature_of_a_revoked_key_fails`.
 
 ## ARC
 
