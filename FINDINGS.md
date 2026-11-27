@@ -133,7 +133,9 @@ that could not be evaluated - and what DMARC makes of them (RFC 7489 §6.6.2); i
 refer to `1105a05e`. The thirty-third (P-6, A-7) tests the header fields the DKIM signer and the
 ARC sealer sign (RFC 6376 §5.4, §5.4.2, RFC 8617 §4.1.2): From among them whatever the
 configuration names, a field named once more than it occurs, a field that occurs twice, a field
-the message lacks; its line numbers refer to `31854e6b`.
+the message lacks; its line numbers refer to `31854e6b`. The thirty-fourth (V-33 to V-35) tests
+the values of the optional tags of a DKIM-Signature as the verifier reads them (RFC 6376 §3.5,
+§6.1.1): t= and x=, l=, q=; its line numbers refer to `b0386737`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -141,7 +143,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [V-33](#v-33) | low | DKIM | A t= or x= of an unexpected value - not a number, an x= not after t= - verified as pass, not permerror | 6 |
+| [V-34](#v-34) | low | DKIM | An l= of an unexpected value - not a number, larger than the body - verified as pass, not permerror | 3 |
+| [V-35](#v-35) | low | DKIM | A q= without a query method the verifier knows - empty, dns without txt, a method of no one - verified as pass, not permerror | 3 |
 
 ### Closed
 
@@ -3314,6 +3320,44 @@ guards: `A_signature_that_does_not_verify_fails` - the body changed, the Subject
 Fixed: a signature with an invalid tag-list, a required tag missing or another version, and one
 whose key does not exist or whose key record is invalid, is `DkimResult.PermError`; a revoked
 key, and the checks that refuse a signature for what it says, stay `DkimResult.Fail`.
+
+The thirty-fourth round's tests (`DkimTagValueTests`) sign with the suite's own signer, the tag
+under test signed with the others, and verify with `DNSVerifier.VerifyDkimAsync`. RFC 6376
+§6.1.1: "Implementers MUST meticulously validate the format and values in the DKIM-Signature
+header field; any inconsistency or unexpected values MUST cause the header field to be
+completely ignored and the Verifier to return PERMFAIL (signature syntax error)." The verifier
+reads v=, a=, b=, bh=, d=, h= and s= (`DNSVerifier.cs:1066` to `:1072`), i= (`:1093`) and c=
+(`:1176`), and no other tag. Covered without a finding: an x= a day after t= passes, an l= of
+the length of the body passes, and so do q=dns/txt and an unknown method before it.
+
+### V-33
+**Open.** **A t= or x= of an unexpected value verified as pass** (`DNSVerifier.cs:1066` and on:
+neither tag is read). RFC 6376 §3.5: `sig-t-tag = %x74 [FWS] "=" [FWS] 1*12DIGIT`, and x= the
+same; "The value of the "x=" tag MUST be greater than the value of the "t=" tag if both are
+present." A signature with t=yesterday, an empty t=, t=-5, x=tomorrow, an x= the same as its
+t= or an hour before it was dkim=pass, though §6.1.1 ends it with PERMFAIL (signature syntax
+error). Test: `A_t_or_x_of_an_unexpected_value_is_a_permanent_error` - the six; guard:
+`A_signature_that_expires_after_its_timestamp_passes`.
+
+### V-34
+**Open.** **An l= of an unexpected value verified as pass** (`DNSVerifier.cs:1066` and on: l= is
+not read, and the body is hashed whole). RFC 6376 §3.5: `sig-l-tag = %x6c [FWS] "=" [FWS]
+1*76DIGIT`, and l= "MUST NOT be larger than the actual number of octets in the canonicalized
+message body". A signature with l=abc, l=-1, or l=1000 over a body of 8 octets was dkim=pass,
+though §6.1.1 ends it with PERMFAIL (signature syntax error). Test:
+`An_l_of_an_unexpected_value_is_a_permanent_error` - the three; guard:
+`A_signature_whose_l_is_the_length_of_the_body_passes`.
+
+### V-35
+**Open.** **A q= without a query method the verifier knows verified as pass**
+(`DNSVerifier.cs:1066` and on: q= is not read, and the key is looked up in the DNS whatever it
+says). RFC 6376 §3.5, q=: "Currently, the only valid value is "dns/txt""; "The only option
+defined for the "dns" query type is "txt", which MUST be included"; "Unrecognized query
+mechanisms MUST be ignored". A signature with an empty q=, q=dns or q=foo/bar names no way to
+its key that the verifier knows, and was dkim=pass, though §6.1.1 ends it with PERMFAIL
+(signature syntax error). Test:
+`A_q_without_a_query_method_the_verifier_knows_is_a_permanent_error` - the three; guard:
+`A_q_with_dns_txt_passes` - q=dns/txt, an unknown method before it.
 
 ## ARC
 

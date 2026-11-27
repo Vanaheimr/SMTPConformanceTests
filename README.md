@@ -13,7 +13,14 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-27, Hermod `b0386737`):** 1349 tests, **all pass**. A thirty-third round tested the header fields the DKIM signer and the ARC sealer
+**State (2026-11-27, Hermod `b0386737`):** 1365 tests, 1353 pass, 12 fail on 3 open
+findings. A thirty-fourth round tested the values of the optional tags of a DKIM-Signature as
+the verifier reads them (RFC 6376 §3.5, §6.1.1) - 16 tests, 3 findings: the verifier read none
+of t=, x=, l= and q=, so a signature with a t= or x= that is no number or an x= not after its
+t= ([V-33](FINDINGS.md#v-33)), an l= that is no number or larger than the body
+([V-34](FINDINGS.md#v-34)), or a q= that names no query method it knows
+([V-35](FINDINGS.md#v-35)) was dkim=pass, not permerror.
+A thirty-third round tested the header fields the DKIM signer and the ARC sealer
 sign (RFC 6376 §5.4, §5.4.2, RFC 8617 §4.1.2) - 9 tests, 2 findings: the signer signed From only
 when the configuration named it, so without it every signature was one no verifier takes
 ([P-6](FINDINGS.md#p-6)), and the ARC sealer's AMS did the same ([A-7](FINDINGS.md#a-7)).
@@ -484,7 +491,8 @@ vectors, and the four Linux tools.
 | RFC 6376 §2.8, §3.4.2, §3.4.4, §3.5, RFC 8617 §4.1.2: white space in DKIM and ARC - WSP and nothing else in the relaxed canonicalization, white space in bh=, the c= of an AMS and of the signer; the verifier, the signer, the ARC validator and sealer | 31 | 0 | ~~V-29~~, ~~V-30~~, ~~A-6~~, ~~P-4~~, ~~P-5~~ fixed |
 | RFC 6376 §6.1.1, §6.1.2, RFC 8601 §2.7.1, RFC 7489 §6.6.2: the DKIM results temperror and permerror - a DNS error at the key, a signature that cannot be evaluated - and the DMARC policy on a temporary error | 17 | 0 | ~~V-31~~, ~~V-32~~ fixed |
 | RFC 6376 §5.4, §5.4.2, RFC 8617 §4.1.2: the header fields the DKIM signer and the ARC sealer sign - From whatever the configuration names, a field named once more than it occurs, a field that occurs twice, a field the message lacks | 9 | 0 | ~~P-6~~, ~~A-7~~ fixed |
-| **Total** | **1349** | **0** | |
+| RFC 6376 §3.5, §6.1.1: the values of the optional tags of a DKIM-Signature - t= and x=, l=, q= - as the verifier reads them | 16 | 12 | V-33, V-34, V-35 |
+| **Total** | **1365** | **12** | |
 
 ## External test partners
 
