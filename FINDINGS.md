@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `7ade4cd9`**
-(Styx `6dc4bb30`), which closes every finding of all thirty-four rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `ecc008c2`**
+(Styx `6dc4bb30`), which closes every finding of all thirty-five rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -145,11 +145,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [V-36](#v-36) | low | SPF | The transformers of a macro not applied as RFC 7208 §7 has them - an upper-case R reversed nothing, a DIGIT of 0 was no error, a DIGIT of twenty digits a temperror | 4 |
-| [V-37](#v-37) | low | SPF | A "/" as delimiter in the domain-spec of a or mx was a permerror | 3 |
-| [V-38](#v-38) | low | SPF | %{p} was "unknown" also for a client with a validated name | 1 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -376,6 +372,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [V-33](#v-33) | low | DKIM | A t= or x= of an unexpected value - not a number, an x= not after t= - verified as pass, not permerror | 6 | [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) |
 | [V-34](#v-34) | low | DKIM | An l= of an unexpected value - not a number, larger than the body - verified as pass, not permerror | 3 | [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) |
 | [V-35](#v-35) | low | DKIM | A q= without a query method the verifier knows - empty, dns without txt, a method of no one - verified as pass, not permerror | 3 | [Vanaheimr/Hermod#353](https://github.com/Vanaheimr/Hermod/pull/353) |
+| [V-36](#v-36) | low | SPF | The transformers of a macro not applied as RFC 7208 §7 has them - an upper-case R reversed nothing, a DIGIT of 0 was no error, a DIGIT of twenty digits a temperror | 4 | [Vanaheimr/Hermod#362](https://github.com/Vanaheimr/Hermod/pull/362) |
+| [V-37](#v-37) | low | SPF | A "/" as delimiter in the domain-spec of a or mx was a permerror | 3 | [Vanaheimr/Hermod#362](https://github.com/Vanaheimr/Hermod/pull/362) |
+| [V-38](#v-38) | low | SPF | %{p} was "unknown" also for a client with a validated name | 1 | [Vanaheimr/Hermod#362](https://github.com/Vanaheimr/Hermod/pull/362) |
 | [E-1](#e-1) | **high** | message format | A comment after the address named the mailbox: `From: mallory@evil.example (<ceo@company.example>)` read as ceo@company.example, and was DKIM-signed for company.example | 7 | [Vanaheimr/Hermod#269](https://github.com/Vanaheimr/Hermod/pull/269) |
 | [I-1](#i-1) | **high** | TLS-RPT ingest | A gzip bomb was inflated whole, in memory and onto disk, before the reply to DATA | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
 | [I-2](#i-2) | **high** | DMARC reader | Deeply nested XML overflowed the stack and ended the process | 1 | [Vanaheimr/Hermod#271](https://github.com/Vanaheimr/Hermod/pull/271) |
@@ -430,7 +429,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 626 tests for these are part of the merge gate now; the observations the first
+The 634 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -3384,7 +3383,7 @@ as delimiter in the domain-spec of exists is read, so is a prefix length after a
 have its address.
 
 ### V-36
-**Open.** **The transformers of a macro not applied as RFC 7208 §7 has them**
+**Closed** in [Vanaheimr/Hermod#362](https://github.com/Vanaheimr/Hermod/pull/362) (`ecc008c2`). **The transformers of a macro not applied as RFC 7208 §7 has them**
 (`SpfMacros.cs:94` to `:117`). §7.1: `transformers = *DIGIT [ "r" ]`, an ABNF string, which is
 case-insensitive (RFC 5234 §2.3) - and the syntax check takes an "R" (`DNSVerifier.cs:855`) -
 but only a lower-case "r" reverses (`SpfMacros.cs:96`): %{dR} and %{d2R} were read as macros
@@ -3395,8 +3394,11 @@ too large for an Int32 (`:94`) - %{d99999999999999999999} - threw, and check_hos
 temperror. Test: `A_transformer_is_applied_as_the_rfc_has_it` - the four; guard:
 `A_transformer_is_applied` - %{dr}, %{d2}, %{d127}.
 
+Fixed: an "R" reverses as an "r" does; a DIGIT of 0 - of only zeros - is a syntax error, the
+record permerror; a DIGIT too large for an Int32 takes all the labels.
+
 ### V-37
-**Open.** **A "/" as delimiter in the domain-spec of a or mx was a permerror**
+**Closed** in [Vanaheimr/Hermod#362](https://github.com/Vanaheimr/Hermod/pull/362) (`ecc008c2`). **A "/" as delimiter in the domain-spec of a or mx was a permerror**
 (`DNSVerifier.cs:754`, `:435`). §7.1: `delimiter = "." / "-" / "+" / "," / "/" / "_" / "="`;
 §5.3: `a = "a" [ ":" domain-spec ] [ dual-cidr-length ]`, mx the same. A "/" within the braces
 of a macro is a delimiter, but the syntax check and the evaluation both take the first "/" of
@@ -3407,8 +3409,11 @@ that use '/' as a delimiter are not supported". Test:
 `A_slash_as_delimiter_in_the_domain_spec_of_a_or_mx_is_no_syntax_error` - the three; guard:
 `A_slash_as_delimiter_in_exists_and_a_prefix_length_after_a_macro_are_read`.
 
+Fixed: the prefix length of a and mx begins at the first "/" outside the braces of a macro,
+in the syntax check and in the evaluation.
+
 ### V-38
-**Open.** **%{p} was "unknown" also for a client with a validated name** (`SpfMacros.cs:109`).
+**Closed** in [Vanaheimr/Hermod#362](https://github.com/Vanaheimr/Hermod/pull/362) (`ecc008c2`). **%{p} was "unknown" also for a client with a validated name** (`SpfMacros.cs:109`).
 §7.3: "The "p" macro expands to the validated domain name of <ip>. The procedure for finding
 the validated domain name is defined in Section 5.5"; "If there are no validated domain names
 or if a DNS error occurs, the string "unknown" is used." The macro is always "unknown", the
@@ -3418,6 +3423,11 @@ name the same way (§5.5), so the procedure is there. Test:
 `The_p_macro_expands_to_the_validated_name_of_the_client`; guard:
 `The_p_macro_without_a_validated_name_expands_to_unknown` - no reverse name, a reverse name
 without the client's address.
+
+Fixed: where a %{p} asks for it, the reverse names of the client are looked up once per
+check_host() - the PTR query counted against the limit of ten - and the first ten validated as
+for ptr (§5.5); the domain is preferred, then a subdomain of it, then any validated name, and
+"unknown" without one.
 
 ## ARC
 

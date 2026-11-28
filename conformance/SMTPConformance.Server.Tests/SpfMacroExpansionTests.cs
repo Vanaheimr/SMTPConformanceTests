@@ -96,7 +96,6 @@ public sealed class SpfMacroExpansionTests
 
     [TestCaseSource(nameof(TransformersAsTheRfcHasThem))]
     [Description("RFC 7208 §7.1: transformers = *DIGIT [ \"r\" ], an ABNF string, which is case-insensitive (RFC 5234 §2.3); §7.3: \"If a DIGIT is specified, the value MUST be nonzero. If no DIGITs are specified, or if the value specifies more parts than are available, all the available parts are used\"")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_transformer_is_applied_as_the_rfc_has_it(String Record, String? Expanded, SPFResult Expected)
     {
 
@@ -157,7 +156,6 @@ public sealed class SpfMacroExpansionTests
 
     [TestCaseSource(nameof(SlashesInTheDomainSpecOfAOrMx))]
     [Description("RFC 7208 §5.3, §5.4: a = \"a\" [ \":\" domain-spec ] [ dual-cidr-length ], mx the same; §7.1: macro-expand = ( \"%{\" macro-letter transformers *delimiter \"}\" ), delimiter = \".\" / \"-\" / \"+\" / \",\" / \"/\" / \"_\" / \"=\" - a \"/\" within the braces is a delimiter, not the start of a prefix length")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_slash_as_delimiter_in_the_domain_spec_of_a_or_mx_is_no_syntax_error(String Record, Action<StubDnsClient> Names)
     {
 
@@ -206,7 +204,6 @@ public sealed class SpfMacroExpansionTests
 
     [Test(Description = "RFC 7208 §7.3: \"The \"p\" macro expands to the validated domain name of <ip>. The procedure for finding the validated domain name is defined in Section 5.5\" - the client's reverse name mail.email.macro.test has the client's address, and %{p} is that name")]
     [Property("Finding", "V-38")]
-    [Category(TestCategories.KnownIssue)]
     public async Task The_p_macro_expands_to_the_validated_name_of_the_client()
     {
 
