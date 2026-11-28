@@ -135,7 +135,9 @@ ARC sealer sign (RFC 6376 §5.4, §5.4.2, RFC 8617 §4.1.2): From among them wha
 configuration names, a field named once more than it occurs, a field that occurs twice, a field
 the message lacks; its line numbers refer to `31854e6b`. The thirty-fourth (V-33 to V-35) tests
 the values of the optional tags of a DKIM-Signature as the verifier reads them (RFC 6376 §3.5,
-§6.1.1): t= and x=, l=, q=; its line numbers refer to `b0386737`.
+§6.1.1): t= and x=, l=, q=; its line numbers refer to `b0386737`. The thirty-fifth (V-36 to
+V-38) tests the macros of an SPF record as check_host() expands them (RFC 7208 §7.1, §7.3): the
+transformers, a "/" as delimiter, the "p" macro; its line numbers refer to `7ade4cd9`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -143,7 +145,11 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [V-36](#v-36) | low | SPF | The transformers of a macro not applied as RFC 7208 §7 has them - an upper-case R reversed nothing, a DIGIT of 0 was no error, a DIGIT of twenty digits a temperror | 4 |
+| [V-37](#v-37) | low | SPF | A "/" as delimiter in the domain-spec of a or mx was a permerror | 3 |
+| [V-38](#v-38) | low | SPF | %{p} was "unknown" also for a client with a validated name | 1 |
 
 ### Closed
 
@@ -3367,6 +3373,51 @@ its key that the verifier knows, and was dkim=pass, though §6.1.1 ends it with 
 
 Fixed: q= is a list of methods none of which is empty, dns only as dns/txt, unknown methods
 ignored, and dns/txt among them; anything else is `DkimResult.PermError`.
+
+The thirty-fifth round's tests (`SpfMacroExpansionTests`) evaluate a record with
+`DNSVerifier.CheckSpfAsync` against the test's DNS: the record names, by a macro, the name it
+looks up, and that name is published, so check_host() passes when the macro expands to it. The
+examples of RFC 7208 §7.4 expand as the RFC has them (`SpfMacroTests`); these go past them.
+Covered without a finding: %{dr} reverses, %{d2} keeps two labels and %{d127} all of them, a "/"
+as delimiter in the domain-spec of exists is read, so is a prefix length after a macro, and
+%{p} is "unknown" for a client without a reverse name and for one whose reverse name does not
+have its address.
+
+### V-36
+**Open.** **The transformers of a macro not applied as RFC 7208 §7 has them**
+(`SpfMacros.cs:94` to `:117`). §7.1: `transformers = *DIGIT [ "r" ]`, an ABNF string, which is
+case-insensitive (RFC 5234 §2.3) - and the syntax check takes an "R" (`DNSVerifier.cs:855`) -
+but only a lower-case "r" reverses (`SpfMacros.cs:96`): %{dR} and %{d2R} were read as macros
+split on "R", and expanded to the domain unreversed. §7.3: "If a DIGIT is specified, the value
+MUST be nonzero", but %{d0} was no syntax error and expanded to all labels (`:117`); "if the
+value specifies more parts than are available, all the available parts are used", but a DIGIT
+too large for an Int32 (`:94`) - %{d99999999999999999999} - threw, and check_host() was
+temperror. Test: `A_transformer_is_applied_as_the_rfc_has_it` - the four; guard:
+`A_transformer_is_applied` - %{dr}, %{d2}, %{d127}.
+
+### V-37
+**Open.** **A "/" as delimiter in the domain-spec of a or mx was a permerror**
+(`DNSVerifier.cs:754`, `:435`). §7.1: `delimiter = "." / "-" / "+" / "," / "/" / "_" / "="`;
+§5.3: `a = "a" [ ":" domain-spec ] [ dual-cidr-length ]`, mx the same. A "/" within the braces
+of a macro is a delimiter, but the syntax check and the evaluation both take the first "/" of
+the argument of a and mx for the start of a prefix length: of a:%{d/}.a.macro.test the
+domain-spec was "%{d", no macro-string, and the record a syntax error - a:%{d/}.a.macro.test,
+the same with /24 after it, and mx:%{d/}.mx.macro.test. `SpfMacros.cs:37` says as much: "macros
+that use '/' as a delimiter are not supported". Test:
+`A_slash_as_delimiter_in_the_domain_spec_of_a_or_mx_is_no_syntax_error` - the three; guard:
+`A_slash_as_delimiter_in_exists_and_a_prefix_length_after_a_macro_are_read`.
+
+### V-38
+**Open.** **%{p} was "unknown" also for a client with a validated name** (`SpfMacros.cs:109`).
+§7.3: "The "p" macro expands to the validated domain name of <ip>. The procedure for finding
+the validated domain name is defined in Section 5.5"; "If there are no validated domain names
+or if a DNS error occurs, the string "unknown" is used." The macro is always "unknown", the
+reverse name not looked up: for a client whose reverse name mail.email.macro.test has its
+address, exists:%{p}.p.macro.test looked up unknown.p.macro.test. The ptr mechanism validates a
+name the same way (§5.5), so the procedure is there. Test:
+`The_p_macro_expands_to_the_validated_name_of_the_client`; guard:
+`The_p_macro_without_a_validated_name_expands_to_unknown` - no reverse name, a reverse name
+without the client's address.
 
 ## ARC
 
