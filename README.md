@@ -13,7 +13,15 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-28, Hermod `ecc008c2`):** 1380 tests, **all pass**. A thirty-fifth round tested the macros of an SPF record as check_host() expands them
+**State (2026-11-28, Hermod `ecc008c2`):** 1393 tests, 1384 pass, 9 fail on 4 open
+findings. A thirty-sixth round tested the TLS report on its way and what it says of an MTA-STS
+policy that could not be had (RFC 8460 §4.3, §5.3, RFC 8461 §3.3) - 13 tests, 4 findings: a
+report sent by SMTP honored MTA-STS and DANE failures, and waited for a next hop whose TLS
+failed its policy ([T-7](FINDINGS.md#t-7)), a policy that could not be fetched or was not valid
+was reported as no policy and a success ([T-8](FINDINGS.md#t-8)), a certificate-not-trusted or
+validation-failure had no failure-reason-code ([T-9](FINDINGS.md#t-9)), and a policy host that
+failed was asked again at every delivery ([M-7](FINDINGS.md#m-7)).
+A thirty-fifth round tested the macros of an SPF record as check_host() expands them
 (RFC 7208 §7.1, §7.3) - 15 tests, 3 findings: an upper-case R reversed nothing, a DIGIT of 0
 was no error and one of twenty digits a temperror ([V-36](FINDINGS.md#v-36)), a "/" as
 delimiter in the domain-spec of a or mx was a permerror ([V-37](FINDINGS.md#v-37)), and %{p}
@@ -499,7 +507,8 @@ vectors, and the four Linux tools.
 | RFC 6376 §5.4, §5.4.2, RFC 8617 §4.1.2: the header fields the DKIM signer and the ARC sealer sign - From whatever the configuration names, a field named once more than it occurs, a field that occurs twice, a field the message lacks | 9 | 0 | ~~P-6~~, ~~A-7~~ fixed |
 | RFC 6376 §3.5, §6.1.1: the values of the optional tags of a DKIM-Signature - t= and x=, l=, q= - as the verifier reads them | 16 | 0 | ~~V-33~~, ~~V-34~~, ~~V-35~~ fixed |
 | RFC 7208 §7.1, §7.3: the macros of an SPF record as check_host() expands them - the transformers, a "/" as delimiter, the "p" macro | 15 | 0 | ~~V-36~~, ~~V-37~~, ~~V-38~~ fixed |
-| **Total** | **1380** | **0** | |
+| RFC 8460 §4.3, §5.3, RFC 8461 §3.3: the TLS report on its way and what it says of an MTA-STS policy that could not be had - the report under the TLS policies of the next hop, sts-policy-fetch-error and sts-policy-invalid, the failure-reason-code; a policy fetch that failed | 13 | 9 | T-7, T-8, T-9, M-7 |
+| **Total** | **1393** | **9** | |
 
 ## External test partners
 

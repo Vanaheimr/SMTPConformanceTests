@@ -137,7 +137,12 @@ the message lacks; its line numbers refer to `31854e6b`. The thirty-fourth (V-33
 the values of the optional tags of a DKIM-Signature as the verifier reads them (RFC 6376 §3.5,
 §6.1.1): t= and x=, l=, q=; its line numbers refer to `b0386737`. The thirty-fifth (V-36 to
 V-38) tests the macros of an SPF record as check_host() expands them (RFC 7208 §7.1, §7.3): the
-transformers, a "/" as delimiter, the "p" macro; its line numbers refer to `7ade4cd9`.
+transformers, a "/" as delimiter, the "p" macro; its line numbers refer to `7ade4cd9`. The
+thirty-sixth (T-7 to T-9, M-7) tests the TLS report on its way and what it says of an MTA-STS
+policy that could not be had (RFC 8460 §4.3, §5.3), and a policy fetch that failed (RFC 8461
+§3.3): the report mail under the TLS policies of the next hop, the result types of a policy
+that could not be fetched or was not valid, the failure-reason-code, and how soon a policy
+host is asked again; its line numbers refer to `ecc008c2`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -145,7 +150,12 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [T-7](#t-7) | medium | TLS-RPT | A TLS report sent by SMTP honored MTA-STS and DANE failures: to a next hop whose TLS failed its policy the report waited, as any other message | 2 |
+| [T-8](#t-8) | low | TLS-RPT | An MTA-STS policy that could not be fetched or was not valid was not reported - the session counted as a success without a policy | 3 |
+| [T-9](#t-9) | low | TLS-RPT | A failure reported as certificate-not-trusted or validation-failure had no failure-reason-code | 2 |
+| [M-7](#m-7) | low | MTA-STS | A policy host that failed was asked again at every delivery, not after five minutes for the same id | 2 |
 
 ### Closed
 
@@ -2651,6 +2661,17 @@ domain as the Policy Domain".
 Fixed: the smart host's own policy applies, its mx patterns included; an address literal has
 none. Test: `OutboundClientTests.Through_a_smart_host_the_recipient_domains_policy_does_not_apply`.
 
+### M-7
+**Open.** **A policy host that failed was asked again at every delivery**
+(`MtaStsResolver.cs:146` to `:148`). RFC 8461 §3.3: "In the case where the HTTPS GET fails,
+implementers SHOULD limit further attempts to a period of five minutes or longer per version
+ID, to avoid overwhelming resource-constrained recipients with cascading failures." A GET that
+failed leaves nothing behind: the next delivery to the domain finds the same id in the TXT
+record, no policy in the cache, and asks the policy host again - three deliveries in a row,
+three GETs, for a policy host that answered 500 and for one that answered 404. Test:
+`MtaStsTests.A_policy_that_could_not_be_fetched_is_not_fetched_again_at_once`, two cases;
+guard: `After_a_fetch_that_failed_a_new_policy_id_is_fetched_at_once` - the limit is per id.
+
 ---
 
 ## DANE
@@ -3841,6 +3862,49 @@ address [RFC6068]", and of a tlsrpt-uri: "commas (ASCII 0x2C), exclamation point
 
 Fixed: as R-9 - percent-decoded, its header fields no part of the address, and one address
 named twice reported to once.
+
+The thirty-sixth round's tests (`OutboundClientTests.TlsRptReports.cs`) send through the smart
+host "localhost", whose MTA-STS policy the test announces and serves, or whose DANE TLSA record
+it signs; a report is queued by `TlsRptReportService` and delivered by the `QueueProcessor`, as
+any other message. Covered without a finding: a message that is no report waits for a next hop
+whose TLS fails its MTA-STS policy or its TLSA records, and without an MTA-STS record a session
+is a success under "no-policy-found".
+
+### T-7
+**Open.** **A TLS report sent by SMTP honored MTA-STS and DANE failures**
+(`Reporting/TlsRptReportService.cs:132`, `SMTPOutboundClient.cs:163`). RFC 8460 §5.3: "Note
+that, when sending failure reports via SMTP, Sending MTAs MUST NOT honor MTA-STS or DANE TLSA
+failures." The report is queued as any other message, and delivered as one: under the
+recipient's enforce policy with a certificate nobody vouches for, and with a DANE-EE record of
+another certificate, the first attempt was deferred - the report about failed TLS sessions waits
+for the very TLS that fails, and a domain whose TLS is broken learns of it last. Hermod has the
+means to set the policies aside - a message with "TLS-Required: No" (RFC 8689 §3) has them set
+aside (`SMTPOutboundClient.cs:150`) - but not for its reports. Test:
+`A_TLS_report_does_not_honor_a_TLS_policy_failure`, MTA-STS and DANE; guard:
+`A_message_that_is_no_TLS_report_honors_a_TLS_policy_failure`, the same two.
+
+### T-8
+**Open.** **An MTA-STS policy that could not be fetched or was not valid was not reported**
+(`MtaStsResolver.cs:148`, `SMTPOutboundClient.cs:595`). RFC 8460 §4.3.2.2:
+"sts-policy-fetch-error: This indicates a failure to retrieve an MTA-STS policy, for example,
+because the policy host is unreachable"; "sts-policy-invalid: This indicates a validation error
+for the overall MTA-STS Policy." When the TXT record announces a policy that cannot be had, the
+resolver answers as if there were none, and the session is recorded as a success under
+"no-policy-found" - the policy domain is told that it has no policy, and that all went well,
+when its policy host answers 500 or 404, and when its policy has no max_age. Test:
+`An_MTA_STS_policy_that_could_not_be_had_is_reported`, three cases; guard:
+`Without_an_MTA_STS_record_a_session_is_reported_under_no_policy_found`.
+
+### T-9
+**Open.** **A failure reported as certificate-not-trusted or validation-failure had no
+failure-reason-code** (`Reporting/TlsRptReportJson.cs:94` to `:98`, `Reporting/TlsRptEvent.cs:51`).
+RFC 8460 §4.3.1 of certificate-not-trusted and of validation-failure: "When using this
+declaration, the reporting MTA SHOULD utilize the "failure-reason-code" to provide more
+information to the receiving entity"; §4.3.3: "the reporter SHOULD also use
+"failure-reason-code" to give some feedback". A session event carries the result type and
+nothing more, and the JSON has no failure-reason-code: neither for a certificate nobody vouches
+for under an enforce policy, nor for an MX host a testing policy does not name. Test:
+`A_failure_of_a_general_result_type_has_a_failure_reason_code`, the two.
 
 ## Priorities and limits
 

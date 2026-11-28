@@ -6,6 +6,7 @@ using NUnit.Framework;
 using org.GraphDefined.Vanaheimr.Hermod.DNS;
 using org.GraphDefined.Vanaheimr.Hermod.SMTP;
 
+using SMTPConformance.Core;
 using SMTPConformance.Core.Fixtures;
 
 namespace SMTPConformance.Client.Tests;
@@ -265,6 +266,56 @@ public sealed class MtaStsTests
         Assert.Multiple(() => {
             Assert.That(fetchFails.Mode, Is.EqualTo(MtaStsMode.Enforce));
             Assert.That(noTxt.Mode,      Is.EqualTo(MtaStsMode.Enforce));
+        });
+
+    }
+
+    #endregion
+
+    #region M-7: a policy that could not be fetched
+
+    [TestCase(500, TestName = "A policy host that answered 500 is not asked again at once for the same id")]
+    [TestCase(404, TestName = "A policy host that answered 404 is not asked again at once for the same id")]
+    [Description("RFC 8461 §3.3: \"In the case where the HTTPS GET fails, implementers SHOULD limit further attempts to a period of five minutes or longer per version ID, to avoid overwhelming resource-constrained recipients with cascading failures\" - three deliveries in a row")]
+    [Property("Finding", "M-7")]
+    [Category(TestCategories.KnownIssue)]
+    public async Task A_policy_that_could_not_be_fetched_is_not_fetched_again_at_once(Int32 Status)
+    {
+
+        var dns  = new StubDnsClient();
+        var host = new MtaStsPolicyHost(Domain) { Status = (HttpStatusCode) Status };
+        using var resolver = new MtaStsResolver(dns, new CapturingLogger(), host);
+
+        MtaStsPolicyHost.Announce(dns, Domain, "v=STSv1; id=20261128;");
+
+        for (var attempt = 0; attempt < 3; attempt++)
+            Assert.That((await resolver.GetPolicyAsync(Domain)).Mode, Is.EqualTo(MtaStsMode.None));
+
+        Assert.That(host.Requests, Is.EqualTo(1), "one GET for id 20261128 within five minutes");
+
+    }
+
+
+    [Test(Description = "RFC 8461 §3.3: the limit is \"per version ID\" - after a GET that failed, a new id in the TXT record is a new policy, fetched at once; a guard for M-7")]
+    [Property("Finding", "M-7")]
+    public async Task After_a_fetch_that_failed_a_new_policy_id_is_fetched_at_once()
+    {
+
+        var dns  = new StubDnsClient();
+        var host = new MtaStsPolicyHost(Domain) { Status = HttpStatusCode.InternalServerError };
+        using var resolver = new MtaStsResolver(dns, new CapturingLogger(), host);
+
+        MtaStsPolicyHost.Announce(dns, Domain, "v=STSv1; id=20261128;");
+        var failed  = await resolver.GetPolicyAsync(Domain);
+
+        MtaStsPolicyHost.Announce(dns, Domain, "v=STSv1; id=20261129;");
+        host.Status = HttpStatusCode.OK;
+        var fetched = await resolver.GetPolicyAsync(Domain);
+
+        Assert.Multiple(() => {
+            Assert.That(failed.Mode,    Is.EqualTo(MtaStsMode.None));
+            Assert.That(fetched.Mode,   Is.EqualTo(MtaStsMode.Enforce), "the policy of id 20261129");
+            Assert.That(host.Requests,  Is.EqualTo(2));
         });
 
     }
