@@ -8,8 +8,8 @@ comes off — the `Finding` property stays, so the test still says which finding
 it guards.
 
 First measured against **Hermod `8af03484`** (Styx `fc2aeddb`), 2026-10-03; line numbers
-refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `ecc008c2`**
-(Styx `6dc4bb30`), which closes every finding of all thirty-five rounds and of the follow-up
+refer to that revision, under `libs/Hermod/Hermod/SMTP/`. Pinned to **Hermod `1823f7af`**
+(Styx `6dc4bb30`), which closes every finding of all thirty-six rounds and of the follow-up
 E-14 to E-16. The second round (S-18 and on, C-8 and on) comes from the observations the
 first one left without a test; its line numbers refer to `96a8048d`. The third (O-1 and
 on, C-11) tests `SMTPOutboundClient`, the relay side, which the first two did not test at
@@ -150,12 +150,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-| ID | Severity | Area | Summary | Tests |
-|---|---|---|---|---|
-| [T-7](#t-7) | medium | TLS-RPT | A TLS report sent by SMTP honored MTA-STS and DANE failures: to a next hop whose TLS failed its policy the report waited, as any other message | 2 |
-| [T-8](#t-8) | low | TLS-RPT | An MTA-STS policy that could not be fetched or was not valid was not reported - the session counted as a success without a policy | 3 |
-| [T-9](#t-9) | low | TLS-RPT | A failure reported as certificate-not-trusted or validation-failure had no failure-reason-code | 2 |
-| [M-7](#m-7) | low | MTA-STS | A policy host that failed was asked again at every delivery, not after five minutes for the same id | 2 |
+None. A new finding gets a test tagged `KnownIssue` and a row here.
 
 ### Closed
 
@@ -301,6 +296,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [M-4](#m-4) | medium | MTA-STS | Policy redirects were followed | 2 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
 | [M-5](#m-5) | medium | MTA-STS | A new policy went unseen until max_age; no matching MX failed for good at once | 3 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
 | [M-6](#m-6) | low | MTA-STS | Through a smart host, the recipient domain's policy was applied to it | 1 | [Vanaheimr/Hermod#135](https://github.com/Vanaheimr/Hermod/pull/135) |
+| [M-7](#m-7) | low | MTA-STS | A policy host that failed was asked again at every delivery, not after five minutes for the same id | 2 | [Vanaheimr/Hermod#366](https://github.com/Vanaheimr/Hermod/pull/366) |
 | [N-3](#n-3) | **high** | DANE | DANE-TA accepted any certificate of the trust anchor, whatever its name | 3 | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
 | [N-4](#n-4) | medium | DANE | Secure but unusable TLSA records made delivery impossible | 2 | [Vanaheimr/Hermod#136](https://github.com/Vanaheimr/Hermod/pull/136) |
 | [N-1](#n-1) | **high** | DANE | A failed TLSA lookup was taken as "no TLSA records" | 4 | [Vanaheimr/Hermod#144](https://github.com/Vanaheimr/Hermod/pull/144) |
@@ -334,6 +330,9 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [T-4](#t-4) | low | TLS-RPT | Through a smart host, the session was reported to the recipient's domain, under the smart host's policy | 1 | [Vanaheimr/Hermod#262](https://github.com/Vanaheimr/Hermod/pull/262) |
 | [T-5](#t-5) | medium | TLS-RPT | A line break in an rua URI went into the report: a Bcc field of its own, a recipient with a line break in it - and into RCPT TO | 2 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
 | [T-6](#t-6) | low | TLS-RPT | A mailto URI was taken for an address: percent-encoding not decoded, its header fields part of it | 2 | [Vanaheimr/Hermod#316](https://github.com/Vanaheimr/Hermod/pull/316) |
+| [T-7](#t-7) | medium | TLS-RPT | A TLS report sent by SMTP honored MTA-STS and DANE failures: to a next hop whose TLS failed its policy the report waited, as any other message | 2 | [Vanaheimr/Hermod#366](https://github.com/Vanaheimr/Hermod/pull/366) |
+| [T-8](#t-8) | low | TLS-RPT | An MTA-STS policy that could not be fetched or was not valid was not reported - the session counted as a success without a policy | 3 | [Vanaheimr/Hermod#366](https://github.com/Vanaheimr/Hermod/pull/366) |
+| [T-9](#t-9) | low | TLS-RPT | A failure reported as certificate-not-trusted or validation-failure had no failure-reason-code | 2 | [Vanaheimr/Hermod#366](https://github.com/Vanaheimr/Hermod/pull/366) |
 | [Q-1](#q-1) | low | MT-PRIORITY | `+3`, `-0`, `05` were taken | 3 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
 | [Q-2](#q-2) | low | MT-PRIORITY | MT-PRIORITY twice was taken | 1 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
 | [Q-3](#q-3) | medium | MT-PRIORITY | A client nobody vouched for raised its own priority | 1 | [Vanaheimr/Hermod#263](https://github.com/Vanaheimr/Hermod/pull/263) |
@@ -439,7 +438,7 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 | [G-5](#g-5) | low | PGP/MIME | `PgpMime.Signed` took a signed part with trailing white space | 1 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 | [G-6](#g-6) | low | PGP/MIME | micalg `pgp-sha3_256` instead of `pgp-sha3-256` | 2 | [Vanaheimr/Hermod#273](https://github.com/Vanaheimr/Hermod/pull/273) |
 
-The 634 tests for these are part of the merge gate now; the observations the first
+The 643 tests for these are part of the merge gate now; the observations the first
 round noted without a test are [accounted for](#observations-without-a-test-yet).
 
 ---
@@ -2662,7 +2661,7 @@ Fixed: the smart host's own policy applies, its mx patterns included; an address
 none. Test: `OutboundClientTests.Through_a_smart_host_the_recipient_domains_policy_does_not_apply`.
 
 ### M-7
-**Open.** **A policy host that failed was asked again at every delivery**
+**Closed** in [Vanaheimr/Hermod#366](https://github.com/Vanaheimr/Hermod/pull/366) (`1823f7af`). **A policy host that failed was asked again at every delivery**
 (`MtaStsResolver.cs:146` to `:148`). RFC 8461 §3.3: "In the case where the HTTPS GET fails,
 implementers SHOULD limit further attempts to a period of five minutes or longer per version
 ID, to avoid overwhelming resource-constrained recipients with cascading failures." A GET that
@@ -2671,6 +2670,9 @@ record, no policy in the cache, and asks the policy host again - three deliverie
 three GETs, for a policy host that answered 500 and for one that answered 404. Test:
 `MtaStsTests.A_policy_that_could_not_be_fetched_is_not_fetched_again_at_once`, two cases;
 guard: `After_a_fetch_that_failed_a_new_policy_id_is_fetched_at_once` - the limit is per id.
+
+Fixed: the failure of an id is remembered for five minutes; until then the cached policy, if
+there is one, applies, else the policy that could not be had; a new id is fetched at once.
 
 ---
 
@@ -3871,7 +3873,7 @@ whose TLS fails its MTA-STS policy or its TLSA records, and without an MTA-STS r
 is a success under "no-policy-found".
 
 ### T-7
-**Open.** **A TLS report sent by SMTP honored MTA-STS and DANE failures**
+**Closed** in [Vanaheimr/Hermod#366](https://github.com/Vanaheimr/Hermod/pull/366) (`1823f7af`). **A TLS report sent by SMTP honored MTA-STS and DANE failures**
 (`Reporting/TlsRptReportService.cs:132`, `SMTPOutboundClient.cs:163`). RFC 8460 §5.3: "Note
 that, when sending failure reports via SMTP, Sending MTAs MUST NOT honor MTA-STS or DANE TLSA
 failures." The report is queued as any other message, and delivered as one: under the
@@ -3883,8 +3885,12 @@ aside (`SMTPOutboundClient.cs:150`) - but not for its reports. Test:
 `A_TLS_report_does_not_honor_a_TLS_policy_failure`, MTA-STS and DANE; guard:
 `A_message_that_is_no_TLS_report_honors_a_TLS_policy_failure`, the same two.
 
+Fixed: the report mail carries "TLS-Required: No" (RFC 8689 §3), so that the outbound client -
+and every MTA on the way that knows the field - sets MTA-STS and DANE aside for it; STARTTLS is
+still negotiated where it is offered.
+
 ### T-8
-**Open.** **An MTA-STS policy that could not be fetched or was not valid was not reported**
+**Closed** in [Vanaheimr/Hermod#366](https://github.com/Vanaheimr/Hermod/pull/366) (`1823f7af`). **An MTA-STS policy that could not be fetched or was not valid was not reported**
 (`MtaStsResolver.cs:148`, `SMTPOutboundClient.cs:595`). RFC 8460 §4.3.2.2:
 "sts-policy-fetch-error: This indicates a failure to retrieve an MTA-STS policy, for example,
 because the policy host is unreachable"; "sts-policy-invalid: This indicates a validation error
@@ -3895,8 +3901,13 @@ when its policy host answers 500 or 404, and when its policy has no max_age. Tes
 `An_MTA_STS_policy_that_could_not_be_had_is_reported`, three cases; guard:
 `Without_an_MTA_STS_record_a_session_is_reported_under_no_policy_found`.
 
+Fixed: the resolver says why a policy could not be had - sts-policy-fetch-error for no 200, a
+redirect, an unreachable host; sts-webpki-invalid for a TLS handshake with the policy host that
+failed; sts-policy-invalid for a policy that is not text/plain or not valid - and the session
+is recorded under "sts" as a failure of that type. The policy applies as none, as before.
+
 ### T-9
-**Open.** **A failure reported as certificate-not-trusted or validation-failure had no
+**Closed** in [Vanaheimr/Hermod#366](https://github.com/Vanaheimr/Hermod/pull/366) (`1823f7af`). **A failure reported as certificate-not-trusted or validation-failure had no
 failure-reason-code** (`Reporting/TlsRptReportJson.cs:94` to `:98`, `Reporting/TlsRptEvent.cs:51`).
 RFC 8460 §4.3.1 of certificate-not-trusted and of validation-failure: "When using this
 declaration, the reporting MTA SHOULD utilize the "failure-reason-code" to provide more
@@ -3905,6 +3916,10 @@ information to the receiving entity"; §4.3.3: "the reporter SHOULD also use
 nothing more, and the JSON has no failure-reason-code: neither for a certificate nobody vouches
 for under an enforce policy, nor for an MX host a testing policy does not name. Test:
 `A_failure_of_a_general_result_type_has_a_failure_reason_code`, the two.
+
+Fixed: a session event has a failure-reason-code, kept apart in the aggregate and written to
+the JSON - the status of the certificate chain, a certificate no TLSA record matches, an MX
+host the policy does not name, what went wrong with a policy that could not be had.
 
 ## Priorities and limits
 

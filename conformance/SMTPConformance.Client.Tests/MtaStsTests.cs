@@ -278,7 +278,6 @@ public sealed class MtaStsTests
     [TestCase(404, TestName = "A policy host that answered 404 is not asked again at once for the same id")]
     [Description("RFC 8461 §3.3: \"In the case where the HTTPS GET fails, implementers SHOULD limit further attempts to a period of five minutes or longer per version ID, to avoid overwhelming resource-constrained recipients with cascading failures\" - three deliveries in a row")]
     [Property("Finding", "M-7")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_policy_that_could_not_be_fetched_is_not_fetched_again_at_once(Int32 Status)
     {
 

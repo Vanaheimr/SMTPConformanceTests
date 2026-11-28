@@ -180,7 +180,6 @@ public sealed partial class OutboundClientTests
     [TestCase("DANE",    TestName = "A TLS report sent by SMTP does not honor a DANE TLSA failure")]
     [Description("RFC 8460 §5.3: \"when sending failure reports via SMTP, Sending MTAs MUST NOT honor MTA-STS or DANE TLSA failures\" - the report goes to a next hop whose TLS fails its policy")]
     [Property("Finding", "T-7")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_TLS_report_does_not_honor_a_TLS_policy_failure(String Policy)
     {
 
@@ -236,7 +235,6 @@ public sealed partial class OutboundClientTests
     [TestCase(200, "version: STSv1\r\nmode: enforce\r\nmx: localhost\r\n",  "sts-policy-invalid",     TestName = "A policy without max_age is reported as sts-policy-invalid")]
     [Description("RFC 8460 §4.3.2.2: \"sts-policy-fetch-error: This indicates a failure to retrieve an MTA-STS policy, for example, because the policy host is unreachable\"; \"sts-policy-invalid: This indicates a validation error for the overall MTA-STS Policy\" - a TXT record announces a policy that cannot be had")]
     [Property("Finding", "T-8")]
-    [Category(TestCategories.KnownIssue)]
     public async Task An_MTA_STS_policy_that_could_not_be_had_is_reported(Int32 Status, String? Policy, String ResultType)
     {
 
@@ -276,7 +274,6 @@ public sealed partial class OutboundClientTests
     [TestCase("testing", "mx.other.test",  true,  "validation-failure",      TestName = "A validation-failure has a failure-reason-code")]
     [Description("RFC 8460 §4.3.1: certificate-not-trusted - \"When using this declaration, the reporting MTA SHOULD utilize the \"failure-reason-code\" to provide more information to the receiving entity\"; validation-failure the same, and §4.3.3: \"the reporter SHOULD also use \"failure-reason-code\" to give some feedback\"")]
     [Property("Finding", "T-9")]
-    [Category(TestCategories.KnownIssue)]
     public async Task A_failure_of_a_general_result_type_has_a_failure_reason_code(String Mode, String Mx, Boolean TrustCertificate, String ResultType)
     {
 
