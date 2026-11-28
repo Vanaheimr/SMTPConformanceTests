@@ -390,9 +390,14 @@ public class SmtpWire : IAsyncDisposable
             lock (issuersSent)
                 issuersSent.AddRange(Chain);
 
+        var context = SslStreamCertificateContext.Create(Certificate, [.. Chain ?? []], offline: true);
+
+        if (OperatingSystem.IsWindows() && Chain is { Count: > 0 })
+            await UntilWindowsBuildsTheChainAsync(Certificate, Chain, CancellationToken);
+
         await tls.AuthenticateAsServerAsync(
                   new SslServerAuthenticationOptions {
-                      ServerCertificateContext  = SslStreamCertificateContext.Create(Certificate, [.. Chain ?? []], offline: true),
+                      ServerCertificateContext  = context,
                       EnabledSslProtocols       = SslProtocols.Tls12 | SslProtocols.Tls13
                   },
                   CancellationToken
@@ -404,6 +409,35 @@ public class SmtpWire : IAsyncDisposable
     }
 
     #endregion
+
+
+    /// <summary>
+    /// Wait until Windows builds the chain of the certificate with the issuers in it. SChannel
+    /// sends the chain it builds from the certificate stores, not the one it is given: the
+    /// issuers the context has just put into the intermediate CA store are not always found
+    /// there yet, and the server sends its certificate alone.
+    /// </summary>
+    private static async Task UntilWindowsBuildsTheChainAsync(X509Certificate2 Certificate, IReadOnlyList<X509Certificate2> Issuers, CancellationToken CancellationToken)
+    {
+
+        var thumbprints = Issuers.Select(issuer => issuer.Thumbprint).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (var attempt = 0; attempt < 100; attempt++)
+        {
+
+            using var chain = new X509Chain();
+            chain.ChainPolicy.RevocationMode               = X509RevocationMode.NoCheck;
+            chain.ChainPolicy.DisableCertificateDownloads  = true;
+            chain.Build(Certificate);
+
+            if (chain.ChainElements.Any(element => thumbprints.Contains(element.Certificate.Thumbprint)))
+                return;
+
+            await Task.Delay(20, CancellationToken);
+
+        }
+
+    }
 
 
     public virtual async ValueTask DisposeAsync()

@@ -13,7 +13,15 @@ are git submodules under `libs/`, the tests build against exactly the pinned
 revisions, and every check is either an RFC requirement with its section in the
 test description, or an interop result against an independent implementation.
 
-**State (2026-11-28, Hermod `1823f7af`):** 1393 tests, **all pass**. A thirty-sixth round tested the TLS report on its way and what it says of an MTA-STS
+**State (2026-11-28, Hermod `1823f7af`):** 1403 tests, 1398 pass, 5 fail on 2 open
+findings. A thirty-seventh round tested the names DANE authenticates a next hop by (RFC 7672
+§2.2.2, §3.2.2, §8.1) - 10 tests, 2 findings: a smart host that is a CNAME was looked up for
+TLSA records under its own name only, and named so in SNI, so that TLSA records at its
+expanded name did not apply ([N-7](FINDINGS.md#n-7)), and after an MX lookup that was not
+secure the next-hop domain still counted as a reference identifier of a DANE-TA name check
+([N-6](FINDINGS.md#n-6)). The round also ends the occasional DANE-TA failures on Windows: the
+scripted server waits until Windows builds the chain it sends.
+A thirty-sixth round tested the TLS report on its way and what it says of an MTA-STS
 policy that could not be had (RFC 8460 §4.3, §5.3, RFC 8461 §3.3) - 13 tests, 4 findings: a
 report sent by SMTP honored MTA-STS and DANE failures, and waited for a next hop whose TLS
 failed its policy ([T-7](FINDINGS.md#t-7)), a policy that could not be fetched or was not valid
@@ -508,7 +516,8 @@ vectors, and the four Linux tools.
 | RFC 6376 §3.5, §6.1.1: the values of the optional tags of a DKIM-Signature - t= and x=, l=, q= - as the verifier reads them | 16 | 0 | ~~V-33~~, ~~V-34~~, ~~V-35~~ fixed |
 | RFC 7208 §7.1, §7.3: the macros of an SPF record as check_host() expands them - the transformers, a "/" as delimiter, the "p" macro | 15 | 0 | ~~V-36~~, ~~V-37~~, ~~V-38~~ fixed |
 | RFC 8460 §4.3, §5.3, RFC 8461 §3.3: the TLS report on its way and what it says of an MTA-STS policy that could not be had - the report under the TLS policies of the next hop, sts-policy-fetch-error and sts-policy-invalid, the failure-reason-code; a policy fetch that failed | 13 | 0 | ~~T-7~~, ~~T-8~~, ~~T-9~~, ~~M-7~~ fixed |
-| **Total** | **1393** | **0** | |
+| RFC 7672 §2.2.2, §3.2.2, §8.1: the names DANE authenticates a next hop by - the TLSA base domain of a smart host that is a CNAME, the SNI, the reference identifiers after an MX lookup that was not secure; §3.1.1 an expired certificate under DANE-EE | 10 | 5 | N-6, N-7 |
+| **Total** | **1403** | **5** | |
 
 ## External test partners
 

@@ -161,6 +161,12 @@ public sealed class SmtpServerScript
     /// </summary>
     public List<(String Line, Boolean Tls)> Commands   { get; } = [];
 
+    /// <summary>
+    /// The server name (SNI, RFC 6066 §3) of every TLS handshake across all sessions - empty
+    /// for a handshake without one.
+    /// </summary>
+    public List<String>             ServerNames        { get; } = [];
+
 
     private void Record(String line, Boolean tls)
     {
@@ -224,6 +230,8 @@ public sealed class SmtpServerScript
                     if (StartTlsReply.StartsWith("220"))
                     {
                         await s.UpgradeToTlsAsServerAsync(Certificate, CertificateChain);
+                        lock (ServerNames)
+                            ServerNames.Add(s.Tls?.TargetHostName ?? "");
                         transaction = null;
                     }
                     break;

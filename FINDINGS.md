@@ -142,7 +142,11 @@ thirty-sixth (T-7 to T-9, M-7) tests the TLS report on its way and what it says 
 policy that could not be had (RFC 8460 §4.3, §5.3), and a policy fetch that failed (RFC 8461
 §3.3): the report mail under the TLS policies of the next hop, the result types of a policy
 that could not be fetched or was not valid, the failure-reason-code, and how soon a policy
-host is asked again; its line numbers refer to `ecc008c2`.
+host is asked again; its line numbers refer to `ecc008c2`. The thirty-seventh (N-6, N-7)
+tests the names DANE authenticates a next hop by (RFC 7672 §2.2.2, §3.2.2, §8.1): the TLSA
+base domain of a smart host that is a CNAME, the name sent in SNI, and the reference
+identifiers of a DANE-TA name check after an MX lookup that was not secure; its line numbers
+refer to `1823f7af`.
 
 ```powershell
 dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
@@ -150,7 +154,10 @@ dotnet test SMTPConformanceTests.slnx --filter "TestCategory=KnownIssue"
 
 ### Open
 
-None. A new finding gets a test tagged `KnownIssue` and a row here.
+| ID | Severity | Area | Summary | Tests |
+|---|---|---|---|---|
+| [N-7](#n-7) | medium | DANE | A smart host that is a CNAME was looked up for TLSA records under its own name only, and named so in SNI: TLSA records at its expanded name did not apply | 4 |
+| [N-6](#n-6) | low | DANE | After an MX lookup that was not secure, the next-hop domain still counted as a reference identifier of a DANE-TA name check | 1 |
 
 ### Closed
 
@@ -2803,6 +2810,63 @@ TempFail ([#151](https://github.com/Vanaheimr/Hermod/pull/151) makes its CAs uni
 an occasional Windows failure: every anchor was "CN=DANE trust anchor" without key
 identifiers, and the chain engine could take one of an earlier test from its cache - the
 suite's `TestCertificate.CreateIssuedCertificate` does the same now).
+
+The thirty-seventh round's tests (`OutboundClientTests.DaneNames.cs`) sign the zone
+"localhost" with hosts, aliases, TLSA and MX records of their own, and names proven not to
+exist; the scripted server records the server name of each TLS handshake. The MX tests set the
+port of the MX hosts by reflection, as the O-21 tests do. Covered without a finding: with no
+TLSA records at the expanded name of a smart host that is a CNAME, those of its own name apply;
+the SNI of a smart host is its name; DANE-EE(3) ignores the expiration date of the certificate
+(§3.1.1); after an insecure MX lookup a certificate for the MX host is accepted, and after a
+secure one a certificate for the next-hop domain.
+
+The DANE-TA tests failed now and then on Windows - `DANE_TA_accepts_a_certificate_for_the_host`
+and `DANE_TA_does_not_depend_on_certificate_downloads` among them, and with this round's more
+of them in half the runs: the client's chain lacked the anchor the server was given. SChannel sends
+the chain it builds from the certificate stores, not the one it is given, and the issuers the
+certificate context had just put into the intermediate CA store were not always found there
+yet. The scripted server now waits until Windows builds the chain with them before the
+handshake (`SmtpWire.UpgradeToTlsAsServerAsync`). Of the nine DANE-TA tests, six runs in a
+row since failed only the two of this round's findings; of six runs before, three failed
+guards as well, up to four of them.
+
+### N-7
+**Open.** **A smart host that is a CNAME was looked up for TLSA records under its own name
+only** (`DaneResolver.cs:93`, `SMTPOutboundClient.cs:481`, `:730`). RFC 7672 §2.2.2, of a
+next hop "configured by the sending MTA administrator" ("Unlike administrator-specified
+relays, MTAs are not required to support CNAME expansion of next-hop names found via MX
+lookups"): "Secure CNAME: The input domain is a CNAME alias,
+and the ultimate network address RRset is "secure" ... Two candidate TLSA base domains are
+tried: the fully CNAME-expanded initial name and, failing that, the initial name itself";
+§3.2.2: "the SMTP client MUST employ the TLSA base domain as the primary reference identifier";
+§8.1: "the SMTP client MUST send the TLS SNI extension containing the TLSA base domain". The
+resolver validates the CNAME and the address record it leads to, and then asks for the TLSA
+records of the unexpanded name alone. A DANE-EE record of another certificate at the expanded
+name, the unexpanded one proven to have none: the message went, over opportunistic TLS - the
+authentication the smart host's TLSA records ask for was passed over. A DANE-EE record of the
+server's certificate, or a DANE-TA record and a certificate for the expanded name, at the
+expanded name alone: deferred, for want of a proof that the unexpanded name has none. And the
+SNI was the unexpanded name. Test: `A_TLSA_record_at_the_expanded_name_of_a_smart_host_that_is_a_CNAME_is_not_passed_over`,
+`A_smart_host_that_is_a_CNAME_is_authenticated_by_the_TLSA_records_of_its_expanded_name` -
+DANE-EE and DANE-TA -, `The_SNI_of_a_smart_host_that_is_a_CNAME_is_its_TLSA_base_domain`;
+guards: `Without_TLSA_records_at_the_expanded_name_those_of_the_smart_hosts_own_name_apply`,
+`The_SNI_of_a_smart_host_is_its_name`.
+
+### N-6
+**Open.** **After an MX lookup that was not secure, the next-hop domain still counted as a
+reference identifier of a DANE-TA name check** (`SMTPOutboundClient.cs:518`). RFC 7672 §3.2.2:
+"If the TLSA base domain was obtained indirectly via a "secure" MX lookup ... then the original
+next-hop domain used in the MX lookup MUST be included as a second reference identifier ...
+When the client MTA is employing DANE TLS security despite "insecure" MX redirection, the MX
+hostname is the only reference identifier." The reference identifiers of an MX host are the
+host and the next-hop domain, whatever the MX lookup was: the MX records of outbound.test,
+unsigned, name mx.localhost in a signed zone, whose DANE-TA record is the authority of a
+certificate for outbound.test - and the message went. An MX record nobody vouches for may have
+been put there by whoever answers the query; that the host's certificate names the domain the
+record was asked for is no evidence the record was the domain's. Test:
+`After_an_insecure_MX_lookup_the_next_hop_domain_is_no_reference_identifier`; guards:
+`After_an_insecure_MX_lookup_a_certificate_for_the_MX_host_is_accepted`,
+`After_a_secure_MX_lookup_a_certificate_for_the_next_hop_domain_is_accepted`.
 
 ---
 
